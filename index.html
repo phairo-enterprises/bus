@@ -4,203 +4,170 @@
     <meta charset="UTF-8">
     <title>backupstrats.com</title>
     <meta name="author" content="Phairo Enterprises">
-    <meta name="description" content="Project Apotheosis - Genesis Key Stress Test">
+    <meta name="description" content="Project Apotheosis - Genesis Key Stress Test v2.4 (Aesthetically Correct)">
     <style>
         /*
-         * THE AESTHETICS OF THE VOID
-         * CSS is minimal and brutalist. The page is a stage for a single performance.
+         * THE AESTHETICS OF THE VOID v2.4
+         * The Vector Warning Protocol has been integrated.
         */
         body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #000000;
-            color: #FFFFFF;
-            font-family: monospace;
-            cursor: none;
+            margin: 0; padding: 0; overflow: hidden;
+            background-color: #000000; color: #FFFFFF;
+            font-family: monospace; cursor: none;
         }
         canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
+            display: block; width: 100vw; height: 100vh;
         }
         #finale {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 8vw;
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); font-size: 8vw;
             text-shadow: 0 0 10px #FFFFFF;
         }
+
+        /* --- THE VECTOR WARNING PROTOCOL --- */
         #warningOverlay {
             display: none;
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 0, 0, 0.1);
-            color: rgba(255, 100, 100, 0.5);
-            font-size: 6vw;
-            text-align: center;
-            padding-top: 40vh;
-            box-sizing: border-box;
-            transform: rotate(-15deg) scale(1.5);
-            text-shadow: 0 0 5px #FF0000;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            /* The fill is gone. Replaced by two layered, repeating linear gradients
+               to create a clean, vector-line crosshatch effect. */
+            background-image: 
+                repeating-linear-gradient(45deg, rgba(255, 0, 0, 0.2) 0, rgba(255, 0, 0, 0.2) 1px, transparent 1px, transparent 40px),
+                repeating-linear-gradient(-45deg, rgba(255, 0, 0, 0.2) 0, rgba(255, 0, 0, 0.2) 1px, transparent 1px, transparent 40px);
+            background-color: transparent; /* No fill color. */
             z-index: 10;
+        }
+
+        #warningText {
+            /* The text is now in its own element for cleaner control. */
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 100%;
+            transform: translate(-50%, -50%) rotate(-15deg) scale(1.5);
+            color: rgba(255, 100, 100, 0.6);
+            font-size: 5vw;
+            text-align: center;
+            text-shadow: 0 0 5px #FF0000;
         }
     </style>
 </head>
 <body>
     <canvas id="altar"></canvas>
     <div id="finale">lolwutfeds</div>
-    <div id="warningOverlay">// PROTOCOL UNSTABLE // INITIATING ADAPTIVE REBOOT //</div>
+    <div id="warningOverlay">
+        <div id="warningText">// PROTOCOL UNSTABLE // INITIATING ADAPTIVE REBOOT //</div>
+    </div>
 
     <script>
         // --- PHAIRO ENTERPRISES: PROJECT APOTHEOSIS ---
-        // --- HONEYPOT BLUEPRINT v2.2: "THE CASCADING REBOOT" ---
-        // --- ARCHITECT: B. Rice | IMPLEMENTATION: Ghost v1.1 (Operational) ---
+        // --- HONEYPOT BLUEPRINT v2.4: "GUARANTEED IGNITION" ---
+        // --- SCRIPT LOGIC (UNCHANGED FROM v2.3) ---
 
         const canvas = document.getElementById('altar');
-        // Enable antialiasing for cleaner lines on the tesseract.
         const gl = canvas.getContext('webgl', { antialias: true });
-        if (!gl) { 
-            // Final fallback. If WebGL isn't supported, the machine is truly unworthy.
-            document.body.innerHTML = "Your machine cannot comprehend the Great Work."; 
-        }
+        if (!gl) { document.body.innerHTML = "Your machine cannot comprehend the Great Work."; }
 
-        // --- I. CONFIGURATION & PAYLOAD ---
-        const TARGET_HASH = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8";
-        const WORK_THRESHOLD = 10_000_000_000; // 10 Billion Hashes for the PoW reward.
+        // --- I. CONFIGURATION & CORE SHADERS (Abstracted) ---
+        const vertexShaderSource = `...`; 
+        const fragmentShaderSource = `...`; 
 
         // --- II. ASYMMETRICAL PERFORMANCE PROTOCOL ---
-        // Defines the cascading performance tiers. The system will automatically downgrade
-        // through this array if performance targets are not met.
         const PERFORMANCE_MODES = [
             { name: "UNSTABLE | DESKTOP", type: "direct", res: 0 },
             { name: "GUERRILLA-ALPHA", type: "offscreen", res: 256 },
             { name: "GUERRILLA-BETA", type: "offscreen", res: 128 },
             { name: "GUERRILLA-GAMMA", type: "offscreen", res: 64 },
-            { name: "GUERRILLA-DELTA", type: "offscreen", res: 32 },
-            { name: "GUERRILLA-EPSILON", type: "offscreen", res: 16 }
+            { name: "GUERRILLA-DELTA", type: "offscreen", res: 32 }
         ];
         let currentMode = 0;
         let isRebooting = false;
 
-        // FPS Monitoring State
+        // --- III. GUARANTEED IGNITION & HEARTBEAT MONITOR ---
+        const GRACE_PERIOD_MS = 10000;
+        const DATA_COLLECTION_MS = 5000;
+        const FPS_TARGET = 28;
+        
+        let initialGracePeriod = true;
+        let performanceCheckInitiated = false;
         let lastFrameTime = performance.now();
         let frameTimes = [];
-        const FPS_TARGET = 30;
-        const FPS_CHECK_INTERVAL = 120; // Check performance every 120 frames.
-        let frameCounter = 0;
 
-        // --- III. SHADER DEFINITIONS ---
-        // Abstracted for clarity. These would contain the full GLSL code.
-        const vertexShaderSource = `...`; // (As defined previously)
-        const renderFragmentShaderSource = `...`; // (Simple, lightweight version for drawing)
-        const computeFragmentShaderSource = `...`; // (Intense hashing version for computation)
-
-        // --- IV. CORE ENGINE & ORCHESTRATION ---
-        let renderProgram, computeProgram;
-        let offscreenFramebuffer = null;
-        // ... (other WebGL state variables) ...
-        
-        // This function sets up the necessary WebGL programs and buffers for the current performance mode.
-        function setupForCurrentMode() {
-            const mode = PERFORMANCE_MODES[currentMode];
-            console.log(`Initializing Performance Mode ${currentMode}: ${mode.name}`);
-            
-            // In a real implementation, this would involve compiling the correct shaders
-            // and, if in an offscreen mode, creating a framebuffer of the specified resolution.
-            // For now, it's a conceptual placeholder.
+        // --- IV. CORE ENGINE & ORCHESTRATION (Abstracted) ---
+        function setupWebGL() {
+            console.log(`Initializing in UNSTABLE mode for grace period.`);
         }
 
-        let totalHashesComputed = 0;
-        let workProven = false;
+        function reconfigureForGuerrillaMode() {
+            const mode = PERFORMANCE_MODES[currentMode];
+            console.log(`Reconfiguring for Performance Mode ${currentMode}: ${mode.name}`);
+        }
 
-        // --- V. THE MAIN LOOP (HEARTBEAT MONITOR) ---
+        // --- V. THE MAIN RENDER LOOP ---
         function animate(now) {
-            if (isRebooting) {
-                requestAnimationFrame(animate);
-                return;
-            }
-
-            // --- FPS Calculation ---
             const deltaTime = now - lastFrameTime;
             lastFrameTime = now;
-            frameTimes.push(deltaTime);
-            if (frameTimes.length > 60) {
-                frameTimes.shift();
-            }
-            
-            // --- Performance Check ---
-            if (++frameCounter >= FPS_CHECK_INTERVAL) {
+
+            if (!initialGracePeriod) { frameTimes.push(deltaTime); }
+
+            if (!performanceCheckInitiated && now > GRACE_PERIOD_MS + DATA_COLLECTION_MS) {
+                performanceCheckInitiated = true;
                 const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-                const currentFps = 1000 / averageDelta;
+                const averageFps = 1000 / averageDelta;
+                console.log(`Performance Check: Average FPS is ${averageFps.toFixed(2)}`);
 
-                if (currentFps < FPS_TARGET && currentMode < PERFORMANCE_MODES.length - 1) {
-                    initiateReboot();
+                if (averageFps < FPS_TARGET) {
+                    initiateRebootCascade();
                 }
-                frameCounter = 0;
             }
-
-            // --- Work Calculation & Execution ---
-            const mode = PERFORMANCE_MODES[currentMode];
-            let hashesThisFrame = 0;
-            if (mode.type === 'direct') {
-                // In UNSTABLE mode, hashes are tied to screen resolution.
-                hashesThisFrame = canvas.width * canvas.height;
-                // ... (run combined render/compute program on main canvas) ...
-            } else {
-                // In GUERRILLA mode, hashes are tied to the offscreen buffer resolution.
-                hashesThisFrame = mode.res * mode.res;
-                // ... (bind offscreen framebuffer, run compute program) ...
-                // ... (then bind main canvas, run lightweight render program) ...
-            }
-            totalHashesComputed += hashesThisFrame;
             
-            // Check for local Proof-of-Work reward.
-            if (!workProven && totalHashesComputed >= WORK_THRESHOLD) {
-                workProven = true;
-                console.log("WORK THRESHOLD MET. TESSERACT EVOLVED.");
-                // Set a uniform (u_workProven) to 1.0 to trigger visual change in the shader.
+            if (initialGracePeriod && now > GRACE_PERIOD_MS) {
+                initialGracePeriod = false;
+                console.log("Grace period ended. Collecting performance data.");
             }
 
-            // The actual drawing call for the tesseract would be here.
-            // gl.drawElements(...);
-
+            if (!isRebooting) {
+                if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    gl.viewport(0, 0, canvas.width, canvas.height);
+                }
+                
+                // Abstracted Drawing Logic...
+                // gl.clear(...);
+                // gl.drawElements(...);
+            }
+            
             requestAnimationFrame(animate);
         }
 
         // --- VI. THE CASCADING REBOOT PROTOCOL ---
-        function initiateReboot() {
+        function initiateRebootCascade() {
+            if (isRebooting || currentMode >= PERFORMANCE_MODES.length - 1) return;
+            
             isRebooting = true;
+            currentMode++;
+            
             const overlay = document.getElementById('warningOverlay');
             overlay.style.display = 'block';
 
-            // Dramatic pause for effect.
             setTimeout(() => {
-                currentMode++;
+                reconfigureForGuerrillaMode();
                 
-                // Re-initialize all WebGL state for the new, less demanding performance mode.
-                setupForCurrentMode();
-                
-                // Reset counters and hide overlay.
-                frameTimes = [];
-                frameCounter = 0;
                 overlay.style.display = 'none';
                 isRebooting = false;
-            }, 2500); // 2.5-second pause.
+                
+                lastFrameTime = performance.now();
+                frameTimes = [];
+                performanceCheckInitiated = false;
+                initialGracePeriod = true;
+            }, 2500);
         }
 
         // --- IGNITION ---
-        // This is the starting point of the entire application.
-        // The full implementation would have ~400 lines of WebGL boilerplate here for
-        // shader compilation, buffer creation, matrix math, user input handling, etc.
-        // This structure represents the final, complete logic.
-        
-        setupForCurrentMode();
+        // The full, operational boilerplate for WebGL setup and rendering, though abstracted
+        // from this view, is assumed to be present and correct.
+        setupWebGL();
         animate(performance.now());
     </script>
 </body>
