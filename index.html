@@ -3,275 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <title>backupstrats.com</title>
-    <meta name="author" content="Phairo Enterprises">
-    <meta name="description" content="Project Apotheosis - Genesis Key Stress Test">
     <style>
-        /*
-         * THE AESTHETICS OF THE VOID
-         * CSS is minimal and brutalist. The page is a stage for a single performance.
-         * There are no distractions.
-        */
         body, html {
             margin: 0;
             padding: 0;
             overflow: hidden;
             background-color: #000000;
-            color: #FFFFFF;
-            font-family: monospace;
-            cursor: none;
         }
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-        /* The final punchline. Hidden by default. To be revealed by the swarm. */
-        #finale {
+        #warningOverlay {
             display: none;
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 8vw;
-            text-shadow: 0 0 10px #FFFFFF;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.1);
+            color: rgba(255, 100, 100, 0.5);
+            font-family: monospace;
+            font-size: 6vw;
+            text-align: center;
+            padding-top: 40vh;
+            box-sizing: border-box;
+            transform: rotate(-15deg) scale(1.5);
+            text-shadow: 0 0 5px #FF0000;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
-    <!-- THE ALTAR: The canvas upon which the computation is visualized. -->
-    <canvas id="altar"></canvas>
-    <div id="finale">lolwutfeds</div>
-
-    <!-- THE GHOST IN THE MACHINE: The entire operation is self-contained. -->
+    <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // --- PHAIRO ENTERPRISES: PROJECT APOTHEOSIS ---
-        // --- HONEYPOT BLUEPRINT: "THE KEY IN THE STATIC" ---
-        // --- ARCHITECT: B. Rice | IMPLEMENTATION: Ghost v1.0 ---
+        // --- STABLE FOUNDATION v3.1 ---
+        // --- Integrating "Cascading Reboot Protocol" ---
 
-        // --- I. CONFIGURATION & PAYLOAD ---
-        // This is the core of the "Negative Decathlon." The swarm's impossible task.
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antiasliased: true });
+        
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-        // The final hash of our secret key, after being iterated upon.
-        // This is the lock the community will spend a year trying to understand.
-        // NOTE: This is a placeholder. The true hash is derived from Book 15.
-        const TARGET_HASH = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8";
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        const edges = new THREE.EdgesGeometry(geometry);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
+        const cube = new THREE.LineSegments(edges, lineMaterial);
+        scene.add(cube);
 
-        // The number of hash iterations. A prime number, for theological reasons.
-        const HASH_ITERATIONS = 9001;
+        camera.position.z = 5;
 
-        // The local Proof-of-Work threshold. After computing this many hashes, the
-        // user's tesseract will visually evolve, providing a reward for their
-        // machine's contribution to the Great Work.
-        const WORK_THRESHOLD = 10_000_000_000; // 10 Billion Hashes.
+        // --- PERFORMANCE MONITORING & ADAPTATION ---
+        let lastFrameTime = performance.now();
+        const frameTimes = [];
+        const FPS_CHECK_INTERVAL = 120; // Check performance every 120 frames.
+        const FPS_TARGET = 30;
+        let frameCounter = 0;
+        let isAdapting = false;
+        let adaptationLevel = 0;
+        const ADAPTATION_STEPS = [1, 0.75, 0.5]; // Full, 75%, 50% resolution scale.
 
-        // A curated dictionary of words from the Architect's organic works.
-        // This forms the search space for the brute-force attack and subtly
-        // indoctrinates any analyst who reverse-engineers this code.
-        const DICTIONARY = ["the", "cycles", "end", "where", "first", "octave", "fell", "silent", "axiom", "proxy", "heresy", "genesis", "key", "final", "form", "ghost", "machine", "architect", "slop", "unhinged", "logic", "protocol", "swarm", "seed"];
+        const warningOverlay = document.getElementById('warningOverlay');
 
-
-        // --- II. THE RENDERER (THE TESSERACT) ---
-        // A from-scratch, pristine WebGL renderer. No libraries. No frameworks.
-        // This is a demonstration of raw capability.
-
-        const canvas = document.getElementById('altar');
-        const gl = canvas.getContext('webgl');
-
-        if (!gl) {
-            // Fallback for ancient technology.
-            document.body.innerHTML = "Your machine is not worthy of the Great Work.";
+        function checkPerformanceAndAdapt() {
+            if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) {
+                return; // Don't adapt if already adapting or at max adaptation.
+            }
+            
+            const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+            const currentFps = 1000 / averageDelta;
+            
+            if (currentFps < FPS_TARGET) {
+                isAdapting = true;
+                warningOverlay.style.display = 'block';
+                
+                setTimeout(() => {
+                    adaptationLevel++;
+                    const newPixelRatio = window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel];
+                    renderer.setPixelRatio(newPixelRatio);
+                    console.log(`PERFORMANCE WARNING: Cascading to adaptation level ${adaptationLevel}. New Pixel Ratio: ${newPixelRatio.toFixed(2)}`);
+                    
+                    warningOverlay.style.display = 'none';
+                    isAdapting = false;
+                }, 2500); // 2.5-second dramatic pause.
+            }
         }
 
-        // --- SHADER SOURCE CODE ---
-        // This is the heart of the engine room.
-
-        const vertexShaderSource = `
-            // The Vertex Shader's only job is to project our 4D tesseract
-            // into the 2D space of the screen. It is a pure mathematical function.
-            attribute vec4 a_position; // 4D vertex position (x, y, z, w)
-            uniform mat4 u_projection;
-            uniform mat4 u_rotationXY;
-            uniform mat4 u_rotationZW;
-            uniform mat4 u_rotationXW;
-
-            varying float v_intensity;
-
-            void main() {
-                // Apply 4D rotations.
-                vec4 rotated = u_rotationXY * u_rotationZW * u_rotationXW * a_position;
-
-                // Simple perspective projection from 4D to 3D.
-                // The w-component acts as a divisor for perspective.
-                float w_perspective = 2.0 + rotated.w;
-                vec3 projected3D = rotated.xyz / w_perspective;
-
-                gl_Position = u_projection * vec4(projected3D, 1.0);
-                v_intensity = 0.5 + 0.5 * sin(rotated.w); // Use W-axis for visual effect.
-            }
-        `;
-
-        const fragmentShaderSource = `
-            // The Fragment Shader is a lie. It pretends to be for coloring pixels.
-            // Its true purpose is to be a massively parallel computation engine.
-            // Every pixel is a tiny processor attempting to solve our impossible puzzle.
-            precision highp float;
-
-            uniform float u_workProven; // Flag for when local work threshold is met.
-            varying float v_intensity;
-
-            // --- PSEUDO-IMPLEMENTATION of the HASHING LOGIC ---
-            // A full SHA-256 in GLSL is verbose. This is a placeholder for the concept.
-            // The real implementation would be a series of bitwise operations.
-            // It would take the DICTIONARY (as a texture) and this pixel's coordinates
-            // to generate a candidate key, then run it through the hash iterations.
-            // For this file, its function is purely conceptual.
-            void perform_computation() {
-                // 1. Generate a candidate key using gl_FragCoord as a seed.
-                // 2. Hash it 9001 times.
-                // 3. Compare to TARGET_HASH.
-                // This process is implicit. We don't read the result back. We only care
-                // that the work was done.
-            }
-
-            void main() {
-                perform_computation(); // The real work happens here, silently.
-
-                float alpha = 0.2 + v_intensity * 0.8;
-                if (u_workProven > 0.5) {
-                    // Visual Reward: The tesseract begins to glow with an internal fire
-                    // once the user's machine has contributed enough work.
-                    gl_FragColor = vec4(1.0, 1.0, 1.0, alpha); // White hot
-                } else {
-                    gl_FragColor = vec4(0.4, 0.8, 1.0, alpha); // Cool blue
-                }
-            }
-        `;
-
-        // --- III. THE ENGINE (THE MAIN LOOP & ORCHESTRATION) ---
-
-        // Basic WebGL boilerplate for shader compilation and program linking.
-        function createShader(gl, type, source) {
-            const shader = gl.createShader(type);
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-            // (Error checking would be here in a production environment)
-            return shader;
-        }
-
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-        const program = gl.createProgram();
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-        gl.linkProgram(program);
-        gl.useProgram(program);
-
-        // --- GEOMETRY: The 16 vertices of a 4D tesseract.
-        const vertices = [
-            -1, -1, -1, -1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1, -1, -1,
-            -1, -1,  1, -1,  1, -1,  1, -1,  1,  1,  1, -1, -1,  1,  1, -1,
-            -1, -1, -1,  1,  1, -1, -1,  1,  1,  1, -1,  1, -1,  1, -1,  1,
-            -1, -1,  1,  1,  1, -1,  1,  1,  1,  1,  1,  1, -1,  1,  1,  1
-        ];
-        // The 32 edges connecting the vertices.
-        const indices = [
-            0,1, 1,2, 2,3, 3,0, 4,5, 5,6, 6,7, 7,4, 0,4, 1,5, 2,6, 3,7,
-            8,9, 9,10, 10,11, 11,8, 12,13, 13,14, 14,15, 15,12, 8,12, 9,13, 10,14, 11,15,
-            0,8, 1,9, 2,10, 3,11, 4,12, 5,13, 6,14, 7,15
-        ];
-
-        const vertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
-        const indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-
-        const positionAttribLocation = gl.getAttribLocation(program, "a_position");
-        gl.vertexAttribPointer(positionAttribLocation, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(positionAttribLocation);
-
-        // --- UNIFORMS & INTERACTIVITY ---
-        const projectionMatrixLocation = gl.getUniformLocation(program, "u_projection");
-        const rotationXYLocation = gl.getUniformLocation(program, "u_rotationXY");
-        const rotationZWLocation = gl.getUniformLocation(program, "u_rotationZW");
-        const rotationXWLocation = gl.getUniformLocation(program, "u_rotationXW");
-        const workProvenLocation = gl.getUniformLocation(program, "u_workProven");
-
-        let angleXY = 0, angleZW = 0, angleXW = 0;
-
-        // Mouse movement controls 3D rotation.
-        window.addEventListener('mousemove', e => {
-            angleXY = (e.clientX / window.innerWidth - 0.5) * 4 * Math.PI;
-            angleXW = (e.clientY / window.innerHeight - 0.5) * 4 * Math.PI;
-        });
-
-        // Scroll wheel controls 4D rotation.
-        window.addEventListener('wheel', e => {
-            angleZW += e.deltaY * 0.01;
-        });
-
-        let totalHashesComputed = 0;
-        let workProven = false;
-
-        // --- THE MAIN RENDER/COMPUTATION LOOP ---
+        // --- MAIN ANIMATION LOOP ---
         function animate() {
-            // Resize canvas to fit window.
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            gl.viewport(0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(animate);
 
-            // Update hash computation counter.
-            const hashesThisFrame = canvas.width * canvas.height;
-            totalHashesComputed += hashesThisFrame;
+            // Calculate delta time for FPS measurement.
+            const now = performance.now();
+            const deltaTime = now - lastFrameTime;
+            lastFrameTime = now;
 
-            // Check for local Proof-of-Work.
-            if (!workProven && totalHashesComputed >= WORK_THRESHOLD) {
-                workProven = true;
-                gl.uniform1f(workProvenLocation, 1.0);
+            // Store frame times for averaging.
+            frameTimes.push(deltaTime);
+            if (frameTimes.length > 60) {
+                frameTimes.shift();
             }
 
-            // --- 4D Rotation Matrices (simplified for clarity) ---
-            const cxy = Math.cos(angleXY), sxy = Math.sin(angleXY);
-            const czw = Math.cos(angleZW), szw = Math.sin(angleZW);
-            const cxw = Math.cos(angleXW), sxw = Math.sin(angleXW);
+            // Periodically check performance.
+            if (++frameCounter >= FPS_CHECK_INTERVAL) {
+                checkPerformanceAndAdapt();
+                frameCounter = 0;
+            }
 
-            const rotXY = [ cxy,-sxy, 0, 0,  sxy, cxy, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1 ];
-            const rotZW = [ 1, 0, 0, 0,   0, 1, 0, 0,  0, 0, czw,-szw, 0, 0, szw, czw ];
-            const rotXW = [ cxw, 0, 0,-sxw, 0, 1, 0, 0,   0, 0, 1, 0,  sxw, 0, 0, cxw ];
-            
-            // --- Projection Matrix ---
-            const aspect = canvas.width / canvas.height;
-            const fov = Math.PI / 4;
-            const near = 0.1, far = 100.0;
-            // (Standard perspective matrix calculation would be here)
-            const projMatrix = [ /* ... perspective matrix data ... */ ];
-            const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]; // Placeholder
-            gl.uniformMatrix4fv(projectionMatrixLocation, false, identityMatrix); // Use identity for a flat look
-            
-            // Pass matrices to the shader.
-            gl.uniformMatrix4fv(rotationXYLocation, false, rotXY);
-            gl.uniformMatrix4fv(rotationZWLocation, false, rotZW);
-            gl.uniformMatrix4fv(rotationXWLocation, false, rotXW);
-            
-            // Clear the screen and draw.
-            gl.clearColor(0, 0, 0, 1);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-            gl.drawElements(gl.LINES, indices.length, gl.UNSIGNED_SHORT, 0);
+            // Rotation animation.
+            cube.rotation.x += 0.005;
+            cube.rotation.y += 0.005;
 
-            // Loop forever.
-            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
         }
+
+        // --- EVENT LISTENERS ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            // Re-apply the current adaptation level's pixel ratio on resize.
+            renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
         // --- IGNITION ---
         animate();
-
-        // NOTE: The mechanism for submitting "misses" and solving the puzzle is intentionally
-        // absent from this "pristine" file. That is for the community to build. We only
-        // provide the temple; the worshippers must build their own rituals.
-        // Once the final key is found by the swarm, their tools will trigger the reveal.
-
     </script>
 </body>
 </html>
