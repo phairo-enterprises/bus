@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>backupstrats.com</title>
-    <meta name="author" content="wut">
-    <meta name="description" content="Project">
     <style>
         body, html {
             margin: 0;
@@ -12,70 +10,124 @@
             overflow: hidden;
             background-color: #000000;
         }
+        #warningOverlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.1);
+            color: rgba(255, 100, 100, 0.5);
+            font-family: monospace;
+            font-size: 6vw;
+            text-align: center;
+            padding-top: 40vh;
+            box-sizing: border-box;
+            transform: rotate(-15deg) scale(1.5);
+            text-shadow: 0 0 5px #FF0000;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
-    <!-- The final code will be embedded here after loading the library -->
+    <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // --- PHAIRO ENTERPRISES: PROJECT APOTHEOSIS ---
-        // --- HONEYPOT BLUEPRINT v3.0: "THE STABLE FOUNDATION" ---
-        // --- STRATEGY: Prioritize operational success over implementation purity. ---
+        // --- STABLE FOUNDATION v3.1 ---
+        // --- Integrating "Cascading Reboot Protocol" ---
 
-        // --- I. SCENE SETUP ---
-        // We use Three.js to handle the WebGL boilerplate. This is the professional approach.
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-
+        const renderer = new THREE.WebGLRenderer({ antiasliased: true });
+        
+        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // --- II. THE ARTIFACT (A CUBE, THE PRECURSOR TO THE TESSERACT) ---
-        // We start with a simple, guaranteed-to-work geometric form.
-        // This is our new baseline. It proves the engine is running.
         const geometry = new THREE.BoxGeometry(2, 2, 2);
-        
-        // The material uses EdgesGeometry to create the "vector line" look.
         const edges = new THREE.EdgesGeometry(geometry);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF, linewidth: 2 }); // Linewidth may not work on all GPUs, a known Three.js limitation.
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
         const cube = new THREE.LineSegments(edges, lineMaterial);
-        
         scene.add(cube);
 
         camera.position.z = 5;
 
-        // --- III. THE ENGINE (THE GUARANTEED-TO-WORK LOOP) ---
-        // A simple, robust animation loop. This will not crash.
+        // --- PERFORMANCE MONITORING & ADAPTATION ---
+        let lastFrameTime = performance.now();
+        const frameTimes = [];
+        const FPS_CHECK_INTERVAL = 120; // Check performance every 120 frames.
+        const FPS_TARGET = 30;
+        let frameCounter = 0;
+        let isAdapting = false;
+        let adaptationLevel = 0;
+        const ADAPTATION_STEPS = [1, 0.75, 0.5]; // Full, 75%, 50% resolution scale.
 
+        const warningOverlay = document.getElementById('warningOverlay');
+
+        function checkPerformanceAndAdapt() {
+            if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) {
+                return; // Don't adapt if already adapting or at max adaptation.
+            }
+            
+            const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+            const currentFps = 1000 / averageDelta;
+            
+            if (currentFps < FPS_TARGET) {
+                isAdapting = true;
+                warningOverlay.style.display = 'block';
+                
+                setTimeout(() => {
+                    adaptationLevel++;
+                    const newPixelRatio = window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel];
+                    renderer.setPixelRatio(newPixelRatio);
+                    console.log(`PERFORMANCE WARNING: Cascading to adaptation level ${adaptationLevel}. New Pixel Ratio: ${newPixelRatio.toFixed(2)}`);
+                    
+                    warningOverlay.style.display = 'none';
+                    isAdapting = false;
+                }, 2500); // 2.5-second dramatic pause.
+            }
+        }
+
+        // --- MAIN ANIMATION LOOP ---
         function animate() {
             requestAnimationFrame(animate);
 
-            // Simple rotation to prove the loop is active and rendering.
+            // Calculate delta time for FPS measurement.
+            const now = performance.now();
+            const deltaTime = now - lastFrameTime;
+            lastFrameTime = now;
+
+            // Store frame times for averaging.
+            frameTimes.push(deltaTime);
+            if (frameTimes.length > 60) {
+                frameTimes.shift();
+            }
+
+            // Periodically check performance.
+            if (++frameCounter >= FPS_CHECK_INTERVAL) {
+                checkPerformanceAndAdapt();
+                frameCounter = 0;
+            }
+
+            // Rotation animation.
             cube.rotation.x += 0.005;
             cube.rotation.y += 0.005;
 
             renderer.render(scene, camera);
         }
 
-        // --- IV. RESPONSIVE DESIGN ---
-        // A listener to handle window resizing gracefully.
+        // --- EVENT LISTENERS ---
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
+            // Re-apply the current adaptation level's pixel ratio on resize.
+            renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
             renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+});
 
         // --- IGNITION ---
         animate();
-
-        // NOTE TO THE ARCHITECT:
-        // This is the stable foundation. It works. From this base, we can now intelligently
-        // integrate the more complex elements: replacing the BoxGeometry with the tesseract's
-        // BufferGeometry, and writing the custom shaders for the computational task.
-        // This is the correct "stonecutting" process: a solid, functional block of marble,
-        // ready for the master's chisel.
-
     </script>
 </body>
 </html>
