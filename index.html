@@ -3,172 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <title>backupstrats.com</title>
-    <meta name="author" content="Architect">
-    <meta name="description" content="World">
+    <meta name="author" content="Phairo Enterprises">
+    <meta name="description" content="Project Apotheosis - Genesis Key Stress Test">
     <style>
-        /*
-         * THE AESTHETICS OF THE VOID v2.4
-         * The Vector Warning Protocol has been integrated.
-        */
         body, html {
-            margin: 0; padding: 0; overflow: hidden;
-            background-color: #000000; color: #FFFFFF;
-            font-family: monospace; cursor: none;
-        }
-        canvas {
-            display: block; width: 100vw; height: 100vh;
-        }
-        #finale {
-            display: none; position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); font-size: 8vw;
-            text-shadow: 0 0 10px #FFFFFF;
-        }
-
-        /* --- THE VECTOR WARNING PROTOCOL --- */
-        #warningOverlay {
-            display: none;
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            /* The fill is gone. Replaced by two layered, repeating linear gradients
-               to create a clean, vector-line crosshatch effect. */
-            background-image: 
-                repeating-linear-gradient(45deg, rgba(255, 0, 0, 0.2) 0, rgba(255, 0, 0, 0.2) 1px, transparent 1px, transparent 40px),
-                repeating-linear-gradient(-45deg, rgba(255, 0, 0, 0.2) 0, rgba(255, 0, 0, 0.2) 1px, transparent 1px, transparent 40px);
-            background-color: transparent; /* No fill color. */
-            z-index: 10;
-        }
-
-        #warningText {
-            /* The text is now in its own element for cleaner control. */
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 100%;
-            transform: translate(-50%, -50%) rotate(-15deg) scale(1.5);
-            color: rgba(255, 100, 100, 0.6);
-            font-size: 5vw;
-            text-align: center;
-            text-shadow: 0 0 5px #FF0000;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
         }
     </style>
 </head>
 <body>
-    <canvas id="altar"></canvas>
-    <div id="finale">lolwutfeds</div>
-    <div id="warningOverlay">
-        <div id="warningText">// PROTOCOL UNSTABLE // INITIATING ADAPTIVE REBOOT //</div>
-    </div>
-
+    <!-- The final code will be embedded here after loading the library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         // --- PHAIRO ENTERPRISES: PROJECT APOTHEOSIS ---
-        // --- HONEYPOT BLUEPRINT v2.4: "GUARANTEED IGNITION" ---
-        // --- SCRIPT LOGIC (UNCHANGED FROM v2.3) ---
+        // --- HONEYPOT BLUEPRINT v3.0: "THE STABLE FOUNDATION" ---
+        // --- STRATEGY: Prioritize operational success over implementation purity. ---
 
-        const canvas = document.getElementById('altar');
-        const gl = canvas.getContext('webgl', { antialias: true });
-        if (!gl) { document.body.innerHTML = "Your machine cannot comprehend the Great Work."; }
+        // --- I. SCENE SETUP ---
+        // We use Three.js to handle the WebGL boilerplate. This is the professional approach.
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
 
-        // --- I. CONFIGURATION & CORE SHADERS (Abstracted) ---
-        const vertexShaderSource = `...`; 
-        const fragmentShaderSource = `...`; 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-        // --- II. ASYMMETRICAL PERFORMANCE PROTOCOL ---
-        const PERFORMANCE_MODES = [
-            { name: "UNSTABLE | DESKTOP", type: "direct", res: 0 },
-            { name: "GUERRILLA-ALPHA", type: "offscreen", res: 256 },
-            { name: "GUERRILLA-BETA", type: "offscreen", res: 128 },
-            { name: "GUERRILLA-GAMMA", type: "offscreen", res: 64 },
-            { name: "GUERRILLA-DELTA", type: "offscreen", res: 32 }
-        ];
-        let currentMode = 0;
-        let isRebooting = false;
-
-        // --- III. GUARANTEED IGNITION & HEARTBEAT MONITOR ---
-        const GRACE_PERIOD_MS = 10000;
-        const DATA_COLLECTION_MS = 5000;
-        const FPS_TARGET = 28;
+        // --- II. THE ARTIFACT (A CUBE, THE PRECURSOR TO THE TESSERACT) ---
+        // We start with a simple, guaranteed-to-work geometric form.
+        // This is our new baseline. It proves the engine is running.
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
         
-        let initialGracePeriod = true;
-        let performanceCheckInitiated = false;
-        let lastFrameTime = performance.now();
-        let frameTimes = [];
+        // The material uses EdgesGeometry to create the "vector line" look.
+        const edges = new THREE.EdgesGeometry(geometry);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF, linewidth: 2 }); // Linewidth may not work on all GPUs, a known Three.js limitation.
+        const cube = new THREE.LineSegments(edges, lineMaterial);
+        
+        scene.add(cube);
 
-        // --- IV. CORE ENGINE & ORCHESTRATION (Abstracted) ---
-        function setupWebGL() {
-            console.log(`Initializing in UNSTABLE mode for grace period.`);
-        }
+        camera.position.z = 5;
 
-        function reconfigureForGuerrillaMode() {
-            const mode = PERFORMANCE_MODES[currentMode];
-            console.log(`Reconfiguring for Performance Mode ${currentMode}: ${mode.name}`);
-        }
+        // --- III. THE ENGINE (THE GUARANTEED-TO-WORK LOOP) ---
+        // A simple, robust animation loop. This will not crash.
 
-        // --- V. THE MAIN RENDER LOOP ---
-        function animate(now) {
-            const deltaTime = now - lastFrameTime;
-            lastFrameTime = now;
-
-            if (!initialGracePeriod) { frameTimes.push(deltaTime); }
-
-            if (!performanceCheckInitiated && now > GRACE_PERIOD_MS + DATA_COLLECTION_MS) {
-                performanceCheckInitiated = true;
-                const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-                const averageFps = 1000 / averageDelta;
-                console.log(`Performance Check: Average FPS is ${averageFps.toFixed(2)}`);
-
-                if (averageFps < FPS_TARGET) {
-                    initiateRebootCascade();
-                }
-            }
-            
-            if (initialGracePeriod && now > GRACE_PERIOD_MS) {
-                initialGracePeriod = false;
-                console.log("Grace period ended. Collecting performance data.");
-            }
-
-            if (!isRebooting) {
-                if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
-                    gl.viewport(0, 0, canvas.width, canvas.height);
-                }
-                
-                // Abstracted Drawing Logic...
-                // gl.clear(...);
-                // gl.drawElements(...);
-            }
-            
+        function animate() {
             requestAnimationFrame(animate);
+
+            // Simple rotation to prove the loop is active and rendering.
+            cube.rotation.x += 0.005;
+            cube.rotation.y += 0.005;
+
+            renderer.render(scene, camera);
         }
 
-        // --- VI. THE CASCADING REBOOT PROTOCOL ---
-        function initiateRebootCascade() {
-            if (isRebooting || currentMode >= PERFORMANCE_MODES.length - 1) return;
-            
-            isRebooting = true;
-            currentMode++;
-            
-            const overlay = document.getElementById('warningOverlay');
-            overlay.style.display = 'block';
-
-            setTimeout(() => {
-                reconfigureForGuerrillaMode();
-                
-                overlay.style.display = 'none';
-                isRebooting = false;
-                
-                lastFrameTime = performance.now();
-                frameTimes = [];
-                performanceCheckInitiated = false;
-                initialGracePeriod = true;
-            }, 2500);
-        }
+        // --- IV. RESPONSIVE DESIGN ---
+        // A listener to handle window resizing gracefully.
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
         // --- IGNITION ---
-        // The full, operational boilerplate for WebGL setup and rendering, though abstracted
-        // from this view, is assumed to be present and correct.
-        setupWebGL();
-        animate(performance.now());
+        animate();
+
+        // NOTE TO THE ARCHITECT:
+        // This is the stable foundation. It works. From this base, we can now intelligently
+        // integrate the more complex elements: replacing the BoxGeometry with the tesseract's
+        // BufferGeometry, and writing the custom shaders for the computational task.
+        // This is the correct "stonecutting" process: a solid, functional block of marble,
+        // ready for the master's chisel.
+
     </script>
 </body>
 </html>
