@@ -29,10 +29,10 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.3 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.4 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v5.8 (INCREMENTAL ADDITION: EMPTY CAMERA FOLDER) ---
+        // --- STABLE FOUNDATION v5.9 (INCREMENTAL ADDITION: FOV SLIDER) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -105,8 +105,11 @@
                 artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
             });
 
-            // --- SINGLE FEATURE ADDITION: EMPTY CAMERA FOLDER ---
+            // --- SINGLE FEATURE ADDITION: CAMERA FOLDER + FOV SLIDER ---
             const cameraFolder = gui.addFolder('Camera Controls');
+            cameraFolder.add(camera, 'fov', 30, 120).name('Field of View').onChange(() => {
+                camera.updateProjectionMatrix();
+            });
         }
         document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
 
