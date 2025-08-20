@@ -9,7 +9,7 @@
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #000000; }
         canvas { display: block; touch-action: none; cursor: grab; }
         canvas.grabbing { cursor: grabbing; }
-        canvas.hovering { cursor: pointer; }
+        canvas.hovering-ui { cursor: pointer; }
         #loadButton {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -21,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v9.3 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.0 //</button>
     <script>
-        // --- STABLE FOUNDATION v9.3 (AIRLOCK INPUT PROTOCOL) ---
+        // --- STABLE FOUNDATION v10.0 (THE AIRLOCK INPUT PROTOCOL) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -94,7 +94,7 @@
 
             if (advancedProtocolsLoaded && intersects.length > 0) {
                 selectedObject = intersects[0].object;
-                document.body.style.cursor = 'grabbing';
+                renderer.domElement.classList.add('grabbing');
             } else {
                 isDragging = true;
                 renderer.domElement.classList.add('grabbing');
@@ -141,7 +141,6 @@
             isDragging = false; 
             selectedObject = null;
             renderer.domElement.classList.remove('grabbing');
-            document.body.style.cursor = 'default';
         }
         
         function onWindowResize() {
