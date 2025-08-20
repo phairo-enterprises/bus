@@ -259,6 +259,35 @@
             }
         }
         
+        function updateAndLogParameter(param, action) {
+            const step = action === 'inc' ? 1 : -1;
+            const label = param.toUpperCase();
+            let logMessage = "";
+
+            switch(param) {
+                case 'scale':
+                    const currentScale = artifactGroup.scale.x;
+                    const newScale = Math.max(0.1, currentScale + step * 0.1);
+                    artifactGroup.scale.setScalar(newScale);
+                    logMessage = `// ${label} SET TO ${newScale.toFixed(2)} //`;
+                    break;
+                case 'damping':
+                    params.damping = Math.max(0.8, Math.min(0.995, params.damping + step * 0.01));
+                    logMessage = `// ${label} SET TO ${params.damping.toFixed(3)} //`;
+                    break;
+                case 'intensity':
+                    pointLight.intensity = Math.max(0, pointLight.intensity + step * 0.2);
+                    logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`;
+                    break;
+                case 'opacity':
+                    bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step * 0.05));
+                    cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
+                    logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`;
+                    break;
+            }
+            if (logMessage) logToConsole(logMessage);
+        }
+
         function onPointerDown(event) {
             const clientX = event.clientX || event.touches[0].clientX;
             const clientY = event.clientY || event.touches[0].clientY;
@@ -272,23 +301,8 @@
             if (advancedProtocolsLoaded && intersects.length > 0) {
                 const button = intersects[0].object;
                 const [param, action] = button.name.split('_');
-                const step = action === 'inc' ? 0.05 : -0.05;
-
-                switch(param) {
-                    case 'scale':
-                        const currentScale = artifactGroup.scale.x;
-                        artifactGroup.scale.setScalar(Math.max(0.1, currentScale + step * 2));
-                        break;
-                    case 'damping':
-                        params.damping = Math.max(0.8, Math.min(0.995, params.damping + step * 0.1));
-                        break;
-                    case 'intensity':
-                        pointLight.intensity = Math.max(0, pointLight.intensity + step * 2);
-                        break;
-                    case 'opacity':
-                        bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step));
-                        cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
-                        break;
+                if (param && action) {
+                    updateAndLogParameter(param, action);
                 }
                 return;
             }
