@@ -20,35 +20,16 @@
         canvas.grabbing {
             cursor: grabbing;
         }
-        #warningOverlay {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 0, 0, 0.1);
-            color: rgba(255, 100, 100, 0.5);
-            font-family: monospace;
-            font-size: 6vw;
-            text-align: center;
-            padding-top: 40vh;
-            box-sizing: border-box;
-            transform: rotate(-15deg) scale(1.5);
-            text-shadow: 0 0 5px #FF0000;
-            z-index: 10;
-        }
     </style>
 </head>
 <body>
-    <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v0.8 (VERBATIM BASELINE + MINIMAL GLOW) ---
+        // --- STABLE FOUNDATION v0.9 (VERBATIM BASELINE + GLOW & SLOW) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
         const BASE_FOV = 75;
-        const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
+        const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.z = 5;
 
         renderer.setPixelRatio(window.devicePixelRatio);
@@ -56,103 +37,35 @@
         document.body.appendChild(renderer.domElement);
         
         const clock = new THREE.Clock();
-        const warningOverlay = document.getElementById('warningOverlay');
 
-        const ambientLight = new THREE.AmbientLight(0x404080, 2);
-        scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0xFFFFFF, 1.5, 50);
-        scene.add(pointLight);
+        // --- MINIMAL CHANGE 1: The "Glow" ---
+        // The 'cube' is now an 'artifactGroup' to hold multiple objects.
+        const artifactGroup = new THREE.Group();
+        scene.add(artifactGroup);
 
-        // --- MINIMAL CHANGE IMPLEMENTATION ---
-        const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
+        const bodyGeometry = new THREE.BoxGeometry(2, 2, 2);
         
-        // 1. Create the glowing body as a separate Mesh.
+        // The glowing body (a semi-transparent mesh)
         const bodyMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00FFFF,
+            color: 0x00FFFF, // Blue glow
             transparent: true,
             opacity: 0.1
         });
-        const cubeBody = new THREE.Mesh(cubeGeometry, bodyMaterial);
-        scene.add(cubeBody);
+        const cubeBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        artifactGroup.add(cubeBody);
 
-        // 2. Create the original wireframe cube.
-        const edges = new THREE.EdgesGeometry(cubeGeometry);
+        // The wireframe
+        const edges = new THREE.EdgesGeometry(bodyGeometry);
         const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
-        const cube = new THREE.LineSegments(edges, lineMaterial);
-        
-        // 3. Make the wireframe and light children of the glowing body
-        // so they all rotate together as one unit.
-        cubeBody.add(cube);
-        cubeBody.add(pointLight);
-
-
-        const caveGeometry = new THREE.BufferGeometry();
-        const vertices = [];
-        const radius = 20, depth = 50, segments = 12;
-        for (let i = 0; i < segments; i++) {
-            const angle = (i / segments) * Math.PI * 2;
-            vertices.push(
-                Math.cos(angle) * radius * (1 + Math.random() * 0.2),
-                Math.sin(angle) * radius * (1 + Math.random() * 0.2),
-                -depth / 2 + (Math.random() - 0.5) * 5
-            );
-            vertices.push(
-                Math.cos(angle) * radius * (1 + Math.random() * 0.2),
-                Math.sin(angle) * radius * (1 + Math.random() * 0.2),
-                depth / 2 + (Math.random() - 0.5) * 5
-            );
-        }
-        vertices.push(0, 0, depth / 2);
-        const backCenterIndex = vertices.length / 3 - 1;
-        const indices = [];
-        for (let i = 0; i < segments; i++) {
-            const current = i * 2;
-            const next = ((i + 1) % segments) * 2;
-            indices.push(current, current + 1, next);
-            indices.push(next, current + 1, next + 1);
-            indices.push(next + 1, current + 1, backCenterIndex);
-        }
-        caveGeometry.setIndex(indices);
-        caveGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-        caveGeometry.computeVertexNormals();
-        const caveMaterial = new THREE.MeshStandardMaterial({
-            color: 0x223366,
-            flatShading: true,
-            side: THREE.BackSide
-        });
-        const cave = new THREE.Mesh(caveGeometry, caveMaterial);
-        scene.add(cave);
-
-        let lastFrameTime = performance.now();
-        const frameTimes = [];
-        const FPS_CHECK_INTERVAL = 120;
-        const FPS_TARGET = 30;
-        let frameCounter = 0;
-        let isAdapting = false;
-        let adaptationLevel = 0;
-        const ADAPTATION_STEPS = [1, 0.75, 0.5];
-
-        function checkPerformanceAndAdapt() {
-            if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
-            const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-            const currentFps = 1000 / averageDelta;
-            if (currentFps < FPS_TARGET) {
-                isAdapting = true;
-                warningOverlay.style.display = 'block';
-                setTimeout(() => {
-                    adaptationLevel++;
-                    onWindowResize();
-                    warningOverlay.style.display = 'none';
-                    isAdapting = false;
-                }, 2500);
-            }
-        }
+        const cubeWireframe = new THREE.LineSegments(edges, lineMaterial);
+        artifactGroup.add(cubeWireframe);
         
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0, y: 0 };
         const DAMPING_FACTOR = 0.95;
-        const SENSITIVITY = 0.004; // SENSITIVITY REDUCED
+        // --- MINIMAL CHANGE 2: Slow the Rotation ---
+        const SENSITIVITY = 0.004; // Reduced from 0.01
 
         function onPointerDown(event) {
             isDragging = true;
@@ -192,7 +105,7 @@
             const height = window.innerHeight;
             const aspect = width / height;
             renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
+            renderer.setPixelRatio(window.devicePixelRatio);
             camera.aspect = aspect;
             if (aspect < 1) {
                 const horizontalFovInRadians = BASE_FOV * Math.PI / 180;
@@ -206,30 +119,23 @@
         
         function animate() {
             requestAnimationFrame(animate);
-            const elapsedTime = clock.getElapsedTime();
             
-            const now = performance.now();
-            frameTimes.push(now - lastFrameTime);
-            lastFrameTime = now;
-            if (frameTimes.length > 60) frameTimes.shift();
-            if (++frameCounter >= FPS_CHECK_INTERVAL) {
-                checkPerformanceAndAdapt();
-                frameCounter = 0;
-            }
-
-            camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-            camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-            camera.lookAt(cubeBody.position); // Look at the main body's position
-
-            // Rotate the main body, and the children (wireframe, light) will follow.
-            cubeBody.rotation.x += rotationVelocity.x;
-            cubeBody.rotation.y += rotationVelocity.y;
+            // The group is rotated, not the individual cube.
+            artifactGroup.rotation.x += rotationVelocity.x;
+            artifactGroup.rotation.y += rotationVelocity.y;
             if (!isDragging) {
                 rotationVelocity.x *= DAMPING_FACTOR;
                 rotationVelocity.y *= DAMPING_FACTOR;
             }
             
             renderer.render(scene, camera);
+        }
+
+        onWindowResize();
+        animate();
+    </script>
+</body>
+</html>            renderer.render(scene, camera);
         }
 
         onWindowResize();
