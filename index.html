@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.38 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.39 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -74,26 +74,14 @@
         document.body.appendChild(renderer.domElement);
         camera.position.z = 5;
         camera.rotation.order = 'YXZ';
-        scene.add(camera);
 
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
-        const bodyMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0x00FFFF, 
-            transparent: true, 
-            opacity: 0.1,
-            depthWrite: false
-        });
-        const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
-        artifactGroup.add(cubeBody);
-        const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
-        artifactGroup.add(cubeWireframe);
-
-        const params = { damping: 0.95 };
+        
         const uiGroup = new THREE.Group();
+        scene.add(uiGroup);
         const freecamUiGroup = new THREE.Group();
-        camera.add(uiGroup);
-        camera.add(freecamUiGroup);
+        scene.add(freecamUiGroup);
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
@@ -153,17 +141,18 @@
         }
 
         function createButton(name, labelText, position, size, targetGroup) {
-            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555 }));
+            const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.8 });
+            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), buttonMaterial);
             button.position.set(position.x, position.y, 0);
             button.name = name;
             targetGroup.add(button);
 
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            const font = '32px monospace';
+            const font = '48px monospace';
             context.font = font;
-            canvas.width = 128;
-            canvas.height = 64; 
+            canvas.width = 64;
+            canvas.height = 64;
             context.font = font;
             context.fillStyle = 'rgba(200, 200, 200, 1)';
             context.textAlign = 'center';
@@ -171,35 +160,37 @@
             context.fillText(labelText, canvas.width / 2, canvas.height / 2);
             const texture = new THREE.CanvasTexture(canvas);
             const labelMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-            const labelGeometry = new THREE.PlaneGeometry(size.x * 0.9, size.y * 0.9);
+            const labelGeometry = new THREE.PlaneGeometry(size.x * 0.8, size.y * 0.8);
             const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
             labelMesh.position.z = 0.06;
             button.add(labelMesh);
         }
 
-        function createControlRow(param, labelText, yPos, targetGroup) {
-            const xOffset = 0.9;
-            const buttonSize = new THREE.Vector2(0.4, 0.4);
-            createButton(`${param}_dec`, '-', new THREE.Vector2(xOffset, yPos), buttonSize, targetGroup);
-            createButton(`${param}_inc`, '+', new THREE.Vector2(xOffset + 0.6, yPos), buttonSize, targetGroup);
-            
+        function createLabel(labelText, position, targetGroup) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            const font = '32px monospace';
+            const font = '64px monospace';
             context.font = font;
-            canvas.width = 200;
-            canvas.height = 40; 
+            canvas.width = 512;
+            canvas.height = 80; 
             context.font = font;
-            context.fillStyle = 'rgba(200, 200, 200, 0.7)';
+            context.fillStyle = 'rgba(255, 255, 255, 0.7)';
             context.textAlign = 'right';
             context.textBaseline = 'middle';
-            context.fillText(labelText, canvas.width - 5, canvas.height / 2);
+            context.fillText(labelText, canvas.width - 10, canvas.height / 2);
             const texture = new THREE.CanvasTexture(canvas);
             const labelMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-            const labelGeometry = new THREE.PlaneGeometry(canvas.width / 100, canvas.height / 100);
+            const labelGeometry = new THREE.PlaneGeometry(canvas.width / 150, canvas.height / 150);
             const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
-            labelMesh.position.set(-0.5, yPos, 0);
+            labelMesh.position.set(position.x, position.y, position.z);
             targetGroup.add(labelMesh);
+        }
+
+        function createControlRow(param, labelText, yPos, uiTarget, labelTarget) {
+            createLabel(labelText, new THREE.Vector3(-1.8, yPos, 0.1), labelTarget);
+            const buttonSize = new THREE.Vector2(0.6, 0.6);
+            createButton(`${param}_dec`, '-', new THREE.Vector2(2.0, yPos), buttonSize, uiTarget);
+            createButton(`${param}_inc`, '+', new THREE.Vector2(2.8, yPos), buttonSize, uiTarget);
         }
 
         function engageDiagnostic() {
@@ -213,26 +204,35 @@
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
             
             freecamUiGroup.visible = false;
-            bodyMaterial.color.set(0xFF0000);
+            
+            const artifactVertices = new Float32Array([
+                -1.5, -2, 0,  1.5, -2, 0,  1.5, 2, 0,  -1.5, 2, 0, 
+                -1, -1.5, -1, 1, -1.5, -1, 1, 1.5, -1, -1, 1.5, -1 
+            ]);
+            const artifactIndices = [
+                0, 1, 2,  0, 2, 3,  4, 5, 1,  4, 1, 0,  5, 6, 2,  5, 2, 1,
+                6, 7, 3,  6, 3, 2,  7, 4, 0,  7, 0, 3,  4, 7, 6,  4, 6, 5
+            ];
+            const artifactGeometry = new THREE.BufferGeometry();
+            artifactGeometry.setAttribute('position', new THREE.BufferAttribute(artifactVertices, 3));
+            artifactGeometry.setIndex(artifactIndices);
+            const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x660000, transparent: true, opacity: 0.5, depthWrite: false });
+            const artifactBody = new THREE.Mesh(artifactGeometry, bodyMaterial);
+            artifactGroup.add(artifactBody);
+            const wireframe = new THREE.LineSegments(new THREE.EdgesGeometry(artifactGeometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
+            artifactGroup.add(wireframe);
 
-            let yPos = 1.6;
-            const yStep = 0.5;
-            createControlRow('scale', 'SCALE', yPos, uiGroup); yPos -= yStep;
-            createControlRow('damping', 'DAMPING', yPos, uiGroup); yPos -= yStep;
-            createControlRow('intensity', 'INTENSITY', yPos, uiGroup); yPos -= yStep;
-            createControlRow('opacity', 'OPACITY', yPos, uiGroup); yPos -= yStep;
-            createControlRow('red', 'RED', yPos, uiGroup); yPos -= yStep;
-            createControlRow('green', 'GREEN', yPos, uiGroup); yPos -= yStep;
-            createControlRow('blue', 'BLUE', yPos, uiGroup);
+            let yPos = 1.2, yStep = 0.8;
+            createControlRow('scale', 'SCALE', yPos, uiGroup, artifactGroup); yPos -= yStep;
+            createControlRow('damping', 'DAMPING', yPos, uiGroup, artifactGroup); yPos -= yStep;
+            createControlRow('intensity', 'INTENSITY', yPos, uiGroup, artifactGroup); yPos -= yStep;
+            createControlRow('opacity', 'OPACITY', yPos, uiGroup, artifactGroup);
 
-            yPos = 1.6;
-            createControlRow('fov', 'FOV', yPos, freecamUiGroup); yPos -= yStep;
-            createControlRow('speed', 'SPEED', yPos, freecamUiGroup); yPos -= yStep;
-            createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamUiGroup); yPos -= yStep;
-            createControlRow('roll', 'ROLL', yPos, freecamUiGroup); yPos -= yStep;
-            createControlRow('red', 'RED', yPos, freecamUiGroup); yPos -= yStep;
-            createControlRow('green', 'GREEN', yPos, freecamUiGroup); yPos -= yStep;
-            createControlRow('blue', 'BLUE', yPos, freecamUiGroup);
+            yPos = 1.2;
+            createControlRow('fov', 'FOV', yPos, freecamUiGroup, artifactGroup); yPos -= yStep;
+            createControlRow('speed', 'SPEED', yPos, freecamUiGroup, artifactGroup); yPos -= yStep;
+            createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamUiGroup, artifactGroup); yPos -= yStep;
+            createControlRow('roll', 'ROLL', yPos, freecamUiGroup, artifactGroup);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -243,6 +243,7 @@
         const pointer = new THREE.Vector2();
         let isDragging = false;
         let pressedButton = null;
+        let params = { damping: 0.95 };
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
@@ -282,10 +283,9 @@
 
             switch(param) {
                 case 'scale':
-                    const currentScale = artifactGroup.scale.x;
-                    const newScale = Math.max(0.1, currentScale + step * 0.1);
-                    artifactGroup.scale.setScalar(newScale);
-                    logMessage = `// ${label} SET TO ${newScale.toFixed(2)} //`;
+                    const s = artifactGroup.scale.x + step * 0.1;
+                    artifactGroup.scale.setScalar(Math.max(0.1, s));
+                    logMessage = `// ${label} SET TO ${artifactGroup.scale.x.toFixed(2)} //`;
                     break;
                 case 'damping':
                     params.damping = Math.max(0.8, Math.min(0.995, params.damping + step * 0.01));
@@ -296,24 +296,9 @@
                     logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`;
                     break;
                 case 'opacity':
-                    bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step * 0.05));
-                    cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
-                    logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`;
-                    break;
-                case 'red':
-                    pointLight.color.r = Math.max(0, Math.min(1, pointLight.color.r + step * 0.1));
-                    bodyMaterial.color.r = pointLight.color.r;
-                    logMessage = `// ${label} SET TO ${pointLight.color.r.toFixed(2)} //`;
-                    break;
-                case 'green':
-                    pointLight.color.g = Math.max(0, Math.min(1, pointLight.color.g + step * 0.1));
-                    bodyMaterial.color.g = pointLight.color.g;
-                    logMessage = `// ${label} SET TO ${pointLight.color.g.toFixed(2)} //`;
-                    break;
-                case 'blue':
-                    pointLight.color.b = Math.max(0, Math.min(1, pointLight.color.b + step * 0.1));
-                    bodyMaterial.color.b = pointLight.color.b;
-                    logMessage = `// ${label} SET TO ${pointLight.color.b.toFixed(2)} //`;
+                    const artifactBody = artifactGroup.children.find(c => c.type === 'Mesh');
+                    artifactBody.material.opacity = Math.max(0, Math.min(1, artifactBody.material.opacity + step * 0.05));
+                    logMessage = `// ${label} SET TO ${artifactBody.material.opacity.toFixed(2)} //`;
                     break;
                 case 'fov':
                     camera.fov = Math.max(30, Math.min(120, camera.fov + step * 5));
@@ -414,6 +399,8 @@
                     logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE LOOK)');
                     uiGroup.visible = false;
                     freecamUiGroup.visible = true;
+                    artifactGroup.children.filter(c => c.type === 'Mesh' && c.material.map).forEach(label => label.visible = false);
+                    freecamUiGroup.children.filter(c => c.type === 'Mesh' && c.material.map).forEach(label => label.visible = true);
                 } else {
                     cameraMode = 'bob';
                     logToConsole('CAMERA MODE: BOB ENGAGED');
@@ -421,6 +408,8 @@
                     camera.rotation.set(0, 0, 0);
                     uiGroup.visible = true;
                     freecamUiGroup.visible = false;
+                    artifactGroup.children.filter(c => c.type === 'Mesh' && c.material.map).forEach(label => label.visible = true);
+                    freecamUiGroup.children.filter(c => c.type === 'Mesh' && c.material.map).forEach(label => label.visible = false);
                 }
             }
         }
@@ -438,14 +427,6 @@
             }
         }
         
-        function updateUiPositions() {
-            const zPos = -3.5;
-            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
-            const w = h * camera.aspect;
-            uiGroup.position.set(-w + 2.5, 0, zPos);
-            freecamUiGroup.position.set(w - 2.5, 0, zPos);
-        }
-
         function onWindowResize() {
             const width = window.innerWidth;
             const height = window.innerHeight;
@@ -460,7 +441,6 @@
                 camera.fov = BASE_FOV;
             }
             camera.updateProjectionMatrix();
-            updateUiPositions();
         }
         
         function animate() {
