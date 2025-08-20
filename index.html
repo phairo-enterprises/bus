@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.15 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.14 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -73,7 +73,6 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
         camera.position.z = 5;
-        camera.rotation.order = 'YXZ';
 
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
@@ -91,13 +90,7 @@
 
         const params = { damping: 0.95 };
         const uiGroup = new THREE.Group();
-        const freecamUiGroup = new THREE.Group();
-        scene.add(uiGroup);
-        scene.add(freecamUiGroup);
-        freecamUiGroup.visible = false;
-        
         let advancedProtocolsLoaded = false;
-        let cameraMode = 'bob';
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -151,15 +144,15 @@
             console.log(message);
         }
 
-        function createSlider(name, yPos, initialValue, group) {
+        function createSlider(name, yPos, initialValue = 0.5) {
             const track = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0x333333 }));
             track.position.y = yPos;
+            uiGroup.add(track);
             const handle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.2), new THREE.MeshBasicMaterial({ color: 0xAAAAAA }));
             handle.position.y = yPos;
             handle.position.x = -1.5 + initialValue * 3;
             handle.name = name;
-            group.add(track);
-            group.add(handle);
+            uiGroup.add(handle);
         }
 
         function engageDiagnostic() {
@@ -171,18 +164,16 @@
             advancedProtocolsLoaded = true;
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
-
-            createSlider("scaleSlider", -2.0, 0.5, uiGroup);
-            createSlider("dampingSlider", -2.5, 0.84, uiGroup);
-            createSlider("intensitySlider", -3.0, 0.375, uiGroup);
-            createSlider("opacitySlider", -3.5, 0.1, uiGroup);
-            createSlider("metalnessSlider", -4.0, 0.9, uiGroup);
-            createSlider("roughnessSlider", -4.5, 0.1, uiGroup);
-
-            createSlider("fovSlider", -2.0, 0.2, freecamUiGroup);
+            scene.add(uiGroup);
+            
+            createSlider("scaleSlider", -2.0, 0.5);
+            createSlider("dampingSlider", -2.5, 0.84);
+            createSlider("intensitySlider", -3.0, 0.375);
+            createSlider("opacitySlider", -3.5, 0.1);
+            createSlider("metalnessSlider", -4.0, 0.9);
+            createSlider("roughnessSlider", -4.5, 0.1);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
-            setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
         }
         document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
@@ -192,10 +183,7 @@
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
-        const SENSITIVITY_DRAG = 0.004;
-        const SENSITIVITY_LOOK = 0.002;
-        const FREECAM_SPEED = 5.0;
-        const freecamState = { forward: 0, right: 0 };
+        const SENSITIVITY = 0.004;
         
         const frameTimes = [];
         const FPS_CHECK_INTERVAL = 120;
@@ -230,24 +218,21 @@
             pointer.x = (clientX / window.innerWidth) * 2 - 1;
             pointer.y = - (clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
-
-            const activeUiGroup = cameraMode === 'bob' ? uiGroup : freecamUiGroup;
-            const intersects = raycaster.intersectObjects(activeUiGroup.children);
-
+            const intersects = raycaster.intersectObjects(uiGroup.children);
             if (advancedProtocolsLoaded && intersects.length > 0) {
                 selectedObject = intersects.find(i => i.object.name.endsWith("Slider"))?.object;
                 if(selectedObject) renderer.domElement.classList.add('grabbing');
-            } else if (cameraMode === 'bob') {
+            } else {
                 isDragging = true;
                 renderer.domElement.classList.add('grabbing');
                 previousPointerPosition.x = clientX;
                 previousPointerPosition.y = clientY;
-            } else if (cameraMode === 'free') {
-                renderer.domElement.requestPointerLock();
             }
         }
 
         function onPointerMove(event) {
+            if(event.touches && event.touches.length > 1) return;
+            event.preventDefault();
             const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : previousPointerPosition.x);
             const clientY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : previousPointerPosition.y);
             
@@ -255,9 +240,8 @@
                 pointer.x = (clientX / window.innerWidth) * 2 - 1;
                 pointer.y = - (clientY / window.innerHeight) * 2 + 1;
                 raycaster.setFromCamera(pointer, camera);
-                const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -camera.position.z + selectedObject.position.z);
+                const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
                 const intersectPoint = new THREE.Vector3();
-
                 if (raycaster.ray.intersectPlane(plane, intersectPoint)) {
                     let newX = intersectPoint.x;
                     newX = Math.max(-1.5, Math.min(1.5, newX));
@@ -266,7 +250,8 @@
 
                     switch (selectedObject.name) {
                         case "scaleSlider":
-                            artifactGroup.scale.setScalar(0.2 + value * 2.3);
+                            const scaleValue = 0.2 + value * 2.3;
+                            artifactGroup.scale.setScalar(scaleValue);
                             break;
                         case "dampingSlider":
                             params.damping = 0.8 + value * 0.195;
@@ -284,17 +269,13 @@
                         case "roughnessSlider":
                             bodyMaterial.roughness = value;
                             break;
-                        case "fovSlider":
-                            camera.fov = 40 + value * 80;
-                            camera.updateProjectionMatrix();
-                            break;
                     }
                 }
-            } else if (isDragging && cameraMode === 'bob') {
+            } else if (isDragging) {
                 const deltaX = clientX - previousPointerPosition.x;
                 const deltaY = clientY - previousPointerPosition.y;
-                rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
-                rotationVelocity.x += deltaY * SENSITIVITY_DRAG;
+                rotationVelocity.y += deltaX * SENSITIVITY;
+                rotationVelocity.x += deltaY * SENSITIVITY;
                 previousPointerPosition.x = clientX;
                 previousPointerPosition.y = clientY;
             }
@@ -305,48 +286,6 @@
             selectedObject = null;
             renderer.domElement.classList.remove('grabbing');
         }
-
-        function onPointerLockChange() {
-            if (document.pointerLockElement === renderer.domElement) document.addEventListener('mousemove', onPointerLockMove);
-            else {
-                document.removeEventListener('mousemove', onPointerLockMove);
-                if (cameraMode === 'free') logToConsole('MOUSE LOOK DISENGAGED (ESC PRESSED)');
-            }
-        }
-
-        function onPointerLockMove(event) {
-            camera.rotation.y -= event.movementX * SENSITIVITY_LOOK;
-            camera.rotation.x -= event.movementY * SENSITIVITY_LOOK;
-            camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-        }
-        
-        function onKeyPress(event) {
-            if (event.key.toLowerCase() === 'c' && advancedProtocolsLoaded) {
-                if (cameraMode === 'bob') {
-                    cameraMode = 'free';
-                    logToConsole('CAMERA MODE: FREE (WASD/MOUSE)');
-                    uiGroup.visible = false;
-                    freecamUiGroup.visible = true;
-                } else {
-                    cameraMode = 'bob';
-                    logToConsole('CAMERA MODE: BOB ENGAGED');
-                    uiGroup.visible = true;
-                    freecamUiGroup.visible = false;
-                    document.exitPointerLock();
-                }
-            }
-        }
-        
-        function onKey(event, isDown) {
-            if (document.pointerLockElement !== renderer.domElement) return;
-            const value = isDown ? 1 : 0;
-            switch(event.key.toLowerCase()) {
-                case 'w': freecamState.forward = value; break;
-                case 's': freecamState.forward = -value; break;
-                case 'a': freecamState.right = -value; break;
-                case 'd': freecamState.right = value; break;
-            }
-        }
         
         function onWindowResize() {
             const width = window.innerWidth;
@@ -354,34 +293,31 @@
             renderer.setSize(width, height);
             renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
             camera.aspect = width / height;
+            if (camera.aspect < 1) {
+                const horizontalFovInRadians = BASE_FOV * Math.PI / 180;
+                camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
+            } else {
+                camera.fov = BASE_FOV;
+            }
             camera.updateProjectionMatrix();
         }
         
         function animate() {
             requestAnimationFrame(animate);
-            const delta = clock.getDelta();
             const elapsedTime = clock.getElapsedTime();
-            frameTimes.push(delta * 1000);
+            frameTimes.push(clock.getDelta() * 1000);
             if (frameTimes.length > 60) frameTimes.shift();
             if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) checkPerformanceAndAdapt();
 
-            if (cameraMode === 'bob') {
-                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-                camera.lookAt(0, 0, 0);
-            } else if (cameraMode === 'free') {
-                const moveDirection = new THREE.Vector3(freecamState.right, 0, -freecamState.forward);
-                moveDirection.normalize();
-                moveDirection.applyQuaternion(camera.quaternion);
-                camera.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
-            }
+            camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+            camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+            camera.lookAt(0, 0, 0);
             
-            if (cameraMode === 'bob') {
-                artifactGroup.rotation.x += rotationVelocity.x;
-                artifactGroup.rotation.y += rotationVelocity.y;
-                rotationVelocity.x *= params.damping;
-                rotationVelocity.y *= params.damping;
-            }
+            artifactGroup.rotation.x += rotationVelocity.x;
+            artifactGroup.rotation.y += rotationVelocity.y;
+            
+            rotationVelocity.x *= params.damping;
+            rotationVelocity.y *= params.damping;
             
             renderer.render(scene, camera);
         }
@@ -395,10 +331,6 @@
         renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
         renderer.domElement.addEventListener('touchend', onPointerUp);
         window.addEventListener('resize', onWindowResize);
-        window.addEventListener('keypress', onKeyPress);
-        window.addEventListener('keydown', (e) => onKey(e, true));
-        window.addEventListener('keyup', (e) => onKey(e, false));
-        document.addEventListener('pointerlockchange', onPointerLockChange);
         animate();
     </script>
 </body>
