@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.31 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.32 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -219,6 +219,7 @@
         const pointer = new THREE.Vector2();
         let selectedObject = null;
         let isDragging = false;
+        let lastSliderLog = null;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
@@ -252,34 +253,46 @@
         }
 
         function updateSystemParameter(sliderName, value) {
-             switch (sliderName) {
+            let logMessage = "";
+            const label = sliderName.replace('Slider', '').toUpperCase();
+            switch (sliderName) {
                 case "scaleSlider":
-                    artifactGroup.scale.setScalar(0.2 + value * 2.3);
+                    const scaleValue = 0.2 + value * 2.3;
+                    artifactGroup.scale.setScalar(scaleValue);
+                    logMessage = `// ${label} SET TO ${scaleValue.toFixed(2)} //`;
                     break;
                 case "dampingSlider":
                     params.damping = 0.8 + value * 0.195;
+                    logMessage = `// ${label} SET TO ${params.damping.toFixed(3)} //`;
                     break;
                 case "intensitySlider":
                     pointLight.intensity = value * 4.0;
+                    logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`;
                     break;
                 case "opacitySlider":
                     bodyMaterial.opacity = value;
                     cubeWireframe.material.opacity = value * 0.5 + 0.1;
+                    logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`;
                     break;
                 case "fovSlider":
                     camera.fov = 30 + value * (120 - 30);
                     camera.updateProjectionMatrix();
+                    logMessage = `// ${label} SET TO ${camera.fov.toFixed(1)} //`;
                     break;
                 case "speedSlider":
                     FREECAM_SPEED = 1.0 + value * 19.0;
+                    logMessage = `// ${label} SET TO ${FREECAM_SPEED.toFixed(2)} //`;
                     break;
                 case "sensitivitySlider":
                     SENSITIVITY_LOOK = 0.0005 + value * (0.005 - 0.0005);
+                    logMessage = `// ${label} SET TO ${SENSITIVITY_LOOK.toFixed(4)} //`;
                     break;
                 case "rollSlider":
                     camera.rotation.z = (value - 0.5) * (Math.PI / 2);
+                    logMessage = `// ${label} SET TO ${(value * 100 - 50).toFixed(0)}% //`;
                     break;
             }
+            return logMessage;
         }
 
         function onPointerDown(event) {
@@ -299,8 +312,10 @@
                 const clickedObject = intersects[0].object;
                 if (clickedObject.name.startsWith("reset_")) {
                     const { targetSlider, defaultValue, sliderName } = clickedObject.userData;
-                    targetSlider.position.x = targetSlider.parent.children.find(c => c === targetSlider).position.x - 1.25 + defaultValue * 2.5;
-                    updateSystemParameter(sliderName, defaultValue);
+                    const track = targetSlider.parent.children.find(c => c.name === "");
+                    targetSlider.position.x = track.position.x - 1.25 + defaultValue * 2.5;
+                    const logMsg = updateSystemParameter(sliderName, defaultValue);
+                    logToConsole(logMsg.replace("SET TO", "RESET TO"));
                     return;
                 }
                 selectedObject = intersects.find(i => i.object.name.endsWith("Slider"))?.object;
@@ -328,11 +343,12 @@
                 const intersectPoint = new THREE.Vector3();
                 if (raycaster.ray.intersectPlane(plane, intersectPoint)) {
                     let newX = intersectPoint.x;
-                    const trackPositionX = selectedObject.parent.children.find(c => c === selectedObject).position.x;
+                    const track = selectedObject.parent.children.find(c => c.name === "");
+                    const trackPositionX = track.position.x;
                     newX = Math.max(trackPositionX - 1.25, Math.min(trackPositionX + 1.25, newX));
                     selectedObject.position.x = newX;
                     const value = (newX - (trackPositionX - 1.25)) / 2.5;
-                    updateSystemParameter(selectedObject.name, value);
+                    lastSliderLog = updateSystemParameter(selectedObject.name, value);
                 }
             } else if (isDragging && cameraMode === 'bob') {
                 const deltaX = clientX - previousPointerPosition.x;
@@ -345,6 +361,10 @@
         }
 
         function onPointerUp() { 
+            if (lastSliderLog) {
+                logToConsole(lastSliderLog);
+                lastSliderLog = null;
+            }
             isDragging = false; 
             selectedObject = null;
             renderer.domElement.classList.remove('grabbing');
