@@ -21,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v2.2 (FORCED ERROR TEST) //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v2.3 (SCALE TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v8.2 (THE FINAL DIAGNOSTIC) ---
+        // --- STABLE FOUNDATION v8.3 (INCREMENTAL ADDITION: SCALE SLIDER) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -78,11 +78,18 @@
 
         function attemptUIInitialization() {
             try {
-                // --- THE SINGLE, ISOLATED TEST ---
                 gui = new lil.GUI();
-                console.log("SUCCESS: lil.GUI initialized without error.");
+                
+                // --- THE SINGLE, ADDITIVE CHANGE ---
+                Object.assign(params, { scale: 1.0 });
+                const artifactFolder = gui.addFolder('Artifact Controls');
+                artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
+                    artifactGroup.scale.set(v, v, v);
+                });
+                
+                console.log("SUCCESS: lil.GUI and Scale slider initialized without error.");
             } catch (error) {
-                console.error("FAILURE: Error during lil.GUI initialization.");
+                console.error("FAILURE: Error during UI initialization.");
                 console.error(error);
             }
         }
