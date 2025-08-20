@@ -21,10 +21,10 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.1 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v5.3 (DIAGNOSTIC BUILD) ---
+        // --- STABLE FOUNDATION v5.4 (PHASE 2: FULL ARTIFACT UI) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -84,12 +84,23 @@
             advancedProtocolsLoaded = true;
             
             Object.assign(params, {
-                scale: 1.0
+                scale: 1.0,
+                lightIntensity: 1.5,
+                color: '#00ffff'
             });
 
             gui = new lil.GUI();
-            gui.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
+            const artifactFolder = gui.addFolder('Artifact Controls');
+            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
                 artifactGroup.scale.set(v, v, v);
+            });
+            artifactFolder.add(params, 'damping', 0.9, 0.995).name('Damping');
+            artifactFolder.add(params, 'lightIntensity', 0, 4.0).name('Light Intensity').onChange(v => {
+                artifactGroup.getObjectByProperty('isPointLight').intensity = v;
+            });
+            artifactFolder.addColor(params, 'color').name('Color').onChange(v => {
+                artifactGroup.getObjectByProperty('isPointLight').color.set(v);
+                artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
             });
         }
         document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
