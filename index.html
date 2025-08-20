@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.33 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.34 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -177,6 +177,30 @@
             button.add(labelMesh);
         }
 
+        function createControlRow(param, labelText, yPos, targetGroup) {
+            const xOffset = 0.8;
+            createButton(`${param}_dec`, '-', new THREE.Vector2(xOffset, yPos), new THREE.Vector2(0.3, 0.3), targetGroup);
+            createButton(`${param}_inc`, '+', new THREE.Vector2(xOffset + 0.5, yPos), new THREE.Vector2(0.3, 0.3), targetGroup);
+            
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const font = '32px monospace';
+            context.font = font;
+            canvas.width = 200;
+            canvas.height = 40; 
+            context.font = font;
+            context.fillStyle = 'rgba(200, 200, 200, 0.7)';
+            context.textAlign = 'right';
+            context.textBaseline = 'middle';
+            context.fillText(labelText, canvas.width - 5, canvas.height / 2);
+            const texture = new THREE.CanvasTexture(canvas);
+            const labelMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+            const labelGeometry = new THREE.PlaneGeometry(canvas.width / 100, canvas.height / 100);
+            const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
+            labelMesh.position.set(-0.5, yPos, 0);
+            targetGroup.add(labelMesh);
+        }
+
         function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
@@ -190,13 +214,10 @@
             freecamUiGroup.visible = false;
             bodyMaterial.color.set(0xFF0000);
 
-            let yPos = 1.2;
-            createButton('scale_inc', '+', new THREE.Vector2(0, yPos), new THREE.Vector2(0.3, 0.3), uiGroup);
-            createButton('scale_dec', '-', new THREE.Vector2(0.5, yPos), new THREE.Vector2(0.3, 0.3), uiGroup);
-            
-            yPos -= 0.5;
-            createButton('damping_inc', '+', new THREE.Vector2(0, yPos), new THREE.Vector2(0.3, 0.3), uiGroup);
-            createButton('damping_dec', '-', new THREE.Vector2(0.5, yPos), new THREE.Vector2(0.3, 0.3), uiGroup);
+            createControlRow('scale', 'SCALE', 1.2, uiGroup);
+            createControlRow('damping', 'DAMPING', 0.7, uiGroup);
+            createControlRow('intensity', 'INTENSITY', 0.2, uiGroup);
+            createControlRow('opacity', 'OPACITY', -0.3, uiGroup);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -260,6 +281,13 @@
                         break;
                     case 'damping':
                         params.damping = Math.max(0.8, Math.min(0.995, params.damping + step * 0.1));
+                        break;
+                    case 'intensity':
+                        pointLight.intensity = Math.max(0, pointLight.intensity + step * 2);
+                        break;
+                    case 'opacity':
+                        bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step));
+                        cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
                         break;
                 }
                 return;
@@ -346,8 +374,8 @@
             const zPos = -3;
             const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
             const w = h * camera.aspect;
-            uiGroup.position.set(-w + 1, 0, zPos);
-            freecamUiGroup.position.set(w - 1, 0, zPos);
+            uiGroup.position.set(-w + 2.5, 0, zPos);
+            freecamUiGroup.position.set(w - 2.5, 0, zPos);
         }
 
         function onWindowResize() {
