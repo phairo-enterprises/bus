@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.11 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.12 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -86,11 +86,16 @@
         const params = { damping: 0.95 };
         const uiGroup = new THREE.Group();
         const freecamUiGroup = new THREE.Group();
+        const touchUiGroup = new THREE.Group();
         scene.add(freecamUiGroup);
+        camera.add(touchUiGroup);
+        scene.add(camera);
         freecamUiGroup.visible = false;
+        touchUiGroup.visible = false;
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -150,6 +155,7 @@
             setTimeout(() => loadButton.remove(), 500);
             document.getElementById('consoleContainer').classList.add('visible');
             logToConsole('// CONSOLE BOOT SEQUENCE INITIATED //');
+            if (isTouchDevice) logToConsole('TOUCH INTERFACE DETECTED');
             advancedProtocolsLoaded = true;
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             bodyMaterial.color.set(0xFF0000);
@@ -186,8 +192,15 @@
             fovSliderHandle.name = "fovSlider";
             freecamUiGroup.add(fovSliderHandle);
             
+            const joystickBase = new THREE.Mesh(new THREE.CircleGeometry(0.7, 32), new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.2 }));
+            joystickBase.name = "joystickBase";
+            touchUiGroup.add(joystickBase);
+            const joystickHandle = new THREE.Mesh(new THREE.CircleGeometry(0.3, 32), new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
+            joystickHandle.name = "joystickHandle";
+            touchUiGroup.add(joystickHandle);
+
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
-            setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
+            setTimeout(() => logToConsole(isTouchDevice ? "TAP 'C' AREA OR PRESS 'C' TO TOGGLE FREECAM" : "PRESS 'C' TO TOGGLE FREECAM"), 1000);
         }
         document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
@@ -201,8 +214,11 @@
         const SENSITIVITY_LOOK = 0.002;
         const FREECAM_SPEED = 5.0;
         const freecamState = { forward: 0, right: 0 };
+        const touchState = {
+            move: { id: -1, startX: 0, startY: 0, currentX: 0, currentY: 0 },
+            look: { id: -1, lastX: 0, lastY: 0 }
+        };
         
-        let lastFrameTime = performance.now();
         const frameTimes = [];
         const FPS_CHECK_INTERVAL = 120;
         const FPS_TARGET = 30;
@@ -236,10 +252,8 @@
             pointer.x = (clientX / window.innerWidth) * 2 - 1;
             pointer.y = - (clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
-            
             let intersectableUIs = cameraMode === 'bob' ? uiGroup.children : freecamUiGroup.children;
             const intersects = raycaster.intersectObjects(intersectableUIs);
-            
             if (advancedProtocolsLoaded && intersects.length > 0) {
                 selectedObject = intersects[0].object;
                 renderer.domElement.classList.add('grabbing');
@@ -248,7 +262,7 @@
                 renderer.domElement.classList.add('grabbing');
                 previousPointerPosition.x = clientX;
                 previousPointerPosition.y = clientY;
-            } else if (cameraMode === 'free') {
+            } else if (cameraMode === 'free' && !isTouchDevice) {
                 renderer.domElement.requestPointerLock();
             }
         }
@@ -268,14 +282,10 @@
                 let newX = intersectPoint.x;
                 newX = Math.max(-1.5, Math.min(1.5, newX));
                 selectedObject.position.x = newX;
-                if (selectedObject.name === "scaleSlider") {
-                    const scaleValue = 0.2 + ((newX + 1.5) / 3) * (2.5 - 0.2);
-                    artifactGroup.scale.set(scaleValue, scaleValue, scaleValue);
-                } else if (selectedObject.name === "dampingSlider") {
-                    params.damping = 0.9 + ((newX + 1.5) / 3) * (0.995 - 0.9);
-                } else if (selectedObject.name === "intensitySlider") {
-                    pointLight.intensity = ((newX + 1.5) / 3) * 4.0;
-                } else if (selectedObject.name === "fovSlider") {
+                if (selectedObject.name === "scaleSlider") artifactGroup.scale.setScalar(0.2 + ((newX + 1.5) / 3) * (2.5 - 0.2));
+                else if (selectedObject.name === "dampingSlider") params.damping = 0.9 + ((newX + 1.5) / 3) * (0.995 - 0.9);
+                else if (selectedObject.name === "intensitySlider") pointLight.intensity = ((newX + 1.5) / 3) * 4.0;
+                else if (selectedObject.name === "fovSlider") {
                     camera.fov = 40 + ((newX + 1.5) / 3) * (120 - 40);
                     camera.updateProjectionMatrix();
                 }
@@ -296,13 +306,10 @@
         }
 
         function onPointerLockChange() {
-            if (document.pointerLockElement === renderer.domElement) {
-                document.addEventListener('mousemove', onPointerLockMove);
-            } else {
+            if (document.pointerLockElement === renderer.domElement) document.addEventListener('mousemove', onPointerLockMove);
+            else {
                 document.removeEventListener('mousemove', onPointerLockMove);
-                if (cameraMode === 'free') {
-                    logToConsole('MOUSE LOOK DISENGAGED (ESC PRESSED)');
-                }
+                if (cameraMode === 'free' && !isTouchDevice) logToConsole('MOUSE LOOK DISENGAGED (ESC PRESSED)');
             }
         }
 
@@ -311,32 +318,95 @@
             camera.rotation.x -= event.movementY * SENSITIVITY_LOOK;
             camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
         }
-
-        function onKeyPress(event) {
-            if (event.key.toLowerCase() === 'c' && advancedProtocolsLoaded) {
-                if (cameraMode === 'bob') {
-                    cameraMode = 'free';
-                    logToConsole('CAMERA MODE: FREE (CLICK TO ENGAGE MOUSE LOOK)');
-                    uiGroup.visible = false;
-                    freecamUiGroup.visible = true;
-                } else {
-                    cameraMode = 'bob';
-                    logToConsole('CAMERA MODE: BOB ENGAGED');
-                    uiGroup.visible = true;
-                    freecamUiGroup.visible = false;
-                    document.exitPointerLock();
-                }
+        
+        function toggleFreecam() {
+            if (!advancedProtocolsLoaded) return;
+            if (cameraMode === 'bob') {
+                cameraMode = 'free';
+                logToConsole(isTouchDevice ? 'CAMERA MODE: FREE (TOUCH CONTROLS)' : 'CAMERA MODE: FREE (CLICK TO ENGAGE MOUSE LOOK)');
+                uiGroup.visible = false;
+                if (isTouchDevice) touchUiGroup.visible = true; else freecamUiGroup.visible = true;
+            } else {
+                cameraMode = 'bob';
+                logToConsole('CAMERA MODE: BOB ENGAGED');
+                uiGroup.visible = true;
+                freecamUiGroup.visible = false;
+                touchUiGroup.visible = false;
+                if (!isTouchDevice) document.exitPointerLock();
             }
         }
 
+        function onKeyPress(event) { if (event.key.toLowerCase() === 'c') toggleFreecam(); }
         function onKey(event, isDown) {
-            if (document.pointerLockElement !== renderer.domElement) return;
+            if (cameraMode !== 'free' || isTouchDevice) return;
             const value = isDown ? 1 : 0;
             switch(event.key.toLowerCase()) {
                 case 'w': freecamState.forward = value; break;
                 case 's': freecamState.forward = -value; break;
                 case 'a': freecamState.right = -value; break;
                 case 'd': freecamState.right = value; break;
+            }
+        }
+
+        function onTouchStart(event) {
+            event.preventDefault();
+            for (let i = 0; i < event.changedTouches.length; i++) {
+                const touch = event.changedTouches[i];
+                if (touch.clientX < window.innerWidth / 3 && touchState.move.id === -1) {
+                    touchState.move.id = touch.identifier;
+                    touchState.move.startX = touch.clientX;
+                    touchState.move.startY = touch.clientY;
+                } else if (touch.clientX > window.innerWidth / 2 && touchState.look.id === -1) {
+                    touchState.look.id = touch.identifier;
+                    touchState.look.lastX = touch.clientX;
+                    touchState.look.lastY = touch.clientY;
+                }
+            }
+        }
+
+        function onTouchMove(event) {
+            event.preventDefault();
+            for (let i = 0; i < event.changedTouches.length; i++) {
+                const touch = event.changedTouches[i];
+                if (touch.identifier === touchState.move.id) {
+                    const deltaX = touch.clientX - touchState.move.startX;
+                    const deltaY = touch.clientY - touchState.move.startY;
+                    const joystickHandle = touchUiGroup.getObjectByName("joystickHandle");
+                    const dist = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+                    const maxDist = 50;
+                    freecamState.right = Math.max(-1, Math.min(1, deltaX / maxDist));
+                    freecamState.forward = Math.max(-1, Math.min(1, -deltaY / maxDist));
+                    if (joystickHandle) {
+                        const clampedDist = Math.min(dist, maxDist);
+                        const angle = Math.atan2(deltaY, deltaX);
+                        joystickHandle.position.x = joystickBase.position.x + Math.cos(angle) * (clampedDist / maxDist) * 0.4;
+                        joystickHandle.position.y = joystickBase.position.y + Math.sin(angle) * (clampedDist / maxDist) * 0.4;
+                    }
+                } else if (touch.identifier === touchState.look.id) {
+                    const deltaX = touch.clientX - touchState.look.lastX;
+                    const deltaY = touch.clientY - touchState.look.lastY;
+                    camera.rotation.y -= deltaX * SENSITIVITY_LOOK;
+                    camera.rotation.x -= deltaY * SENSITIVITY_LOOK;
+                    camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+                    touchState.look.lastX = touch.clientX;
+                    touchState.look.lastY = touch.clientY;
+                }
+            }
+        }
+
+        function onTouchEnd(event) {
+            event.preventDefault();
+            for (let i = 0; i < event.changedTouches.length; i++) {
+                const touch = event.changedTouches[i];
+                if (touch.identifier === touchState.move.id) {
+                    touchState.move.id = -1;
+                    freecamState.forward = 0;
+                    freecamState.right = 0;
+                    const joystickHandle = touchUiGroup.getObjectByName("joystickHandle");
+                    if (joystickHandle) joystickHandle.position.copy(touchUiGroup.getObjectByName("joystickBase").position);
+                } else if (touch.identifier === touchState.look.id) {
+                    touchState.look.id = -1;
+                }
             }
         }
         
@@ -346,25 +416,31 @@
             renderer.setSize(width, height);
             renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
             camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+
             const fovSliderHandle = freecamUiGroup.getObjectByName("fovSlider");
             if (fovSliderHandle) {
                 const fovRatio = (camera.fov - 40) / (120 - 40);
                 fovSliderHandle.position.x = -1.5 + fovRatio * 3;
             }
-            camera.updateProjectionMatrix();
+
+            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 5;
+            const w = h * camera.aspect;
+            const joystickBase = touchUiGroup.getObjectByName("joystickBase");
+            const joystickHandle = touchUiGroup.getObjectByName("joystickHandle");
+            if(joystickBase) {
+                joystickBase.position.set(-w + 1, -h + 1, -5);
+                joystickHandle.position.copy(joystickBase.position);
+            }
         }
         
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
             const elapsedTime = clock.getElapsedTime();
-            
             frameTimes.push(delta * 1000);
             if (frameTimes.length > 60) frameTimes.shift();
-            if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) {
-                checkPerformanceAndAdapt();
-                frameCounter = 0;
-            }
+            if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) checkPerformanceAndAdapt();
 
             if (cameraMode === 'bob') {
                 camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
@@ -393,10 +469,16 @@
         renderer.domElement.addEventListener('mousemove', onPointerMove);
         renderer.domElement.addEventListener('mouseup', onPointerUp);
         renderer.domElement.addEventListener('mouseleave', onPointerUp);
-        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
-        renderer.domElement.addEventListener('touchend', onPointerUp);
+        renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+        renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+        renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
+        renderer.domElement.addEventListener('touchcancel', onTouchEnd, { passive: false });
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('keypress', onKeyPress);
         window.addEventListener('keydown', (e) => onKey(e, true));
-        window.addEventListen
+        window.addEventListener('keyup', (e) => onKey(e, false));
+        document.addEventListener('pointerlockchange', onPointerLockChange);
+        animate();
+    </script>
+</body>
+</html>
