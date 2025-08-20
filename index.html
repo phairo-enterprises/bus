@@ -21,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.2 (SCALE TEST) //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.3 (UI REVEAL TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v7.4 (INCREMENTAL ADDITION: SCALE SLIDER) ---
+        // --- STABLE FOUNDATION v7.5 (CORRECT UI INITIALIZATION) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -31,7 +31,7 @@
         const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
         const clock = new THREE.Clock();
         const artifactGroup = new THREE.Group();
-        let params = { damping: 0.95 };
+        let params = { damping: 0.95, scale: 1.0 };
         let pointLight, bodyMaterial, gui;
 
         function initBaseModule() {
@@ -76,7 +76,16 @@
             scene.add(cave);
         }
 
-        function engageDiagnostic() {
+        function createAdvancedUI() {
+            gui = new lil.GUI();
+            const artifactFolder = gui.addFolder('Artifact Controls');
+            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
+                artifactGroup.scale.set(v, v, v);
+            });
+            gui.hide(); // Hide the UI immediately after creation.
+        }
+
+        function engageProtocols() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
@@ -85,17 +94,9 @@
             if (pointLight) pointLight.color.set(redColor);
             if (bodyMaterial) bodyMaterial.color.set(redColor);
 
-            // --- SINGLE FEATURE ADDITION: SCALE SLIDER ---
-            Object.assign(params, {
-                scale: 1.0
-            });
-            gui = new lil.GUI();
-            const artifactFolder = gui.addFolder('Artifact Controls');
-            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
-                artifactGroup.scale.set(v, v, v);
-            });
+            if (gui) gui.show(); // Reveal the pre-made UI.
         }
-        document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
+        document.getElementById('loadButton').addEventListener('click', engageProtocols);
 
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
@@ -126,6 +127,7 @@
             const width = window.innerWidth;
             const height = window.innerHeight;
             renderer.setSize(width, height);
+
             renderer.setPixelRatio(window.devicePixelRatio);
             camera.aspect = width / height;
             
@@ -160,6 +162,7 @@
         }
 
         initBaseModule();
+        createAdvancedUI(); // Create the UI on load.
         onWindowResize();
         renderer.domElement.addEventListener('mousedown', onPointerDown);
         renderer.domElement.addEventListener('mousemove', onPointerMove);
