@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>backupstrats.com</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lil-gui/0.17.0/lil-gui.umd.min.js"></script>
     <style>
         body, html { 
@@ -12,21 +13,52 @@
             overflow: hidden; 
             background-color: #000000; 
         }
+        canvas {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <script>
-        // --- FINAL DIAGNOSTIC: THE CLEAN ROOM ---
-        // --- ISOLATING THE SINGLE POINT OF FAILURE ---
+        // --- FINAL DIAGNOSTIC v2.4 (COEXISTENCE TEST) ---
+        // --- Re-introducing the bare minimum Three.js scene ---
 
+        // --- STEP 1: UI INITIALIZATION (VERIFIED WORKING) ---
         try {
-            // The only line of code that matters.
             const gui = new lil.GUI();
             console.log("SUCCESS: lil.GUI initialized.");
         } catch (error) {
             console.error("FAILURE: Could not initialize lil.GUI.");
             console.error(error);
         }
+
+        // --- STEP 2: THE SINGLE, ADDITIVE CHANGE ---
+        // Initialize the core Three.js components.
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        camera.position.z = 5;
+
+        // The animation loop. It will render an empty scene.
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // Event listener for window resizing.
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onWindowResize);
+
+        // --- IGNITION ---
+        animate();
     </script>
 </body>
 </html>
