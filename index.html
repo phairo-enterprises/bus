@@ -5,12 +5,10 @@
     <title>backupstrats.com</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lil-gui/0.17.0/lil-gui.umd.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #000000; }
         canvas { display: block; touch-action: none; cursor: grab; }
         canvas.grabbing { cursor: grabbing; }
-        canvas.freecam-active { cursor: crosshair; }
         #loadButton {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -19,21 +17,13 @@
             cursor: pointer; z-index: 100; transition: opacity 0.5s;
         }
         #loadButton:hover { background-color: rgba(255, 255, 255, 0.1); }
-        #warningOverlay {
-            display: none; position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; background-color: rgba(255, 0, 0, 0.1);
-            color: rgba(255, 100, 100, 0.5); font-family: monospace; font-size: 6vw;
-            text-align: center; padding-top: 40vh; box-sizing: border-box;
-            transform: rotate(-15deg) scale(1.5); text-shadow: 0 0 5px #FF0000;
-            z-index: 10;
-        }
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.7 //</button>
-    <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.8 (COLOR TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v6.3 (INCREMENTAL ADDITION: FREECAM MOUSE LOOK) ---
+        // --- STABLE FOUNDATION v7.0 (THE RED BUTTON TEST) ---
+        // --- STARTING FROM VERBATIM v5 CODE. NO OTHER FEATURES. ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -41,9 +31,7 @@
         const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
         const clock = new THREE.Clock();
         const artifactGroup = new THREE.Group();
-        let advancedProtocolsLoaded = false;
         let params = { damping: 0.95 };
-        let gui;
 
         function initBaseModule() {
             renderer.setPixelRatio(window.devicePixelRatio);
@@ -86,34 +74,21 @@
             scene.add(cave);
         }
 
-        function initAdvancedModule() {
+        // --- THE SINGLE, VISIBLE CHANGE ---
+        function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
-            advancedProtocolsLoaded = true;
+
+            // Change the color of the light and the glowing body to red.
+            const pointLight = artifactGroup.getObjectByProperty('isPointLight');
+            const bodyMesh = artifactGroup.getObjectByProperty('isMesh');
+            const redColor = new THREE.Color(0xFF0000);
             
-            Object.assign(params, {
-                scale: 1.0, lightIntensity: 1.5, color: '#00ffff', cameraFov: camera.fov, freecam: false
-            });
-
-            gui = new lil.GUI();
-            const artifactFolder = gui.addFolder('Artifact Controls');
-            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => artifactGroup.scale.set(v, v, v));
-            artifactFolder.add(params, 'damping', 0.9, 0.995).name('Damping');
-            artifactFolder.add(params, 'lightIntensity', 0, 4.0).name('Light Intensity').onChange(v => artifactGroup.getObjectByProperty('isPointLight').intensity = v);
-            artifactFolder.addColor(params, 'color').name('Color').onChange(v => {
-                artifactGroup.getObjectByProperty('isPointLight').color.set(v);
-                artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
-            });
-
-            const cameraFolder = gui.addFolder('Camera Controls');
-            cameraFolder.add(params, 'cameraFov', 30, 120).name('Field of View').onChange(value => {
-                camera.fov = value;
-                camera.updateProjectionMatrix();
-            });
-            cameraFolder.add(params, 'freecam').name('Freecam Mode').onChange(toggleFreecam);
+            if (pointLight) pointLight.color.set(redColor);
+            if (bodyMesh) bodyMesh.material.color.set(redColor);
         }
-        document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
+        document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
@@ -121,7 +96,6 @@
         const SENSITIVITY = 0.004;
 
         function onPointerDown(event) {
-            if (advancedProtocolsLoaded && params.freecam) return;
             isDragging = true;
             renderer.domElement.classList.add('grabbing');
             previousPointerPosition.x = event.clientX || event.touches[0].clientX;
@@ -130,7 +104,7 @@
         function onPointerMove(event) {
             if(event.touches && event.touches.length > 1) return;
             event.preventDefault();
-            if (isDragging && (!advancedProtocolsLoaded || !params.freecam)) {
+            if (isDragging) {
                 const clientX = event.clientX || event.touches[0].clientX;
                 const clientY = event.clientY || event.touches[0].clientY;
                 rotationVelocity.y += (clientX - previousPointerPosition.x) * SENSITIVITY;
@@ -141,70 +115,14 @@
         }
         function onPointerUp() { isDragging = false; renderer.domElement.classList.remove('grabbing'); }
         
-        function toggleFreecam(value) {
-            if (value) {
-                renderer.domElement.requestPointerLock();
-            } else {
-                document.exitPointerLock();
-            }
-        }
-        document.addEventListener('pointerlockchange', () => {
-            const isActive = document.pointerLockElement === renderer.domElement;
-            if (advancedProtocolsLoaded) {
-                params.freecam = isActive;
-                renderer.domElement.classList.toggle('freecam-active', isActive);
-                if (gui) {
-                    gui.controllers.forEach(c => {
-                        if (c.property === 'freecam') c.updateDisplay();
-                    });
-                }
-            }
-        });
-
-        // --- SINGLE FEATURE ADDITION: FREECAM MOUSE LOOK LOGIC ---
-        function onFreecamMouseMove(event) {
-            if (advancedProtocolsLoaded && params.freecam) {
-                camera.rotation.y -= event.movementX * 0.002;
-                camera.rotation.x -= event.movementY * 0.002;
-                // Clamp the vertical rotation to prevent camera flipping
-                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-            }
-        }
-
-        let lastFrameTime = performance.now();
-        const frameTimes = [];
-        const FPS_CHECK_INTERVAL = 120;
-        const FPS_TARGET = 30;
-        let frameCounter = 0;
-        let isAdapting = false;
-        let adaptationLevel = 0;
-        const ADAPTATION_STEPS = [1, 0.75, 0.5];
-        const warningOverlay = document.getElementById('warningOverlay');
-
-        function checkPerformanceAndAdapt() {
-            if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
-            const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-            const currentFps = 1000 / averageDelta;
-            if (currentFps < FPS_TARGET) {
-                isAdapting = true;
-                warningOverlay.style.display = 'block';
-                setTimeout(() => {
-                    adaptationLevel++;
-                    onWindowResize();
-                    warningOverlay.style.display = 'none';
-                    isAdapting = false;
-                }, 2500);
-            }
-        }
-
         function onWindowResize() {
             const width = window.innerWidth;
             const height = window.innerHeight;
             renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
+            renderer.setPixelRatio(window.devicePixelRatio);
             camera.aspect = width / height;
             
-            const currentBaseFov = advancedProtocolsLoaded ? params.cameraFov : BASE_FOV;
+            const currentBaseFov = BASE_FOV;
             if (camera.aspect < 1) {
                 const horizontalFovInRadians = currentBaseFov * Math.PI / 180;
                 camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
@@ -218,16 +136,10 @@
             requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
 
-            if (advancedProtocolsLoaded) {
-                checkPerformanceAndAdapt();
-            }
-
-            if (!advancedProtocolsLoaded || !params.freecam) {
-                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-                camera.position.z = 5;
-                camera.lookAt(0, 0, 0);
-            }
+            camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+            camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+            camera.position.z = 5;
+            camera.lookAt(0, 0, 0);
 
             artifactGroup.rotation.x += rotationVelocity.x;
             artifactGroup.rotation.y += rotationVelocity.y;
@@ -242,7 +154,6 @@
 
         initBaseModule();
         onWindowResize();
-        camera.rotation.order = 'YXZ'; // Set rotation order for proper freecam look
         renderer.domElement.addEventListener('mousedown', onPointerDown);
         renderer.domElement.addEventListener('mousemove', onPointerMove);
         renderer.domElement.addEventListener('mouseup', onPointerUp);
@@ -250,9 +161,8 @@
         renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
         renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
         renderer.domElement.addEventListener('touchend', onPointerUp);
-        renderer.domElement.addEventListener('mousemove', onFreecamMouseMove); // Add the new listener
         window.addEventListener('resize', onWindowResize);
         animate();
     </script>
 </body>
-</html>
+</html>```
