@@ -10,7 +10,7 @@
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #000000; }
         canvas { display: block; touch-action: none; cursor: grab; }
         canvas.grabbing { cursor: grabbing; }
-        canvas.freecam-active { cursor: crosshair; }
+        canvas.hovering-ui { cursor: pointer; }
         #loadButton {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -30,10 +30,10 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE FINAL PROTOCOLS //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.4 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v11.0 (FINAL INTEGRATION) ---
+        // --- STABLE FOUNDATION v10.4 (INCREMENTAL ADDITION: FREECAM UI) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -89,51 +89,32 @@
         const cave = new THREE.Mesh(caveGeometry, caveMaterial);
         scene.add(cave);
 
-        function engageProtocols() {
+        function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
-            
-            const styles = {
-                info: 'color: #00ffff; font-weight: bold;',
-                success: 'color: #00ff00; font-weight: bold;',
-                protocol: 'color: #ff00ff; font-weight: bold; font-size: 1.2em;'
-            };
-            console.log('%c[SYSTEM] Engaging Advanced Protocols...', styles.info);
+            advancedProtocolsLoaded = true;
 
-            setTimeout(() => {
-                advancedProtocolsLoaded = true;
-                bodyMaterial.color.set(0xFF0000);
-                pointLight.color.set(0xFF0000);
-                console.log('%c[SUCCESS] Artifact state updated.', styles.success);
-            }, 250);
+            bodyMaterial.color.set(0xFF0000);
+            pointLight.color.set(0xFF0000);
 
-            setTimeout(() => {
-                Object.assign(params, {
-                    scale: 1.0, lightIntensity: 1.5, color: '#ff0000', freecam: false, freecamSpeed: 5.0,
-                });
-                gui = new lil.GUI();
-                const artifactFolder = gui.addFolder('Artifact Controls');
-                artifactFolder.add(params, 'scale', 0.2, 2.5).onChange(v => artifactGroup.scale.set(v, v, v));
-                artifactFolder.add(params, 'damping', 0.9, 0.995);
-                artifactFolder.add(params, 'lightIntensity', 0, 4.0).onChange(v => pointLight.intensity = v);
-                artifactFolder.addColor(params, 'color').onChange(v => { pointLight.color.set(v); bodyMaterial.color.set(v); });
-                const cameraFolder = gui.addFolder('Camera Controls');
-                cameraFolder.add(params, 'freecam').name('Freecam Mode').onChange(toggleFreecam);
-                cameraFolder.add(camera, 'fov', 30, 120).name('Field of View').onChange(() => camera.updateProjectionMatrix());
-                cameraFolder.add(params, 'freecamSpeed', 1, 20).name('Move Speed');
-                console.log('%c[SUCCESS] Diegetic UI Interface initialized.', styles.success);
-            }, 500);
+            Object.assign(params, {
+                scale: 1.0, lightIntensity: 1.5, color: '#ff0000', freecam: false, freecamSpeed: 5.0,
+            });
 
-            setTimeout(() => {
-                console.log('%c[INFO] Performance Monitor armed.', styles.info);
-            }, 750);
+            gui = new lil.GUI();
+            const artifactFolder = gui.addFolder('Artifact Controls');
+            artifactFolder.add(params, 'scale', 0.2, 2.5).onChange(v => artifactGroup.scale.set(v, v, v));
+            artifactFolder.add(params, 'damping', 0.9, 0.995);
+            artifactFolder.add(params, 'lightIntensity', 0, 4.0).onChange(v => pointLight.intensity = v);
+            artifactFolder.addColor(params, 'color').onChange(v => { pointLight.color.set(v); bodyMaterial.color.set(v); });
 
-            setTimeout(() => {
-                console.log('%c[PROTOCOL ENGAGED] Freecam Protocol armed and ready.', styles.protocol);
-            }, 1000);
+            const cameraFolder = gui.addFolder('Camera Controls');
+            cameraFolder.add(params, 'freecam').name('Freecam Mode');
+            cameraFolder.add(camera, 'fov', 30, 120).name('Field of View').onChange(() => camera.updateProjectionMatrix());
+            cameraFolder.add(params, 'freecamSpeed', 1, 20).name('Move Speed');
         }
-        document.getElementById('loadButton').addEventListener('click', engageProtocols);
+        document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
@@ -142,8 +123,6 @@
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0, y: 0 };
         const SENSITIVITY = 0.004;
-        const keyState = {};
-        const cameraDirection = new THREE.Vector3();
         
         let lastFrameTime = performance.now();
         const frameTimes = [];
@@ -154,10 +133,8 @@
         let adaptationLevel = 0;
         const ADAPTATION_STEPS = [1, 0.75, 0.5];
         const warningOverlay = document.getElementById('warningOverlay');
-        let lastLogTime = 0;
 
         function onPointerDown(event) {
-            if (advancedProtocolsLoaded && params.freecam) return;
             const clientX = event.clientX || event.touches[0].clientX;
             const clientY = event.clientY || event.touches[0].clientY;
             isDragging = true;
@@ -169,7 +146,7 @@
         function onPointerMove(event) {
             if(event.touches && event.touches.length > 1) return;
             event.preventDefault();
-            if (isDragging && (!advancedProtocolsLoaded || !params.freecam)) {
+            if (isDragging) {
                 const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : previousPointerPosition.x);
                 const clientY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : previousPointerPosition.y);
                 const deltaX = clientX - previousPointerPosition.x;
@@ -184,42 +161,6 @@
         function onPointerUp() { 
             isDragging = false; 
             renderer.domElement.classList.remove('grabbing');
-        }
-
-        function toggleFreecam(value) {
-            if (value) renderer.domElement.requestPointerLock();
-            else document.exitPointerLock();
-        }
-
-        document.addEventListener('pointerlockchange', () => {
-            const isActive = document.pointerLockElement === renderer.domElement;
-            if (advancedProtocolsLoaded) {
-                params.freecam = isActive;
-                renderer.domElement.classList.toggle('freecam-active', isActive);
-                if (gui) gui.controllers.forEach(c => { if(c.property === 'freecam') c.updateDisplay(); });
-            }
-        });
-        
-        document.addEventListener('keydown', (e) => keyState[e.code] = true);
-        document.addEventListener('keyup', (e) => keyState[e.code] = false);
-
-        function onFreecamMouseMove(event) {
-            if (advancedProtocolsLoaded && params.freecam) {
-                camera.rotation.y -= event.movementX * 0.002;
-                camera.rotation.x -= event.movementY * 0.002;
-                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-            }
-        }
-
-        function updateFreecamPosition(deltaTime) {
-            const moveSpeed = params.freecamSpeed * deltaTime;
-            camera.getWorldDirection(cameraDirection);
-            if (keyState['KeyW'] || keyState['ArrowUp']) camera.position.addScaledVector(cameraDirection, moveSpeed);
-            if (keyState['KeyS'] || keyState['ArrowDown']) camera.position.addScaledVector(cameraDirection, -moveSpeed);
-            if (keyState['KeyA'] || keyState['ArrowLeft']) camera.position.addScaledVector(cameraDirection.cross(camera.up).normalize(), -moveSpeed);
-            if (keyState['KeyD'] || keyState['ArrowRight']) camera.position.addScaledVector(cameraDirection.cross(camera.up).normalize(), moveSpeed);
-            if (keyState['KeyE']) camera.position.y += moveSpeed;
-            if (keyState['KeyQ']) camera.position.y -= moveSpeed;
         }
         
         function checkPerformanceAndAdapt() {
@@ -256,33 +197,21 @@
         
         function animate() {
             requestAnimationFrame(animate);
-            const deltaTime = clock.getDelta();
             const elapsedTime = clock.getElapsedTime();
 
             const now = performance.now();
             frameTimes.push(now - lastFrameTime);
             lastFrameTime = now;
+            if (frameTimes.length > 60) frameTimes.shift();
             if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) {
                 checkPerformanceAndAdapt();
                 frameCounter = 0;
             }
+
+            camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+            camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+            camera.lookAt(0, 0, 0);
             
-            if (now - lastLogTime > 1000 && advancedProtocolsLoaded) {
-                const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-                const currentFps = (1000 / averageDelta).toFixed(1);
-                console.log(`[STATUS] FPS: ${currentFps} | Adaptation Level: ${adaptationLevel}`);
-                lastLogTime = now;
-            }
-
-            if (advancedProtocolsLoaded && params.freecam) {
-                updateFreecamPosition(deltaTime);
-            } else {
-                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-                camera.position.z = 5;
-                camera.lookAt(0, 0, 0);
-            }
-
             artifactGroup.rotation.x += rotationVelocity.x;
             artifactGroup.rotation.y += rotationVelocity.y;
             if (!isDragging) {
@@ -294,7 +223,6 @@
         }
 
         onWindowResize();
-        camera.rotation.order = 'YXZ';
         renderer.domElement.addEventListener('mousedown', onPointerDown);
         renderer.domElement.addEventListener('mousemove', onPointerMove);
         renderer.domElement.addEventListener('mouseup', onPointerUp);
@@ -302,9 +230,8 @@
         renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
         renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
         renderer.domElement.addEventListener('touchend', onPointerUp);
-        renderer.domElement.addEventListener('mousemove', onFreecamMouseMove);
         window.addEventListener('resize', onWindowResize);
         animate();
     </script>
 </body>
-</html>
+</html>```
