@@ -20,10 +20,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.8 (COLOR TEST) //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.9 (COLOR TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v7.0 (THE RED BUTTON TEST) ---
-        // --- STARTING FROM VERBATIM v5 CODE. NO OTHER FEATURES. ---
+        // --- STABLE FOUNDATION v7.1 (ROBUST TARGETING) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -42,10 +41,12 @@
             const ambientLight = new THREE.AmbientLight(0x404080, 2);
             scene.add(ambientLight);
             const pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
+            pointLight.name = "artifactLight"; // Give the light a name
 
             scene.add(artifactGroup);
             const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.1 });
             const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
+            cubeBody.name = "glowingBody"; // Give the body a name
             artifactGroup.add(cubeBody);
             const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
             artifactGroup.add(cubeWireframe);
@@ -74,15 +75,13 @@
             scene.add(cave);
         }
 
-        // --- THE SINGLE, VISIBLE CHANGE ---
         function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
 
-            // Change the color of the light and the glowing body to red.
-            const pointLight = artifactGroup.getObjectByProperty('isPointLight');
-            const bodyMesh = artifactGroup.getObjectByProperty('isMesh');
+            const pointLight = scene.getObjectByName("artifactLight");
+            const bodyMesh = scene.getObjectByName("glowingBody");
             const redColor = new THREE.Color(0xFF0000);
             
             if (pointLight) pointLight.color.set(redColor);
@@ -165,4 +164,4 @@
         animate();
     </script>
 </body>
-</html>```
+</html>
