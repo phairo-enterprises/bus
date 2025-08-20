@@ -30,7 +30,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE FaiL PROTOCOLS //</button>
+    <button id="loadButton">// ENGAGE FINAL PROTOCOLS //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
         // --- STABLE FOUNDATION v11.0 (FINAL INTEGRATION & BOOT SEQUENCE) ---
@@ -218,4 +218,100 @@
             if (advancedProtocolsLoaded && params.freecam) {
                 camera.rotation.y -= event.movementX * 0.002;
                 camera.rotation.x -= event.movementY * 0.002;
-                camera.rotation.x = Math.m
+                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+            }
+        }
+
+        function updateFreecamPosition(deltaTime) {
+            const moveSpeed = params.freecamSpeed * deltaTime;
+            camera.getWorldDirection(cameraDirection);
+            if (keyState['KeyW'] || keyState['ArrowUp']) camera.position.addScaledVector(cameraDirection, moveSpeed);
+            if (keyState['KeyS'] || keyState['ArrowDown']) camera.position.addScaledVector(cameraDirection, -moveSpeed);
+            if (keyState['KeyA'] || keyState['ArrowLeft']) camera.position.addScaledVector(cameraDirection.cross(camera.up).normalize(), -moveSpeed);
+            if (keyState['KeyD'] || keyState['ArrowRight']) camera.position.addScaledVector(cameraDirection.cross(camera.up).normalize(), moveSpeed);
+            if (keyState['KeyE']) camera.position.y += moveSpeed;
+            if (keyState['KeyQ']) camera.position.y -= moveSpeed;
+        }
+        
+        function checkPerformanceAndAdapt() {
+            if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
+            const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+            const currentFps = 1000 / averageDelta;
+            if (currentFps < FPS_TARGET) {
+                isAdapting = true;
+                warningOverlay.style.display = 'block';
+                setTimeout(() => {
+                    adaptationLevel++;
+                    onWindowResize();
+                    warningOverlay.style.display = 'none';
+                    isAdapting = false;
+                }, 2500);
+            }
+        }
+        
+        function onWindowResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            const pixelRatio = advancedProtocolsLoaded ? window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel] : window.devicePixelRatio;
+            renderer.setPixelRatio(pixelRatio);
+            camera.aspect = width / height;
+            const currentBaseFov = advancedProtocolsLoaded ? camera.fov : BASE_FOV;
+            if (camera.aspect < 1) {
+                const horizontalFovInRadians = currentBaseFov * Math.PI / 180;
+                camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
+            } else {
+                camera.fov = currentBaseFov;
+            }
+            camera.updateProjectionMatrix();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            const deltaTime = clock.getDelta();
+            const elapsedTime = clock.getElapsedTime();
+
+            if (advancedProtocolsLoaded) {
+                const now = performance.now();
+                frameTimes.push(now - lastFrameTime);
+                lastFrameTime = now;
+                if (frameTimes.length > 60) frameTimes.shift();
+                if (++frameCounter >= FPS_CHECK_INTERVAL) {
+                    checkPerformanceAndAdapt();
+                    frameCounter = 0;
+                }
+            }
+
+            if (advancedProtocolsLoaded && params.freecam) {
+                updateFreecamPosition(deltaTime);
+            } else {
+                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+                camera.position.z = 5;
+                camera.lookAt(0, 0, 0);
+            }
+
+            artifactGroup.rotation.x += rotationVelocity.x;
+            artifactGroup.rotation.y += rotationVelocity.y;
+            if (!isDragging) {
+                rotationVelocity.x *= params.damping;
+                rotationVelocity.y *= params.damping;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        onWindowResize();
+        camera.rotation.order = 'YXZ';
+        renderer.domElement.addEventListener('mousedown', onPointerDown);
+        renderer.domElement.addEventListener('mousemove', onPointerMove);
+        renderer.domElement.addEventListener('mouseup', onPointerUp);
+        renderer.domElement.addEventListener('mouseleave', onPointerUp);
+        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
+        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
+        renderer.domElement.addEventListener('touchend', onPointerUp);
+        window.addEventListener('resize', onWindowResize);
+        animate();
+    </script>
+</body>
+</html>```
