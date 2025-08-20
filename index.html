@@ -28,16 +28,21 @@
         }
         #consoleContainer {
             position: absolute; bottom: 10px; left: 10px;
-            width: 400px; max-width: 90%;
+            width: 450px; max-width: 90%;
             background-color: rgba(0, 20, 0, 0.5);
             border: 1px solid rgba(0, 255, 0, 0.3);
             box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
             font-family: monospace; font-size: 14px;
             color: lime;
             z-index: 200;
-            opacity: 0; /* Initially hidden */
-            transition: opacity 0.5s ease-in-out;
-            pointer-events: none; /* Prevent interaction */
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            pointer-events: none;
+        }
+        #consoleContainer.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
         #consoleOutput {
             padding: 10px;
@@ -46,18 +51,19 @@
         }
         #consoleOutput > div {
             margin-bottom: 5px;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.6 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.7 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
     </div>
 
     <script>
-        // --- STABLE FOUNDATION v10.6 (INCREMENTAL ADDITION: CONSOLE STATUS REPORTING) ---
+        // --- STABLE FOUNDATION v10.7 (INCREMENTAL ADDITION: CONSOLE ANIMATION) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -112,15 +118,33 @@
         const cave = new THREE.Mesh(caveGeometry, caveMaterial);
         scene.add(cave);
         
-        function logToConsole(message) {
-            const consoleDiv = document.getElementById('consoleOutput');
-            if (consoleDiv) {
-                const line = document.createElement('div');
-                line.textContent = `> ${message}`;
-                consoleDiv.appendChild(line);
-                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        // --- FEATURE UPDATE: CONSOLE QUEUEING SYSTEM ---
+        const consoleMessageQueue = [];
+        let isConsoleLogging = false;
+
+        function processConsoleQueue() {
+            if (consoleMessageQueue.length === 0) {
+                isConsoleLogging = false;
+                return;
             }
-            console.log(message);
+            isConsoleLogging = true;
+            const message = consoleMessageQueue.shift();
+            const consoleDiv = document.getElementById('consoleOutput');
+            const line = document.createElement('div');
+            line.textContent = `> ${message}`;
+            consoleDiv.appendChild(line);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            
+            const delay = message.length > 30 ? 350 : 150; // Longer delay for more important messages
+            setTimeout(processConsoleQueue, delay);
+        }
+
+        function logToConsole(message) {
+            consoleMessageQueue.push(message);
+            if (!isConsoleLogging) {
+                processConsoleQueue();
+            }
+            console.log(message); // Log immediately to browser console for debugging
         }
 
         function engageDiagnostic() {
@@ -128,10 +152,8 @@
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
             
-            const consoleContainer = document.getElementById('consoleContainer');
-            consoleContainer.style.opacity = '1';
+            document.getElementById('consoleContainer').classList.add('visible');
             
-            // --- FEATURE UPDATE: CONSOLE STATUS REPORTING ---
             logToConsole('// CONSOLE BOOT SEQUENCE INITIATED //');
             
             advancedProtocolsLoaded = true;
@@ -155,7 +177,6 @@
             uiGroup.add(dampingSliderTrack);
             const dampingSliderHandle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xAAAAAA }));
             dampingSliderHandle.position.y = -3.0;
-            dampingSliderHandle.position.x = 0;
             dampingSliderHandle.name = "dampingSlider";
             uiGroup.add(dampingSliderHandle);
 
@@ -164,7 +185,6 @@
             uiGroup.add(intensitySliderTrack);
             const intensitySliderHandle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xAAAAAA }));
             intensitySliderHandle.position.y = -3.5;
-            intensitySliderHandle.position.x = 0;
             intensitySliderHandle.name = "intensitySlider";
             uiGroup.add(intensitySliderHandle);
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
@@ -196,7 +216,6 @@
             if (currentFps < FPS_TARGET) {
                 isAdapting = true;
                 warningOverlay.style.display = 'block';
-                // --- CONSOLE INTEGRATION ---
                 logToConsole(`// PROTOCOL UNSTABLE // FPS: ${currentFps.toFixed(1)} // ADAPTING...`);
                 setTimeout(() => {
                     adaptationLevel++;
@@ -230,7 +249,6 @@
         function onPointerMove(event) {
             if(event.touches && event.touches.length > 1) return;
             event.preventDefault();
-
             const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : previousPointerPosition.x);
             const clientY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : previousPointerPosition.y);
             
