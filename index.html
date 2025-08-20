@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.41 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.42 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -78,17 +78,28 @@
 
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
+        const bodyMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00FFFF, 
+            transparent: true, 
+            opacity: 0.1,
+            depthWrite: false
+        });
+        const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
+        artifactGroup.add(cubeBody);
+        const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
+        artifactGroup.add(cubeWireframe);
 
+        const params = { damping: 0.95 };
         const uiGroup = new THREE.Group();
-        camera.add(uiGroup);
         const freecamUiGroup = new THREE.Group();
+        camera.add(uiGroup);
         camera.add(freecamUiGroup);
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
         let FREECAM_SPEED = 5.0;
         let SENSITIVITY_LOOK = 0.002;
-        let bodyMaterial, cubeWireframe;
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -143,17 +154,17 @@
         }
 
         function createButton(name, labelText, position, size, targetGroup) {
-            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555 }));
+            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 }));
             button.position.set(position.x, position.y, 0);
             button.name = name;
             targetGroup.add(button);
 
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            const font = '32px monospace';
+            const font = '48px monospace';
             context.font = font;
             canvas.width = 128;
-            canvas.height = 64; 
+            canvas.height = 128; 
             context.font = font;
             context.fillStyle = 'rgba(200, 200, 200, 1)';
             context.textAlign = 'center';
@@ -203,33 +214,32 @@
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
             
             freecamUiGroup.visible = false;
-            
-            bodyMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0xFF0000, 
-                transparent: true, 
-                opacity: 0.1,
-                depthWrite: false
-            });
-            const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
-            artifactGroup.add(cubeBody);
-            cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
-            artifactGroup.add(cubeWireframe);
+            bodyMaterial.color.set(0xFF0000);
 
             let yPos = 1.6;
             const yStep = 0.5;
             createControlRow('scale', 'SCALE', yPos, uiGroup); yPos -= yStep;
             createControlRow('damping', 'DAMPING', yPos, uiGroup); yPos -= yStep;
             createControlRow('intensity', 'INTENSITY', yPos, uiGroup); yPos -= yStep;
-            createControlRow('opacity', 'OPACITY', yPos, uiGroup); yPos -= yStep;
-            createControlRow('red', 'RED', yPos, uiGroup); yPos -= yStep;
-            createControlRow('green', 'GREEN', yPos, uiGroup); yPos -= yStep;
-            createControlRow('blue', 'BLUE', yPos, uiGroup);
+            createControlRow('opacity', 'OPACITY', yPos, uiGroup);
 
             yPos = 1.3;
             createControlRow('fov', 'FOV', yPos, freecamUiGroup); yPos -= yStep;
             createControlRow('speed', 'SPEED', yPos, freecamUiGroup); yPos -= yStep;
             createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamUiGroup); yPos -= yStep;
             createControlRow('roll', 'ROLL', yPos, freecamUiGroup);
+
+            if (isTouchDevice) {
+                const btnSize = new THREE.Vector2(0.8, 0.8);
+                const dpadX = 0;
+                const dpadY = -1.2;
+                createButton('touch_fwd', '↑', new THREE.Vector2(dpadX, dpadY + 0.9), btnSize, freecamUiGroup);
+                createButton('touch_back', '↓', new THREE.Vector2(dpadX, dpadY - 0.9), btnSize, freecamUiGroup);
+                createButton('touch_left', '←', new THREE.Vector2(dpadX - 0.9, dpadY), btnSize, freecamUiGroup);
+                createButton('touch_right', '→', new THREE.Vector2(dpadX + 0.9, dpadY), btnSize, freecamUiGroup);
+                createButton('touch_up', '↑', new THREE.Vector2(0, dpadY), btnSize, freecamUiGroup);
+                createButton('touch_down', '↓', new THREE.Vector2(0, dpadY - 0.9), btnSize, freecamUiGroup);
+            }
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -239,12 +249,13 @@
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
         let isDragging = false;
-        let pressedButton = null;
-        let params = { damping: 0.95 };
+        let pressedButtons = {};
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
         const freecamState = { forward: 0, right: 0, up: 0 };
+        const touchState = { forward: 0, right: 0, up: 0 };
+        const lookTouch = { id: -1, lastX: 0, lastY: 0 };
         
         const frameTimes = [];
         const FPS_CHECK_INTERVAL = 120;
@@ -297,21 +308,6 @@
                     cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
                     logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`;
                     break;
-                case 'red':
-                    pointLight.color.r = Math.max(0, Math.min(1, pointLight.color.r + step * 0.1));
-                    bodyMaterial.color.r = pointLight.color.r;
-                    logMessage = `// ${label} SET TO ${pointLight.color.r.toFixed(2)} //`;
-                    break;
-                case 'green':
-                    pointLight.color.g = Math.max(0, Math.min(1, pointLight.color.g + step * 0.1));
-                    bodyMaterial.color.g = pointLight.color.g;
-                    logMessage = `// ${label} SET TO ${pointLight.color.g.toFixed(2)} //`;
-                    break;
-                case 'blue':
-                    pointLight.color.b = Math.max(0, Math.min(1, pointLight.color.b + step * 0.1));
-                    bodyMaterial.color.b = pointLight.color.b;
-                    logMessage = `// ${label} SET TO ${pointLight.color.b.toFixed(2)} //`;
-                    break;
                 case 'fov':
                     camera.fov = Math.max(30, Math.min(120, camera.fov + step * 5));
                     camera.updateProjectionMatrix();
@@ -334,11 +330,15 @@
         }
 
         function onPointerDown(event) {
-            const clientX = event.clientX || event.touches[0].clientX;
-            const clientY = event.clientY || event.touches[0].clientY;
+            const clientX = event.clientX;
+            const clientY = event.clientY;
+            
+            if (cameraMode === 'free' && document.pointerLockElement !== renderer.domElement) {
+                renderer.domElement.requestPointerLock();
+            }
+            
             pointer.x = (clientX / window.innerWidth) * 2 - 1;
             pointer.y = - (clientY / window.innerHeight) * 2 + 1;
-            
             raycaster.setFromCamera(pointer, camera);
             const activeUiGroup = cameraMode === 'bob' ? uiGroup : freecamUiGroup;
             const intersects = raycaster.intersectObjects(activeUiGroup.children, true);
@@ -349,16 +349,14 @@
                     const [param, action] = button.name.split('_');
                     if (param && action) {
                         updateAndLogParameter(param, action);
-                        pressedButton = button;
+                        pressedButtons[0] = button;
                         button.scale.set(0.9, 0.9, 0.9);
                     }
                 }
                 return;
             }
 
-            if (cameraMode === 'free' && document.pointerLockElement !== renderer.domElement) {
-                renderer.domElement.requestPointerLock();
-            } else if (cameraMode === 'bob') {
+            if (cameraMode === 'bob') {
                 isDragging = true;
                 renderer.domElement.classList.add('grabbing');
                 previousPointerPosition.x = clientX;
@@ -369,8 +367,8 @@
         function onPointerMove(event) {
             if (isDragging && cameraMode === 'bob') {
                 event.preventDefault();
-                const clientX = event.clientX || (event.touches?.[0] ? event.touches[0].clientX : previousPointerPosition.x);
-                const clientY = event.clientY || (event.touches?.[0] ? event.touches[0].clientY : previousPointerPosition.y);
+                const clientX = event.clientX;
+                const clientY = event.clientY;
                 const deltaX = clientX - previousPointerPosition.x;
                 const deltaY = clientY - previousPointerPosition.y;
                 rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
@@ -381,9 +379,9 @@
         }
 
         function onPointerUp() { 
-            if (pressedButton) {
-                pressedButton.scale.set(1, 1, 1);
-                pressedButton = null;
+            if (pressedButtons[0]) {
+                pressedButtons[0].scale.set(1, 1, 1);
+                delete pressedButtons[0];
             }
             isDragging = false; 
             renderer.domElement.classList.remove('grabbing');
@@ -438,11 +436,26 @@
         }
         
         function updateUiPositions() {
-            const zPos = -3.5;
+            const zPos = -4;
             const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
             const w = h * camera.aspect;
+            
             uiGroup.position.set(-w + 2.5, 0, zPos);
             freecamUiGroup.position.set(w - 2.5, 0, zPos);
+            
+            if (isTouchDevice) {
+                const dpad = freecamUiGroup.children.filter(c => c.name.startsWith('touch_'));
+                const dpadX = -w + 1.2;
+                const dpadY = -h + 1.2;
+                dpad.find(b => b.name === 'touch_fwd').position.set(dpadX, dpadY + 0.9, 0);
+                dpad.find(b => b.name === 'touch_back').position.set(dpadX, dpadY - 0.9, 0);
+                dpad.find(b => b.name === 'touch_left').position.set(dpadX - 0.9, dpadY, 0);
+                dpad.find(b => b.name === 'touch_right').position.set(dpadX + 0.9, dpadY, 0);
+                
+                const upDownX = w - 1.2;
+                dpad.find(b => b.name === 'touch_up').position.set(upDownX, dpadY + 0.9, 0);
+                dpad.find(b => b.name === 'touch_down').position.set(upDownX, dpadY - 0.9, 0);
+            }
         }
 
         function onWindowResize() {
@@ -460,6 +473,59 @@
             }
             camera.updateProjectionMatrix();
             updateUiPositions();
+        }
+
+        function onTouchStart(event) {
+            event.preventDefault();
+            for (const touch of event.changedTouches) {
+                pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(pointer, camera);
+                const intersects = raycaster.intersectObjects(freecamUiGroup.children, true);
+
+                if (intersects.length > 0 && intersects[0].object.parent.name.startsWith('touch_')) {
+                    const button = intersects[0].object.parent;
+                    const [_, direction] = button.name.split('_');
+                    touchState[direction] = (direction === 'back' || direction === 'left' || direction === 'down') ? -1 : 1;
+                    pressedButtons[touch.identifier] = button;
+                    button.scale.set(0.9, 0.9, 0.9);
+                } else if (lookTouch.id === -1) {
+                    lookTouch.id = touch.identifier;
+                    lookTouch.lastX = touch.clientX;
+                    lookTouch.lastY = touch.clientY;
+                }
+            }
+        }
+
+        function onTouchMove(event) {
+            event.preventDefault();
+            for (const touch of event.changedTouches) {
+                if (touch.identifier === lookTouch.id) {
+                    const deltaX = touch.clientX - lookTouch.lastX;
+                    const deltaY = touch.clientY - lookTouch.lastY;
+                    camera.rotation.y -= deltaX * SENSITIVITY_LOOK * 2;
+                    camera.rotation.x -= deltaY * SENSITIVITY_LOOK * 2;
+                    camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+                    lookTouch.lastX = touch.clientX;
+                    lookTouch.lastY = touch.clientY;
+                }
+            }
+        }
+
+        function onTouchEnd(event) {
+            event.preventDefault();
+            for (const touch of event.changedTouches) {
+                if (pressedButtons[touch.identifier]) {
+                    const button = pressedButtons[touch.identifier];
+                    const [_, direction] = button.name.split('_');
+                    touchState[direction] = 0;
+                    button.scale.set(1, 1, 1);
+                    delete pressedButtons[touch.identifier];
+                }
+                if (touch.identifier === lookTouch.id) {
+                    lookTouch.id = -1;
+                }
+            }
         }
         
         function animate() {
@@ -481,30 +547,38 @@
                 rotationVelocity.x *= params.damping;
                 rotationVelocity.y *= params.damping;
             } else if (cameraMode === 'free') {
-                const moveDirection = new THREE.Vector3(freecamState.right, 0, -freecamState.forward);
+                const totalForward = freecamState.forward + touchState.forward;
+                const totalRight = freecamState.right + touchState.right;
+                const totalUp = freecamState.up + touchState.up;
+
+                const moveDirection = new THREE.Vector3(totalRight, 0, -totalForward);
                 moveDirection.normalize();
                 moveDirection.applyQuaternion(camera.quaternion);
                 camera.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
-                camera.position.y += freecamState.up * FREECAM_SPEED * delta;
+                camera.position.y += totalUp * FREECAM_SPEED * delta;
             }
             
             renderer.render(scene, camera);
         }
 
         onWindowResize();
-        renderer.domElement.addEventListener('mousedown', onPointerDown);
-        renderer.domElement.addEventListener('mousemove', onPointerMove);
-        renderer.domElement.addEventListener('mouseup', onPointerUp);
-        renderer.domElement.addEventListener('mouseleave', onPointerUp);
-        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
-        renderer.domElement.addEventListener('touchend', onPointerUp);
+        if (isTouchDevice) {
+            renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+            renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+            renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
+            renderer.domElement.addEventListener('touchcancel', onTouchEnd, { passive: false });
+        } else {
+            renderer.domElement.addEventListener('mousedown', onPointerDown);
+            renderer.domElement.addEventListener('mousemove', onPointerMove);
+            renderer.domElement.addEventListener('mouseup', onPointerUp);
+            renderer.domElement.addEventListener('mouseleave', onPointerUp);
+            document.addEventListener('pointerlockchange', onPointerLockChange);
+        }
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('keypress', onKeyPress);
         window.addEventListener('keydown', (e) => onKey(e, true));
         window.addEventListener('keyup', (e) => onKey(e, false));
-        document.addEventListener('pointerlockchange', onPointerLockChange);
         animate();
     </script>
 </body>
-</html>
+</html>```
