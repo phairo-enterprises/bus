@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.27 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.28 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -204,8 +204,6 @@
             const initialSensitivityValue = (SENSITIVITY_LOOK - 0.0005) / (0.005 - 0.0005);
             createSliderWithLabel("sensitivitySlider", "SENSITIVITY", -3.5, initialSensitivityValue, freecamUiGroup);
             createSliderWithLabel("rollSlider", "ROLL", -4.0, 0.5, freecamUiGroup);
-            createSliderWithLabel("pitchSlider", "PITCH", -4.5, 0.5, freecamUiGroup);
-            createSliderWithLabel("yawSlider", "YAW", -5.0, 0.5, freecamUiGroup);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -317,12 +315,6 @@
                             break;
                         case "rollSlider":
                             camera.rotation.z = (value - 0.5) * (Math.PI / 2);
-                            break;
-                        case "pitchSlider":
-                            camera.rotation.x = (value - 0.5) * -Math.PI;
-                            break;
-                        case "yawSlider":
-                            camera.rotation.y = (value - 0.5) * -Math.PI;
                             break;
                     }
                 }
