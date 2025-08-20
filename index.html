@@ -29,7 +29,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.4 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.x //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
         // --- STABLE FOUNDATION v10.4 (INCREMENTAL ADDITION: INTENSITY SLIDER) ---
@@ -120,7 +120,7 @@
             uiGroup.add(intensitySliderTrack);
             const intensitySliderHandle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xAAAAAA }));
             intensitySliderHandle.position.y = -3.5;
-            intensitySliderHandle.position.x = 0;
+            intensitySliderHandle.position.x = 0; // Default center position
             intensitySliderHandle.name = "intensitySlider";
             uiGroup.add(intensitySliderHandle);
         }
@@ -203,7 +203,6 @@
                 } else if (selectedObject.name === "dampingSlider") {
                     params.damping = 0.9 + ((newX + 1.5) / 3) * (0.995 - 0.9);
                 } else if (selectedObject.name === "intensitySlider") {
-                    // Map position to light intensity (0 to 4.0)
                     pointLight.intensity = ((newX + 1.5) / 3) * 4.0;
                 }
             } else if (isDragging) {
@@ -245,7 +244,7 @@
             frameTimes.push(now - lastFrameTime);
             lastFrameTime = now;
             if (frameTimes.length > 60) frameTimes.shift();
-            if (++frameCounter >= FPS_CHECK_INTERVAL) {
+            if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) {
                 checkPerformanceAndAdapt();
                 frameCounter = 0;
             }
