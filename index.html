@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.15 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.16 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -77,12 +77,10 @@
 
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
-        const bodyMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xFFFFFF, 
+        const bodyMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00FFFF, 
             transparent: true, 
-            opacity: 0.1,
-            metalness: 0.9,
-            roughness: 0.1
+            opacity: 0.1
         });
         const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
         artifactGroup.add(cubeBody);
@@ -167,6 +165,7 @@
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
             scene.add(uiGroup);
+            bodyMaterial.color.set(0xFF0000);
             
             createSlider("scaleSlider", -2.0, 0.5);
             createSlider("dampingSlider", -2.5, 0.84);
@@ -274,10 +273,10 @@
                             cubeWireframe.material.opacity = value * 0.5 + 0.1;
                             break;
                         case "metalnessSlider":
-                            bodyMaterial.metalness = value;
+                            // bodyMaterial.metalness = value; // No effect on MeshBasicMaterial
                             break;
                         case "roughnessSlider":
-                            bodyMaterial.roughness = value;
+                            // bodyMaterial.roughness = value; // No effect on MeshBasicMaterial
                             break;
                     }
                 }
