@@ -21,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.1 (SCALE TEST) //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.1 (UI INIT TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v7.3 (INCREMENTAL ADDITION: SCALE SLIDER) ---
+        // --- STABLE FOUNDATION v7.3 (VERBATIM BASELINE + UI INIT) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -76,21 +76,21 @@
             scene.add(cave);
         }
 
-        function engageProtocols() {
+        function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
 
-            Object.assign(params, {
-                scale: 1.0
-            });
+            // --- STEP 1: VERBATIM CODE FROM v1.0 ---
+            const redColor = new THREE.Color(0xFF0000);
+            if (pointLight) pointLight.color.set(redColor);
+            if (bodyMaterial) bodyMaterial.color.set(redColor);
 
+            // --- STEP 2: THE SINGLE, TINY ADDITION ---
+            // Initialize the UI panel. It will be empty.
             gui = new lil.GUI();
-            gui.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
-                artifactGroup.scale.set(v, v, v);
-            });
         }
-        document.getElementById('loadButton').addEventListener('click', engageProtocols);
+        document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
