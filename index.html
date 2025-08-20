@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.14 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.15 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -73,6 +73,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
         camera.position.z = 5;
+        camera.rotation.order = 'YXZ';
 
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
@@ -91,6 +92,7 @@
         const params = { damping: 0.95 };
         const uiGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
+        let cameraMode = 'bob';
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -174,6 +176,7 @@
             createSlider("roughnessSlider", -4.5, 0.1);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
+            setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
         }
         document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
@@ -183,7 +186,10 @@
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
-        const SENSITIVITY = 0.004;
+        const SENSITIVITY_DRAG = 0.004;
+        const SENSITIVITY_LOOK = 0.002;
+        const FREECAM_SPEED = 5.0;
+        const freecamState = { forward: 0, right: 0, up: 0 };
         
         const frameTimes = [];
         const FPS_CHECK_INTERVAL = 120;
@@ -213,6 +219,10 @@
         }
 
         function onPointerDown(event) {
+            if (cameraMode === 'free') {
+                renderer.domElement.requestPointerLock();
+                return;
+            }
             const clientX = event.clientX || event.touches[0].clientX;
             const clientY = event.clientY || event.touches[0].clientY;
             pointer.x = (clientX / window.innerWidth) * 2 - 1;
@@ -231,6 +241,7 @@
         }
 
         function onPointerMove(event) {
+            if (cameraMode === 'free') return;
             if(event.touches && event.touches.length > 1) return;
             event.preventDefault();
             const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : previousPointerPosition.x);
@@ -250,8 +261,7 @@
 
                     switch (selectedObject.name) {
                         case "scaleSlider":
-                            const scaleValue = 0.2 + value * 2.3;
-                            artifactGroup.scale.setScalar(scaleValue);
+                            artifactGroup.scale.setScalar(0.2 + value * 2.3);
                             break;
                         case "dampingSlider":
                             params.damping = 0.8 + value * 0.195;
@@ -274,8 +284,8 @@
             } else if (isDragging) {
                 const deltaX = clientX - previousPointerPosition.x;
                 const deltaY = clientY - previousPointerPosition.y;
-                rotationVelocity.y += deltaX * SENSITIVITY;
-                rotationVelocity.x += deltaY * SENSITIVITY;
+                rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
+                rotationVelocity.x += deltaY * SENSITIVITY_DRAG;
                 previousPointerPosition.x = clientX;
                 previousPointerPosition.y = clientY;
             }
@@ -285,6 +295,50 @@
             isDragging = false; 
             selectedObject = null;
             renderer.domElement.classList.remove('grabbing');
+        }
+
+        function onPointerLockChange() {
+            if (document.pointerLockElement === renderer.domElement) {
+                document.addEventListener('mousemove', onPointerLockMove);
+            } else {
+                document.removeEventListener('mousemove', onPointerLockMove);
+                if (cameraMode === 'free') logToConsole('MOUSE LOOK DISENGAGED (ESC PRESSED)');
+            }
+        }
+
+        function onPointerLockMove(event) {
+            if (cameraMode !== 'free') return;
+            camera.rotation.y -= event.movementX * SENSITIVITY_LOOK;
+            camera.rotation.x -= event.movementY * SENSITIVITY_LOOK;
+            camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+        }
+
+        function onKeyPress(event) {
+            if (event.key.toLowerCase() === 'c' && advancedProtocolsLoaded) {
+                if (cameraMode === 'bob') {
+                    cameraMode = 'free';
+                    logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE LOOK)');
+                    uiGroup.visible = false;
+                } else {
+                    cameraMode = 'bob';
+                    logToConsole('CAMERA MODE: BOB ENGAGED');
+                    document.exitPointerLock();
+                    uiGroup.visible = true;
+                }
+            }
+        }
+
+        function onKey(event, isDown) {
+            if (cameraMode !== 'free') return;
+            const value = isDown ? 1 : 0;
+            switch(event.key.toLowerCase()) {
+                case 'w': freecamState.forward = value; break;
+                case 's': freecamState.forward = -value; break;
+                case 'a': freecamState.right = -value; break;
+                case 'd': freecamState.right = value; break;
+                case 'q': freecamState.up = -value; break;
+                case 'e': freecamState.up = value; break;
+            }
         }
         
         function onWindowResize() {
@@ -304,20 +358,28 @@
         
         function animate() {
             requestAnimationFrame(animate);
+            const delta = clock.getDelta();
             const elapsedTime = clock.getElapsedTime();
-            frameTimes.push(clock.getDelta() * 1000);
+            frameTimes.push(delta * 1000);
             if (frameTimes.length > 60) frameTimes.shift();
             if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) checkPerformanceAndAdapt();
 
-            camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-            camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-            camera.lookAt(0, 0, 0);
-            
-            artifactGroup.rotation.x += rotationVelocity.x;
-            artifactGroup.rotation.y += rotationVelocity.y;
-            
-            rotationVelocity.x *= params.damping;
-            rotationVelocity.y *= params.damping;
+            if (cameraMode === 'bob') {
+                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+                camera.lookAt(0, 0, 0);
+                
+                artifactGroup.rotation.x += rotationVelocity.x;
+                artifactGroup.rotation.y += rotationVelocity.y;
+                rotationVelocity.x *= params.damping;
+                rotationVelocity.y *= params.damping;
+            } else if (cameraMode === 'free') {
+                const moveDirection = new THREE.Vector3(freecamState.right, 0, -freecamState.forward);
+                moveDirection.normalize();
+                moveDirection.applyQuaternion(camera.quaternion);
+                camera.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
+                camera.position.y += freecamState.up * FREECAM_SPEED * delta;
+            }
             
             renderer.render(scene, camera);
         }
@@ -331,6 +393,10 @@
         renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
         renderer.domElement.addEventListener('touchend', onPointerUp);
         window.addEventListener('resize', onWindowResize);
+        window.addEventListener('keypress', onKeyPress);
+        window.addEventListener('keydown', (e) => onKey(e, true));
+        window.addEventListener('keyup', (e) => onKey(e, false));
+        document.addEventListener('pointerlockchange', onPointerLockChange);
         animate();
     </script>
 </body>
