@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <title>backupstrats.com</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <!-- Load BOTH libraries statically and reliably from the start. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lil-gui/0.17.0/lil-gui.umd.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #000000; }
         canvas { display: block; touch-action: none; cursor: grab; }
         canvas.grabbing { cursor: grabbing; }
-        canvas.freecam-active { cursor: crosshair; }
         #loadButton {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -19,21 +19,13 @@
             cursor: pointer; z-index: 100; transition: opacity 0.5s;
         }
         #loadButton:hover { background-color: rgba(255, 255, 255, 0.1); }
-        #warningOverlay {
-            display: none; position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; background-color: rgba(255, 0, 0, 0.1);
-            color: rgba(255, 100, 100, 0.5); font-family: monospace; font-size: 6vw;
-            text-align: center; padding-top: 40vh; box-sizing: border-box;
-            transform: rotate(-15deg) scale(1.5); text-shadow: 0 0 5px #FF0000;
-            z-index: 10;
-        }
     </style>
 </head>
 <body>
     <button id="loadButton">// ENGAGE ADVANCED PROTOCOLS //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v5.0 (PHASE 1: UI TEST) ---
+        // --- STABLE FOUNDATION v5.1 (DEPENDENCY CORRECTED) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -42,7 +34,7 @@
         const clock = new THREE.Clock();
         const artifactGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
-        let params = { damping: 0.95 }; // Base controls start here.
+        let params = { damping: 0.95 };
 
         function initBaseModule() {
             renderer.setPixelRatio(window.devicePixelRatio);
@@ -62,7 +54,6 @@
             artifactGroup.add(cubeWireframe);
             artifactGroup.add(pointLight);
             
-            // Cave geometry is included for correct scene rendering
             const caveGeometry = new THREE.BufferGeometry();
             const caveVertices = [], radius = 20, depth = 50, segments = 12;
             for (let i = 0; i < segments; i++) {
@@ -86,7 +77,6 @@
             scene.add(cave);
         }
 
-        // --- ADVANCED MODULE INITIALIZATION (GUI ONLY) ---
         function initAdvancedModule() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
@@ -94,7 +84,7 @@
             advancedProtocolsLoaded = true;
             
             Object.assign(params, {
-                scale: 1.0, lightIntensity: 1.5, color: '#00ffff', freecam: false, freecamSpeed: 5.0,
+                scale: 1.0, lightIntensity: 1.5, color: '#00ffff'
             });
             const gui = new lil.GUI();
             const artifactFolder = gui.addFolder('Artifact Controls');
@@ -108,7 +98,6 @@
         }
         document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
 
-        // --- CORE INTERACTIVITY & ANIMATION LOOP ---
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0, y: 0 };
@@ -154,17 +143,14 @@
             requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
 
-            // Cinematic camera bob
             camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
             camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
             camera.position.z = 5;
             camera.lookAt(0, 0, 0);
 
-            // Artifact Rotation
             artifactGroup.rotation.x += rotationVelocity.x;
             artifactGroup.rotation.y += rotationVelocity.y;
             
-            // Damping (now controlled by params if advanced module is loaded)
             if (!isDragging) {
                 rotationVelocity.x *= params.damping;
                 rotationVelocity.y *= params.damping;
@@ -173,7 +159,6 @@
             renderer.render(scene, camera);
         }
 
-        // --- IGNITION ---
         initBaseModule();
         onWindowResize();
         renderer.domElement.addEventListener('mousedown', onPointerDown);
