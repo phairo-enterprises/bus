@@ -21,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.0 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.1 //</button>
     <script>
-        // --- STABLE FOUNDATION v10.0 (THE AIRLOCK INPUT PROTOCOL) ---
+        // --- STABLE FOUNDATION v10.1 (INCREMENTAL ADDITION: CAVE ENVIRONMENT) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -48,6 +48,38 @@
         const uiGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
 
+        // --- SINGLE FEATURE ADDITION: CAVE & LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0x404080, 2);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
+        artifactGroup.add(pointLight);
+
+        const caveGeometry = new THREE.BufferGeometry();
+        const caveVertices = [];
+        const radius = 20, depth = 50, segments = 12;
+        for (let i = 0; i < segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), -depth/2 + (Math.random()-0.5)*5);
+            caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), depth/2 + (Math.random()-0.5)*5);
+        }
+        caveVertices.push(0, 0, depth / 2);
+        const backCenterIndex = caveVertices.length / 3 - 1;
+        const caveIndices = [];
+        for (let i = 0; i < segments; i++) {
+            const current = i * 2;
+            const next = ((i + 1) % segments) * 2;
+            caveIndices.push(current, current + 1, next);
+            caveIndices.push(next, current + 1, next + 1);
+            caveIndices.push(next + 1, current + 1, backCenterIndex);
+        }
+        caveGeometry.setIndex(caveIndices);
+        caveGeometry.setAttribute('position', new THREE.Float32BufferAttribute(caveVertices, 3));
+        caveGeometry.computeVertexNormals();
+        const caveMaterial = new THREE.MeshStandardMaterial({ color: 0x223366, flatShading: true, side: THREE.BackSide });
+        const cave = new THREE.Mesh(caveGeometry, caveMaterial);
+        scene.add(cave);
+
+
         function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
@@ -55,6 +87,7 @@
             advancedProtocolsLoaded = true;
 
             bodyMaterial.color.set(0xFF0000);
+            pointLight.color.set(0xFF0000);
 
             scene.add(uiGroup);
             const scaleSliderTrack = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0x333333 }));
