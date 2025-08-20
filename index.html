@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.32 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.33 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -74,6 +74,7 @@
         document.body.appendChild(renderer.domElement);
         camera.position.z = 5;
         camera.rotation.order = 'YXZ';
+        scene.add(camera);
 
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
@@ -91,6 +92,9 @@
         const params = { damping: 0.95 };
         const uiGroup = new THREE.Group();
         const freecamUiGroup = new THREE.Group();
+        camera.add(uiGroup);
+        camera.add(freecamUiGroup);
+
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
         let FREECAM_SPEED = 5.0;
@@ -148,39 +152,29 @@
             console.log(message);
         }
 
-        function createControlSet(name, labelText, position, initialValue, targetGroup) {
-            const track = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0x333333 }));
-            track.position.set(position.x, position.y, 0);
-            targetGroup.add(track);
-
-            const handle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.2), new THREE.MeshBasicMaterial({ color: 0xAAAAAA }));
-            handle.position.set(position.x - 1.25 + initialValue * 2.5, position.y, 0);
-            handle.name = name;
-            targetGroup.add(handle);
-
-            const resetButton = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.1), new THREE.MeshBasicMaterial({ color: 0x882222 }));
-            resetButton.position.set(position.x + 1.5, position.y, 0);
-            resetButton.name = `reset_${name}`;
-            resetButton.userData = { targetSlider: handle, defaultValue: initialValue, sliderName: name };
-            targetGroup.add(resetButton);
+        function createButton(name, labelText, position, size, targetGroup) {
+            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555 }));
+            button.position.set(position.x, position.y, 0);
+            button.name = name;
+            targetGroup.add(button);
 
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             const font = '32px monospace';
             context.font = font;
-            canvas.width = 200;
-            canvas.height = 40; 
+            canvas.width = 128;
+            canvas.height = 64; 
             context.font = font;
-            context.fillStyle = 'rgba(200, 200, 200, 0.7)';
-            context.textAlign = 'left';
+            context.fillStyle = 'rgba(200, 200, 200, 1)';
+            context.textAlign = 'center';
             context.textBaseline = 'middle';
-            context.fillText(labelText, 5, canvas.height / 2);
+            context.fillText(labelText, canvas.width / 2, canvas.height / 2);
             const texture = new THREE.CanvasTexture(canvas);
             const labelMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-            const labelGeometry = new THREE.PlaneGeometry(canvas.width / 100, canvas.height / 100);
+            const labelGeometry = new THREE.PlaneGeometry(size.x * 0.9, size.y * 0.9);
             const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
-            labelMesh.position.set(position.x - 2.5, position.y, 0);
-            targetGroup.add(labelMesh);
+            labelMesh.position.z = 0.06;
+            button.add(labelMesh);
         }
 
         function engageDiagnostic() {
@@ -192,23 +186,17 @@
             advancedProtocolsLoaded = true;
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
-            scene.add(uiGroup);
-            scene.add(freecamUiGroup);
+            
             freecamUiGroup.visible = false;
             bodyMaterial.color.set(0xFF0000);
 
-            createControlSet("scaleSlider", "SCALE", new THREE.Vector2(-3.5, -2.0), 0.5, uiGroup);
-            createControlSet("dampingSlider", "DAMPING", new THREE.Vector2(-3.5, -2.7), 0.84, uiGroup);
-            createControlSet("intensitySlider", "INTENSITY", new THREE.Vector2(-3.5, -3.4), 0.375, uiGroup);
-            createControlSet("opacitySlider", "OPACITY", new THREE.Vector2(-3.5, -4.1), 0.1, uiGroup);
-
-            const initialFovValue = (BASE_FOV - 30) / (120 - 30);
-            createControlSet("fovSlider", "FOV", new THREE.Vector2(3.5, -2.0), initialFovValue, freecamUiGroup);
-            const initialSpeedValue = (FREECAM_SPEED - 1) / (20 - 1);
-            createControlSet("speedSlider", "SPEED", new THREE.Vector2(3.5, -2.7), initialSpeedValue, freecamUiGroup);
-            const initialSensitivityValue = (SENSITIVITY_LOOK - 0.0005) / (0.005 - 0.0005);
-            createControlSet("sensitivitySlider", "SENSITIVITY", new THREE.Vector2(3.5, -3.4), initialSensitivityValue, freecamUiGroup);
-            createControlSet("rollSlider", "ROLL", new THREE.Vector2(3.5, -4.1), 0.5, freecamUiGroup);
+            let yPos = 1.2;
+            createButton('scale_inc', '+', new THREE.Vector2(0, yPos), new THREE.Vector2(0.3, 0.3), uiGroup);
+            createButton('scale_dec', '-', new THREE.Vector2(0.5, yPos), new THREE.Vector2(0.3, 0.3), uiGroup);
+            
+            yPos -= 0.5;
+            createButton('damping_inc', '+', new THREE.Vector2(0, yPos), new THREE.Vector2(0.3, 0.3), uiGroup);
+            createButton('damping_dec', '-', new THREE.Vector2(0.5, yPos), new THREE.Vector2(0.3, 0.3), uiGroup);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -217,9 +205,7 @@
 
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
-        let selectedObject = null;
         let isDragging = false;
-        let lastSliderLog = null;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
@@ -251,75 +237,36 @@
                 }, 2500);
             }
         }
-
-        function updateSystemParameter(sliderName, value) {
-            let logMessage = "";
-            const label = sliderName.replace('Slider', '').toUpperCase();
-            switch (sliderName) {
-                case "scaleSlider":
-                    const scaleValue = 0.2 + value * 2.3;
-                    artifactGroup.scale.setScalar(scaleValue);
-                    logMessage = `// ${label} SET TO ${scaleValue.toFixed(2)} //`;
-                    break;
-                case "dampingSlider":
-                    params.damping = 0.8 + value * 0.195;
-                    logMessage = `// ${label} SET TO ${params.damping.toFixed(3)} //`;
-                    break;
-                case "intensitySlider":
-                    pointLight.intensity = value * 4.0;
-                    logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`;
-                    break;
-                case "opacitySlider":
-                    bodyMaterial.opacity = value;
-                    cubeWireframe.material.opacity = value * 0.5 + 0.1;
-                    logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`;
-                    break;
-                case "fovSlider":
-                    camera.fov = 30 + value * (120 - 30);
-                    camera.updateProjectionMatrix();
-                    logMessage = `// ${label} SET TO ${camera.fov.toFixed(1)} //`;
-                    break;
-                case "speedSlider":
-                    FREECAM_SPEED = 1.0 + value * 19.0;
-                    logMessage = `// ${label} SET TO ${FREECAM_SPEED.toFixed(2)} //`;
-                    break;
-                case "sensitivitySlider":
-                    SENSITIVITY_LOOK = 0.0005 + value * (0.005 - 0.0005);
-                    logMessage = `// ${label} SET TO ${SENSITIVITY_LOOK.toFixed(4)} //`;
-                    break;
-                case "rollSlider":
-                    camera.rotation.z = (value - 0.5) * (Math.PI / 2);
-                    logMessage = `// ${label} SET TO ${(value * 100 - 50).toFixed(0)}% //`;
-                    break;
-            }
-            return logMessage;
-        }
-
+        
         function onPointerDown(event) {
-            if (cameraMode === 'free' && document.pointerLockElement !== renderer.domElement) {
-                renderer.domElement.requestPointerLock();
-            }
             const clientX = event.clientX || event.touches[0].clientX;
             const clientY = event.clientY || event.touches[0].clientY;
             pointer.x = (clientX / window.innerWidth) * 2 - 1;
             pointer.y = - (clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(pointer, camera);
             
+            raycaster.setFromCamera(pointer, camera);
             const activeUiGroup = cameraMode === 'bob' ? uiGroup : freecamUiGroup;
             const intersects = raycaster.intersectObjects(activeUiGroup.children);
-            
+
             if (advancedProtocolsLoaded && intersects.length > 0) {
-                const clickedObject = intersects[0].object;
-                if (clickedObject.name.startsWith("reset_")) {
-                    const { targetSlider, defaultValue, sliderName } = clickedObject.userData;
-                    const track = targetSlider.parent.children.find(c => c.name === "");
-                    targetSlider.position.x = track.position.x - 1.25 + defaultValue * 2.5;
-                    const logMsg = updateSystemParameter(sliderName, defaultValue);
-                    logToConsole(logMsg.replace("SET TO", "RESET TO"));
-                    return;
+                const button = intersects[0].object;
+                const [param, action] = button.name.split('_');
+                const step = action === 'inc' ? 0.05 : -0.05;
+
+                switch(param) {
+                    case 'scale':
+                        const currentScale = artifactGroup.scale.x;
+                        artifactGroup.scale.setScalar(Math.max(0.1, currentScale + step * 2));
+                        break;
+                    case 'damping':
+                        params.damping = Math.max(0.8, Math.min(0.995, params.damping + step * 0.1));
+                        break;
                 }
-                selectedObject = intersects.find(i => i.object.name.endsWith("Slider"))?.object;
-                if(selectedObject) renderer.domElement.classList.add('grabbing');
+                return;
+            }
+
+            if (cameraMode === 'free' && document.pointerLockElement !== renderer.domElement) {
+                renderer.domElement.requestPointerLock();
             } else if (cameraMode === 'bob') {
                 isDragging = true;
                 renderer.domElement.classList.add('grabbing');
@@ -329,28 +276,10 @@
         }
 
         function onPointerMove(event) {
-            if (cameraMode === 'free' && document.pointerLockElement === renderer.domElement) return;
-            
-            event.preventDefault();
-            const clientX = event.clientX || (event.touches?.[0] ? event.touches[0].clientX : previousPointerPosition.x);
-            const clientY = event.clientY || (event.touches?.[0] ? event.touches[0].clientY : previousPointerPosition.y);
-            
-            if (selectedObject) {
-                pointer.x = (clientX / window.innerWidth) * 2 - 1;
-                pointer.y = - (clientY / window.innerHeight) * 2 + 1;
-                raycaster.setFromCamera(pointer, camera);
-                const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-                const intersectPoint = new THREE.Vector3();
-                if (raycaster.ray.intersectPlane(plane, intersectPoint)) {
-                    let newX = intersectPoint.x;
-                    const track = selectedObject.parent.children.find(c => c.name === "");
-                    const trackPositionX = track.position.x;
-                    newX = Math.max(trackPositionX - 1.25, Math.min(trackPositionX + 1.25, newX));
-                    selectedObject.position.x = newX;
-                    const value = (newX - (trackPositionX - 1.25)) / 2.5;
-                    lastSliderLog = updateSystemParameter(selectedObject.name, value);
-                }
-            } else if (isDragging && cameraMode === 'bob') {
+            if (isDragging && cameraMode === 'bob') {
+                event.preventDefault();
+                const clientX = event.clientX || (event.touches?.[0] ? event.touches[0].clientX : previousPointerPosition.x);
+                const clientY = event.clientY || (event.touches?.[0] ? event.touches[0].clientY : previousPointerPosition.y);
                 const deltaX = clientX - previousPointerPosition.x;
                 const deltaY = clientY - previousPointerPosition.y;
                 rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
@@ -361,12 +290,7 @@
         }
 
         function onPointerUp() { 
-            if (lastSliderLog) {
-                logToConsole(lastSliderLog);
-                lastSliderLog = null;
-            }
             isDragging = false; 
-            selectedObject = null;
             renderer.domElement.classList.remove('grabbing');
         }
 
@@ -418,6 +342,14 @@
             }
         }
         
+        function updateUiPositions() {
+            const zPos = -3;
+            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
+            const w = h * camera.aspect;
+            uiGroup.position.set(-w + 1, 0, zPos);
+            freecamUiGroup.position.set(w - 1, 0, zPos);
+        }
+
         function onWindowResize() {
             const width = window.innerWidth;
             const height = window.innerHeight;
@@ -432,6 +364,7 @@
                 camera.fov = BASE_FOV;
             }
             camera.updateProjectionMatrix();
+            updateUiPositions();
         }
         
         function animate() {
@@ -445,6 +378,7 @@
             if (cameraMode === 'bob') {
                 camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
                 camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+                camera.position.z = 5;
                 camera.lookAt(0, 0, 0);
                 
                 artifactGroup.rotation.x += rotationVelocity.x;
