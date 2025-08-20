@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.40 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.41 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -74,19 +74,21 @@
         document.body.appendChild(renderer.domElement);
         camera.position.z = 5;
         camera.rotation.order = 'YXZ';
+        scene.add(camera);
 
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
 
         const uiGroup = new THREE.Group();
-        artifactGroup.add(uiGroup);
+        camera.add(uiGroup);
         const freecamUiGroup = new THREE.Group();
-        artifactGroup.add(freecamUiGroup);
+        camera.add(freecamUiGroup);
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
         let FREECAM_SPEED = 5.0;
         let SENSITIVITY_LOOK = 0.002;
+        let bodyMaterial, cubeWireframe;
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -141,18 +143,17 @@
         }
 
         function createButton(name, labelText, position, size, targetGroup) {
-            const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.8 });
-            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), buttonMaterial);
-            button.position.set(position.x, position.y, position.z);
+            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555 }));
+            button.position.set(position.x, position.y, 0);
             button.name = name;
             targetGroup.add(button);
 
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            const font = '48px monospace';
+            const font = '32px monospace';
             context.font = font;
-            canvas.width = 64;
-            canvas.height = 64;
+            canvas.width = 128;
+            canvas.height = 64; 
             context.font = font;
             context.fillStyle = 'rgba(200, 200, 200, 1)';
             context.textAlign = 'center';
@@ -160,37 +161,35 @@
             context.fillText(labelText, canvas.width / 2, canvas.height / 2);
             const texture = new THREE.CanvasTexture(canvas);
             const labelMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-            const labelGeometry = new THREE.PlaneGeometry(size.x * 0.8, size.y * 0.8);
+            const labelGeometry = new THREE.PlaneGeometry(size.x * 0.9, size.y * 0.9);
             const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
             labelMesh.position.z = 0.06;
             button.add(labelMesh);
         }
 
-        function createLabel(labelText, position, targetGroup) {
+        function createControlRow(param, labelText, yPos, targetGroup) {
+            const xOffset = 0.9;
+            const buttonSize = new THREE.Vector2(0.4, 0.4);
+            createButton(`${param}_dec`, '-', new THREE.Vector2(xOffset, yPos), buttonSize, targetGroup);
+            createButton(`${param}_inc`, '+', new THREE.Vector2(xOffset + 0.6, yPos), buttonSize, targetGroup);
+            
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            const font = '64px monospace';
+            const font = '32px monospace';
             context.font = font;
-            canvas.width = 512;
-            canvas.height = 80; 
+            canvas.width = 200;
+            canvas.height = 40; 
             context.font = font;
-            context.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            context.textAlign = 'center';
+            context.fillStyle = 'rgba(200, 200, 200, 0.7)';
+            context.textAlign = 'right';
             context.textBaseline = 'middle';
-            context.fillText(labelText, canvas.width / 2, canvas.height / 2);
+            context.fillText(labelText, canvas.width - 5, canvas.height / 2);
             const texture = new THREE.CanvasTexture(canvas);
             const labelMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-            const labelGeometry = new THREE.PlaneGeometry(canvas.width / 150, canvas.height / 150);
+            const labelGeometry = new THREE.PlaneGeometry(canvas.width / 100, canvas.height / 100);
             const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
-            labelMesh.position.set(position.x, position.y, position.z);
+            labelMesh.position.set(-0.5, yPos, 0);
             targetGroup.add(labelMesh);
-        }
-
-        function createControlRow(param, labelText, yPos, targetGroup) {
-            createLabel(labelText, new THREE.Vector3(0, yPos, 0), targetGroup);
-            const buttonSize = new THREE.Vector2(0.6, 0.6);
-            createButton(`${param}_dec`, '-', new THREE.Vector3(2.0, yPos, 0), buttonSize, targetGroup);
-            createButton(`${param}_inc`, '+', new THREE.Vector3(2.8, yPos, 0), buttonSize, targetGroup);
         }
 
         function engageDiagnostic() {
@@ -205,26 +204,28 @@
             
             freecamUiGroup.visible = false;
             
-            const artifactVertices = new Float32Array([
-                -1.5, -2, 0,  1.5, -2, 0,  2.0, 2, 0,  -2.0, 2, 0
-            ]);
-            const artifactIndices = [ 0, 1, 2,  0, 2, 3 ];
-            const artifactGeometry = new THREE.BufferGeometry();
-            artifactGeometry.setAttribute('position', new THREE.BufferAttribute(artifactVertices, 3));
-            artifactGeometry.setIndex(artifactIndices);
-            const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x660000, transparent: true, opacity: 0.5, depthWrite: false });
-            const artifactBody = new THREE.Mesh(artifactGeometry, bodyMaterial);
-            artifactGroup.add(artifactBody);
-            const wireframe = new THREE.LineSegments(new THREE.EdgesGeometry(artifactGeometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
-            artifactGroup.add(wireframe);
+            bodyMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF0000, 
+                transparent: true, 
+                opacity: 0.1,
+                depthWrite: false
+            });
+            const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
+            artifactGroup.add(cubeBody);
+            cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
+            artifactGroup.add(cubeWireframe);
 
-            let yPos = 1.2, yStep = 0.8;
+            let yPos = 1.6;
+            const yStep = 0.5;
             createControlRow('scale', 'SCALE', yPos, uiGroup); yPos -= yStep;
             createControlRow('damping', 'DAMPING', yPos, uiGroup); yPos -= yStep;
             createControlRow('intensity', 'INTENSITY', yPos, uiGroup); yPos -= yStep;
-            createControlRow('opacity', 'OPACITY', yPos, uiGroup);
+            createControlRow('opacity', 'OPACITY', yPos, uiGroup); yPos -= yStep;
+            createControlRow('red', 'RED', yPos, uiGroup); yPos -= yStep;
+            createControlRow('green', 'GREEN', yPos, uiGroup); yPos -= yStep;
+            createControlRow('blue', 'BLUE', yPos, uiGroup);
 
-            yPos = 1.2;
+            yPos = 1.3;
             createControlRow('fov', 'FOV', yPos, freecamUiGroup); yPos -= yStep;
             createControlRow('speed', 'SPEED', yPos, freecamUiGroup); yPos -= yStep;
             createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamUiGroup); yPos -= yStep;
@@ -276,8 +277,6 @@
             const step = action === 'inc' ? 1 : -1;
             const label = param.toUpperCase();
             let logMessage = "";
-            const artifactBody = artifactGroup.children.find(c => c.type === 'Mesh');
-            const wireframe = artifactGroup.children.find(c => c.type === 'LineSegments');
 
             switch(param) {
                 case 'scale':
@@ -294,9 +293,24 @@
                     logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`;
                     break;
                 case 'opacity':
-                    if (artifactBody) artifactBody.material.opacity = Math.max(0, Math.min(1, artifactBody.material.opacity + step * 0.05));
-                    if (wireframe) wireframe.material.opacity = Math.max(0, Math.min(1, wireframe.material.opacity + step * 0.05));
-                    logMessage = `// ${label} SET TO ${artifactBody.material.opacity.toFixed(2)} //`;
+                    bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step * 0.05));
+                    cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
+                    logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`;
+                    break;
+                case 'red':
+                    pointLight.color.r = Math.max(0, Math.min(1, pointLight.color.r + step * 0.1));
+                    bodyMaterial.color.r = pointLight.color.r;
+                    logMessage = `// ${label} SET TO ${pointLight.color.r.toFixed(2)} //`;
+                    break;
+                case 'green':
+                    pointLight.color.g = Math.max(0, Math.min(1, pointLight.color.g + step * 0.1));
+                    bodyMaterial.color.g = pointLight.color.g;
+                    logMessage = `// ${label} SET TO ${pointLight.color.g.toFixed(2)} //`;
+                    break;
+                case 'blue':
+                    pointLight.color.b = Math.max(0, Math.min(1, pointLight.color.b + step * 0.1));
+                    bodyMaterial.color.b = pointLight.color.b;
+                    logMessage = `// ${label} SET TO ${pointLight.color.b.toFixed(2)} //`;
                     break;
                 case 'fov':
                     camera.fov = Math.max(30, Math.min(120, camera.fov + step * 5));
@@ -331,11 +345,13 @@
 
             if (advancedProtocolsLoaded && intersects.length > 0) {
                 const button = intersects[0].object.parent;
-                const [param, action] = button.name.split('_');
-                if (param && action) {
-                    updateAndLogParameter(param, action);
-                    pressedButton = button;
-                    button.scale.set(0.9, 0.9, 0.9);
+                if (button && button.name) {
+                    const [param, action] = button.name.split('_');
+                    if (param && action) {
+                        updateAndLogParameter(param, action);
+                        pressedButton = button;
+                        button.scale.set(0.9, 0.9, 0.9);
+                    }
                 }
                 return;
             }
@@ -421,6 +437,14 @@
             }
         }
         
+        function updateUiPositions() {
+            const zPos = -3.5;
+            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
+            const w = h * camera.aspect;
+            uiGroup.position.set(-w + 2.5, 0, zPos);
+            freecamUiGroup.position.set(w - 2.5, 0, zPos);
+        }
+
         function onWindowResize() {
             const width = window.innerWidth;
             const height = window.innerHeight;
@@ -435,6 +459,7 @@
                 camera.fov = BASE_FOV;
             }
             camera.updateProjectionMatrix();
+            updateUiPositions();
         }
         
         function animate() {
