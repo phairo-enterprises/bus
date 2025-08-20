@@ -18,13 +18,21 @@
             cursor: pointer; z-index: 100; transition: opacity 0.5s;
         }
         #loadButton:hover { background-color: rgba(255, 255, 255, 0.1); }
+        #warningOverlay {
+            display: none; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background-color: rgba(255, 0, 0, 0.1);
+            color: rgba(255, 100, 100, 0.5); font-family: monospace; font-size: 6vw;
+            text-align: center; padding-top: 40vh; box-sizing: border-box;
+            transform: rotate(-15deg) scale(1.5); text-shadow: 0 0 5px #FF0000;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.1 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.2 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v5.4 (PHASE 2: FULL ARTIFACT UI) ---
+        // --- STABLE FOUNDATION v5.5 (CORRECT INTEGRATION) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -91,13 +99,9 @@
 
             gui = new lil.GUI();
             const artifactFolder = gui.addFolder('Artifact Controls');
-            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
-                artifactGroup.scale.set(v, v, v);
-            });
+            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => artifactGroup.scale.set(v, v, v));
             artifactFolder.add(params, 'damping', 0.9, 0.995).name('Damping');
-            artifactFolder.add(params, 'lightIntensity', 0, 4.0).name('Light Intensity').onChange(v => {
-                artifactGroup.getObjectByProperty('isPointLight').intensity = v;
-            });
+            artifactFolder.add(params, 'lightIntensity', 0, 4.0).name('Light Intensity').onChange(v => artifactGroup.getObjectByProperty('isPointLight').intensity = v);
             artifactFolder.addColor(params, 'color').name('Color').onChange(v => {
                 artifactGroup.getObjectByProperty('isPointLight').color.set(v);
                 artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
@@ -130,11 +134,37 @@
         }
         function onPointerUp() { isDragging = false; renderer.domElement.classList.remove('grabbing'); }
         
-        function onWindowResize(pixelRatioFactor = 1) {
+        let lastFrameTime = performance.now();
+        const frameTimes = [];
+        const FPS_CHECK_INTERVAL = 120;
+        const FPS_TARGET = 30;
+        let frameCounter = 0;
+        let isAdapting = false;
+        let adaptationLevel = 0;
+        const ADAPTATION_STEPS = [1, 0.75, 0.5];
+        const warningOverlay = document.getElementById('warningOverlay');
+
+        function checkPerformanceAndAdapt() {
+            if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
+            const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+            const currentFps = 1000 / averageDelta;
+            if (currentFps < FPS_TARGET) {
+                isAdapting = true;
+                warningOverlay.style.display = 'block';
+                setTimeout(() => {
+                    adaptationLevel++;
+                    onWindowResize();
+                    warningOverlay.style.display = 'none';
+                    isAdapting = false;
+                }, 2500);
+            }
+        }
+
+        function onWindowResize() {
             const width = window.innerWidth;
             const height = window.innerHeight;
             renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio * pixelRatioFactor);
+            renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
             camera.aspect = width / height;
             
             const horizontalFovInRadians = BASE_FOV * Math.PI / 180;
@@ -149,6 +179,14 @@
         function animate() {
             requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
+
+            const now = performance.now();
+            frameTimes.push(now - lastFrameTime);
+            lastFrameTime = now;
+            if (frameTimes.length > 60) frameTimes.shift();
+            if (++frameCounter >= FPS_CHECK_INTERVAL) {
+                checkPerformanceAndAdapt();
+            }
 
             camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
             camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
