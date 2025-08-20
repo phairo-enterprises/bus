@@ -14,7 +14,7 @@
 </head>
 <body>
     <script>
-        // --- STABLE FOUNDATION v9.0 (THE DIEGETIC UI PROTOCOL) ---
+        // --- STABLE FOUNDATION v9.1 (DIEGETIC UI: SCALE SLIDER) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -35,54 +35,65 @@
         const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
         artifactGroup.add(cubeWireframe);
 
-        // --- THE SINGLE, TINY CHANGE: A 3D BUTTON ---
-        const buttonGeometry = new THREE.BoxGeometry(1, 0.2, 0.2);
-        const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x444444 });
-        const buttonMesh = new THREE.Mesh(buttonGeometry, buttonMaterial);
-        buttonMesh.position.y = -2;
-        buttonMesh.name = "engageButton"; // Name it for raycasting
-        scene.add(buttonMesh);
+        // --- DIEGETIC UI ELEMENTS ---
+        const uiGroup = new THREE.Group();
+        scene.add(uiGroup);
+
+        // Slider Track
+        const sliderTrackGeo = new THREE.BoxGeometry(3, 0.1, 0.1);
+        const sliderTrackMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
+        const sliderTrack = new THREE.Mesh(sliderTrackGeo, sliderTrackMat);
+        sliderTrack.position.y = -2.5;
+        uiGroup.add(sliderTrack);
+
+        // Slider Handle
+        const sliderHandleGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+        const sliderHandleMat = new THREE.MeshBasicMaterial({ color: 0xAAAAAA });
+        const sliderHandle = new THREE.Mesh(sliderHandleGeo, sliderHandleMat);
+        sliderHandle.position.y = -2.5;
+        sliderHandle.name = "scaleSlider"; // Name for raycasting
+        uiGroup.add(sliderHandle);
 
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
+        let selectedObject = null;
 
-        function onPointerClick(event) {
+        function onPointerDown(event) {
             pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
             pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
-            const intersects = raycaster.intersectObjects(scene.children);
+            const intersects = raycaster.intersectObjects(uiGroup.children);
 
-            for (const intersect of intersects) {
-                if (intersect.object.name === "engageButton") {
-                    engageDiagnostic();
-                    break;
-                }
+            if (intersects.length > 0) {
+                selectedObject = intersects[0].object;
+            } else {
+                isDragging = true;
+                renderer.domElement.classList.add('grabbing');
+                previousPointerPosition.x = event.clientX || event.touches[0].clientX;
+                previousPointerPosition.y = event.clientY || event.touches[0].clientY;
             }
         }
 
-        function engageDiagnostic() {
-            // The one action we know works: turn the cube red.
-            bodyMaterial.color.set(0xFF0000);
-            // Remove the button after it's clicked.
-            scene.remove(buttonMesh);
-        }
-        
-        let isDragging = false;
-        const previousPointerPosition = { x: 0, y: 0 };
-        const rotationVelocity = { x: 0, y: 0 };
-        const DAMPING_FACTOR = 0.95;
-        const SENSITIVITY = 0.004;
-
-        function onPointerDown(event) {
-            isDragging = true;
-            renderer.domElement.classList.add('grabbing');
-            previousPointerPosition.x = event.clientX || event.touches[0].clientX;
-            previousPointerPosition.y = event.clientY || event.touches[0].clientY;
-        }
         function onPointerMove(event) {
-            if(event.touches && event.touches.length > 1) return;
-            event.preventDefault();
-            if (isDragging) {
+            if (selectedObject && selectedObject.name === "scaleSlider") {
+                pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+                pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+                
+                const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+                raycaster.setFromCamera(pointer, camera);
+                const intersectPoint = new THREE.Vector3();
+                raycaster.ray.intersectPlane(plane, intersectPoint);
+
+                let newX = intersectPoint.x;
+                newX = Math.max(-1.5, Math.min(1.5, newX)); // Clamp to track bounds
+                sliderHandle.position.x = newX;
+
+                const scaleValue = 0.2 + ((newX + 1.5) / 3) * (2.5 - 0.2); // Map position to scale
+                artifactGroup.scale.set(scaleValue, scaleValue, scaleValue);
+
+            } else if (isDragging) {
+                if(event.touches && event.touches.length > 1) return;
+                event.preventDefault();
                 const clientX = event.clientX || event.touches[0].clientX;
                 const clientY = event.clientY || event.touches[0].clientY;
                 const deltaX = clientX - previousPointerPosition.x;
@@ -93,10 +104,18 @@
                 previousPointerPosition.y = clientY;
             }
         }
+
         function onPointerUp() { 
             isDragging = false; 
+            selectedObject = null;
             renderer.domElement.classList.remove('grabbing');
         }
+        
+        let isDragging = false;
+        const previousPointerPosition = { x: 0, y: 0 };
+        const rotationVelocity = { x: 0, y: 0 };
+        const DAMPING_FACTOR = 0.95;
+        const SENSITIVITY = 0.004;
         
         function onWindowResize() {
             const width = window.innerWidth;
@@ -127,7 +146,6 @@
         }
 
         onWindowResize();
-        renderer.domElement.addEventListener('click', onPointerClick);
         renderer.domElement.addEventListener('mousedown', onPointerDown);
         renderer.domElement.addEventListener('mousemove', onPointerMove);
         renderer.domElement.addEventListener('mouseup', onPointerUp);
