@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.21 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.22 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -93,8 +93,6 @@
         const freecamUiGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
-        let FREECAM_SPEED = 5.0;
-        let SENSITIVITY_LOOK = 0.002;
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -199,11 +197,6 @@
 
             const initialFovValue = (BASE_FOV - 30) / (120 - 30);
             createSliderWithLabel("fovSlider", "FOV", -2.5, initialFovValue, freecamUiGroup);
-            const initialSpeedValue = (FREECAM_SPEED - 1) / (20 - 1);
-            createSliderWithLabel("speedSlider", "SPEED", -3.0, initialSpeedValue, freecamUiGroup);
-            const initialSensitivityValue = (SENSITIVITY_LOOK - 0.0005) / (0.005 - 0.0005);
-            createSliderWithLabel("sensitivitySlider", "SENSITIVITY", -3.5, initialSensitivityValue, freecamUiGroup);
-
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -217,6 +210,8 @@
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
+        const SENSITIVITY_LOOK = 0.002;
+        const FREECAM_SPEED = 5.0;
         const freecamState = { forward: 0, right: 0, up: 0 };
         
         const frameTimes = [];
@@ -272,10 +267,10 @@
 
         function onPointerMove(event) {
             if (cameraMode === 'free' && document.pointerLockElement === renderer.domElement) return;
-            if(event.touches && event.touches.length > 1) return;
+            
             event.preventDefault();
-            const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : previousPointerPosition.x);
-            const clientY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : previousPointerPosition.y);
+            const clientX = event.clientX || (event.touches?.[0] ? event.touches[0].clientX : previousPointerPosition.x);
+            const clientY = event.clientY || (event.touches?.[0] ? event.touches[0].clientY : previousPointerPosition.y);
             
             if (selectedObject) {
                 pointer.x = (clientX / window.innerWidth) * 2 - 1;
@@ -306,12 +301,6 @@
                         case "fovSlider":
                             camera.fov = 30 + value * (120 - 30);
                             camera.updateProjectionMatrix();
-                            break;
-                        case "speedSlider":
-                            FREECAM_SPEED = 1.0 + value * 19.0;
-                            break;
-                        case "sensitivitySlider":
-                            SENSITIVITY_LOOK = 0.0005 + value * (0.005 - 0.0005);
                             break;
                     }
                 }
@@ -349,6 +338,7 @@
 
         function onKeyPress(event) {
             if (event.key.toLowerCase() === 'c' && advancedProtocolsLoaded) {
+                warningOverlay.style.display = 'none';
                 if (cameraMode === 'bob') {
                     cameraMode = 'free';
                     logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE LOOK)');
@@ -383,9 +373,12 @@
             renderer.setSize(width, height);
             renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
             camera.aspect = width / height;
+            
             if (camera.aspect < 1) {
-                const horizontalFovInRadians = (camera.fov * Math.PI / 180);
+                const horizontalFovInRadians = BASE_FOV * Math.PI / 180;
                 camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
+            } else {
+                camera.fov = BASE_FOV;
             }
             camera.updateProjectionMatrix();
         }
