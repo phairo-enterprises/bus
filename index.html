@@ -5,41 +5,11 @@
     <title>backupstrats.com</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #000000;
-        }
-        canvas {
-            display: block;
-            touch-action: none;
-            cursor: grab;
-        }
-        canvas.grabbing {
-            cursor: grabbing;
-        }
-        canvas.freecam-active {
-            cursor: crosshair;
-        }
-        #warningOverlay {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 0, 0, 0.1);
-            color: rgba(255, 100, 100, 0.5);
-            font-family: monospace;
-            font-size: 6vw;
-            text-align: center;
-            padding-top: 40vh;
-            box-sizing: border-box;
-            transform: rotate(-15deg) scale(1.5);
-            text-shadow: 0 0 5px #FF0000;
-            z-index: 10;
-        }
+        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #000000; }
+        canvas { display: block; touch-action: none; cursor: grab; }
+        canvas.grabbing { cursor: grabbing; }
+        canvas.freecam-active { cursor: crosshair; }
+        #warningOverlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255,0,0,0.1); color: rgba(255,100,100,0.5); font-family: monospace; font-size: 6vw; text-align: center; padding-top: 40vh; box-sizing: border-box; transform: rotate(-15deg) scale(1.5); text-shadow: 0 0 5px #FF0000; z-index: 10; }
     </style>
 </head>
 <body>
@@ -47,151 +17,213 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lil-gui/0.17.0/lil-gui.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        const scene = new THREE.Scene();
-        const renderer = new THREE.WebGLRenderer({ antialiased: true });
-        const BASE_FOV = 75;
-        const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
-        const clock = new THREE.Clock();
-        const artifactGroup = new THREE.Group();
-        const warningOverlay = document.getElementById('warningOverlay');
-
-        const sharedState = {
-            params: { damping: 0.95, freecam: false, freecamSpeed: 5.0 },
-            rotationVelocity: { x: 0, y: 0 },
-            isDragging: false,
-            pointLight: null,
-            bodyMaterial: null
+        const App = {
+            modules: {},
+            params: {
+                scale: 1.0, damping: 0.95, lightIntensity: 1.5, color: '#00ffff', freecam: false, freecamSpeed: 5.0,
+            },
+            init() {
+                this.modules.core = CoreEngine.init(this);
+                this.modules.env = Environment.init(this.modules.core.scene);
+                this.modules.artifact = Artifact.init(this.modules.core.scene, this.modules.env.pointLight, this.params);
+                this.modules.ui = UIControls.init(this.modules.artifact.group, this.modules.core.camera, this.params);
+                this.modules.perf = PerformanceMonitor.init(this.modules.core.renderer);
+                this.modules.freecam = FreecamController.init(this.modules.core.renderer, this.modules.core.camera, this.params, this.modules.ui.gui);
+                this.modules.artifactControls = ArtifactController.init(this.modules.core.renderer, this.params);
+                this.modules.resize = ResizeHandler.init(this.modules.core.camera, this.modules.core.renderer, this.modules.perf.state);
+                CoreEngine.start();
+            }
         };
 
-        function initCoreExperience() {
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-            
-            camera.position.z = 5;
+        const CoreEngine = {
+            init(app) {
+                this.app = app;
+                this.scene = new THREE.Scene();
+                this.renderer = new THREE.WebGLRenderer({ antialiased: true });
+                this.BASE_FOV = 75;
+                this.camera = new THREE.PerspectiveCamera(this.BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
+                this.clock = new THREE.Clock();
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                document.body.appendChild(this.renderer.domElement);
+                this.camera.rotation.order = 'YXZ';
+                return this;
+            },
+            start() {
+                this.animate();
+            },
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                const deltaTime = this.clock.getDelta();
+                const elapsedTime = this.clock.getElapsedTime();
 
-            const ambientLight = new THREE.AmbientLight(0x404080, 2);
-            scene.add(ambientLight);
-            
-            const pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
-            sharedState.pointLight = pointLight;
+                Object.values(this.app.modules).forEach(module => {
+                    if (module.update) module.update(deltaTime, elapsedTime);
+                });
 
-            scene.add(artifactGroup);
-            const bodyGeometry = new THREE.BoxGeometry(2, 2, 2);
-            const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.1 });
-            sharedState.bodyMaterial = bodyMaterial;
-            const cubeBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
-            artifactGroup.add(cubeBody);
-            const edges = new THREE.EdgesGeometry(bodyGeometry);
-            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
-            const cubeWireframe = new THREE.LineSegments(edges, lineMaterial);
-            artifactGroup.add(cubeWireframe);
-            artifactGroup.add(pointLight);
-
-            const caveGeometry = new THREE.BufferGeometry();
-            const vertices=[];const radius=20,depth=50,segments=12;for(let i=0;i<segments;i++){const a=(i/segments)*Math.PI*2;vertices.push(Math.cos(a)*radius*(1+Math.random()*.2),Math.sin(a)*radius*(1+Math.random()*.2),-depth/2+(Math.random()-.5)*5);vertices.push(Math.cos(a)*radius*(1+Math.random()*.2),Math.sin(a)*radius*(1+Math.random()*.2),depth/2+(Math.random()-.5)*5)}vertices.push(0,0,depth/2);const b=vertices.length/3-1;const indices=[];for(let i=0;i<segments;i++){const c=i*2,d=((i+1)%segments)*2;indices.push(c,c+1,d);indices.push(d,c+1,d+1);indices.push(d+1,c+1,b)}caveGeometry.setIndex(indices);caveGeometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));caveGeometry.computeVertexNormals();
-            const caveMaterial = new THREE.MeshStandardMaterial({ color: 0x223366, flatShading: true, side: THREE.BackSide });
-            const cave = new THREE.Mesh(caveGeometry, caveMaterial);
-            scene.add(cave);
-
-            const previousPointerPosition = { x: 0, y: 0 };
-            const SENSITIVITY = 0.004;
-            function onCorePointerDown(e){if(sharedState.params.freecam)return;sharedState.isDragging=true;renderer.domElement.classList.add('grabbing');previousPointerPosition.x=e.clientX||e.touches[0].clientX;previousPointerPosition.y=e.clientY||e.touches[0].clientY}
-            function onCorePointerMove(e){if(e.touches&&e.touches.length>1)return;e.preventDefault();if(sharedState.isDragging&&!sharedState.params.freecam){const x=e.clientX||e.touches[0].clientX;const y=e.clientY||e.touches[0].clientY;sharedState.rotationVelocity.y+=(x-previousPointerPosition.x)*SENSITIVITY;sharedState.rotationVelocity.x+=(y-previousPointerPosition.y)*SENSITIVITY;previousPointerPosition.x=x;previousPointerPosition.y=y}}
-            function onCorePointerUp(){sharedState.isDragging=false;renderer.domElement.classList.remove('grabbing')}
-            renderer.domElement.addEventListener('mousedown',onCorePointerDown);renderer.domElement.addEventListener('mousemove',onCorePointerMove);renderer.domElement.addEventListener('mouseup',onCorePointerUp);renderer.domElement.addEventListener('mouseleave',onCorePointerUp);renderer.domElement.addEventListener('touchstart',onCorePointerDown,{passive:false});renderer.domElement.addEventListener('touchmove',onCorePointerMove,{passive:false});renderer.domElement.addEventListener('touchend',onCorePointerUp);
-        }
-
-        function initAdvancedFeatures() {
-            try {
-                const gui=new lil.GUI();Object.assign(sharedState.params,{scale:1.0,lightIntensity:1.5,color:'#00ffff'});const a=gui.addFolder('Artifact Controls');a.add(sharedState.params,'scale',.2,2.5).onChange(v=>artifactGroup.scale.set(v,v,v));a.add(sharedState.params,'damping',.9,.995);a.add(sharedState.params,'lightIntensity',0,4).onChange(v=>sharedState.pointLight.intensity=v);a.addColor(sharedState.params,'color').onChange(v=>{sharedState.pointLight.color.set(v);sharedState.bodyMaterial.color.set(v)});const b=gui.addFolder('Camera Controls');b.add(sharedState.params,'freecam').name('Freecam Mode').onChange(toggleFreecam);b.add(camera,'fov',30,120).onChange(()=>camera.updateProjectionMatrix());b.add(sharedState.params,'freecamSpeed',1,20).name('Move Speed');const c={};const d=new THREE.Vector3();function toggleFreecam(v){if(v)renderer.domElement.requestPointerLock();else document.exitPointerLock()}
-                document.addEventListener('pointerlockchange',()=>{const v=document.pointerLockElement===renderer.domElement;sharedState.params.freecam=v;renderer.domElement.classList.toggle('freecam-active',v);gui.controllers.forEach(c=>{if(c.property==='freecam')c.updateDisplay()})});document.addEventListener('keydown',e=>c[e.code]=true);document.addEventListener('keyup',e=>c[e.code]=false);function onFreecamMouseMove(e){if(!sharedState.params.freecam)return;camera.rotation.y-=e.movementX*.002;camera.rotation.x-=e.movementY*.002;camera.rotation.x=Math.max(-Math.PI/2,Math.min(Math.PI/2,camera.rotation.x))}
-                renderer.domElement.addEventListener('mousemove',onFreecamMouseMove);sharedState.updateFreecamPosition=function(v){const m=sharedState.params.freecamSpeed*v;camera.getWorldDirection(d);if(c['KeyW']||c['ArrowUp'])camera.position.addScaledVector(d,m);if(c['KeyS']||c['ArrowDown'])camera.position.addScaledVector(d,-m);if(c['KeyA']||c['ArrowLeft'])camera.position.addScaledVector(d.cross(camera.up).normalize(),-m);if(c['KeyD']||c['ArrowRight'])camera.position.addScaledVector(d.cross(camera.up).normalize(),m);if(c['KeyE'])camera.position.y+=m;if(c['KeyQ'])camera.position.y-=m}
-                console.log("Advanced Features Module Initialized.");
-            } catch (error) {
-                console.error("Advanced Features Module Failed:", error);
+                this.renderer.render(this.scene, this.camera);
             }
-        }
-        
-        let lastFrameTime = performance.now();
-        const frameTimes = [];
-        const FPS_CHECK_INTERVAL = 120;
-        const FPS_TARGET = 30;
-        let frameCounter = 0;
-        let isAdapting = false;
-        let adaptationLevel = 0;
-        const ADAPTATION_STEPS = [1, 0.75, 0.5];
+        };
 
-        function checkPerformanceAndAdapt() {
-            if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
-            if (frameTimes.length < 60) return;
-            const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-            const currentFps = 1000 / averageDelta;
-            if (currentFps < FPS_TARGET) {
-                isAdapting = true;
-                warningOverlay.style.display = 'block';
+        const Environment = {
+            init(scene) {
+                const ambientLight = new THREE.AmbientLight(0x404080, 2);
+                scene.add(ambientLight);
+                this.pointLight = new THREE.PointLight(App.params.color, App.params.lightIntensity, 50);
+                scene.add(this.pointLight);
+                
+                const caveGeometry = new THREE.BufferGeometry();
+                const v = []; const r=20,d=50,s=12; for(let i=0;i<s;i++){const a=(i/s)*Math.PI*2;v.push(Math.cos(a)*r*(1+Math.random()*0.2),Math.sin(a)*r*(1+Math.random()*0.2),-d/2+(Math.random()-0.5)*5);v.push(Math.cos(a)*r*(1+Math.random()*0.2),Math.sin(a)*r*(1+Math.random()*0.2),d/2+(Math.random()-0.5)*5);} v.push(0,0,d/2); const bI=v.length/3-1; const idx=[]; for(let i=0;i<s;i++){const c=i*2,n=((i+1)%s)*2;idx.push(c,c+1,n);idx.push(n,c+1,n+1);idx.push(n+1,c+1,bI);}
+                caveGeometry.setIndex(idx); caveGeometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3)); caveGeometry.computeVertexNormals();
+                const caveMaterial = new THREE.MeshStandardMaterial({color:0x223366,flatShading:true,side:THREE.BackSide});
+                const cave = new THREE.Mesh(caveGeometry, caveMaterial);
+                scene.add(cave);
+                return this;
+            }
+        };
+        
+        const Artifact = {
+            init(scene, pointLight, params) {
+                this.group = new THREE.Group();
+                scene.add(this.group);
+                this.bodyMaterial = new THREE.MeshBasicMaterial({ color: params.color, transparent: true, opacity: 0.15 });
+                const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), this.bodyMaterial);
+                this.group.add(cubeBody);
+                const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
+                this.group.add(cubeWireframe);
+                this.group.add(pointLight);
+                return this;
+            }
+        };
+
+        const UIControls = {
+            init(artifactGroup, camera, params) {
+                this.gui = new lil.GUI();
+                const artifactFolder = this.gui.addFolder('Artifact Controls');
+                artifactFolder.add(params,'scale',0.2,2.5).onChange(v=>artifactGroup.scale.set(v,v,v));
+                artifactFolder.add(params, 'damping', 0.9, 0.995);
+                artifactFolder.add(params,'lightIntensity',0,4.0).onChange(v=>App.modules.env.pointLight.intensity=v);
+                artifactFolder.addColor(params,'color').onChange(v=>{ App.modules.env.pointLight.color.set(v); App.modules.artifact.bodyMaterial.color.set(v); });
+                const cameraFolder = this.gui.addFolder('Camera Controls');
+                cameraFolder.add(params,'freecam').name('Freecam Mode').onChange(v=>App.modules.freecam.toggle(v));
+                cameraFolder.add(camera,'fov',30,120).onChange(()=>camera.updateProjectionMatrix());
+                cameraFolder.add(params,'freecamSpeed',1,20).name('Move Speed');
+                cameraFolder.close();
+                return this;
+            }
+        };
+
+        const PerformanceMonitor = {
+            init(renderer) {
+                this.renderer = renderer;
+                this.warningOverlay = document.getElementById('warningOverlay');
+                this.state = { lastFrameTime: performance.now(), frameTimes: [], frameCounter: 0, isAdapting: false, adaptationLevel: 0 };
+                this.ADAPTATION_STEPS = [1, 0.75, 0.5];
+                this.FPS_CHECK_INTERVAL = 120;
+                this.FPS_TARGET = 30;
+                return this;
+            },
+            update(deltaTime) {
+                this.state.frameTimes.push(deltaTime * 1000);
+                if (this.state.frameTimes.length > 60) this.state.frameTimes.shift();
+                if (++this.state.frameCounter >= this.FPS_CHECK_INTERVAL) { this.check(); this.state.frameCounter = 0; }
+            },
+            check() {
+                if (this.state.isAdapting || this.state.adaptationLevel >= this.ADAPTATION_STEPS.length - 1) return;
+                const avgDelta = this.state.frameTimes.reduce((a,b)=>a+b,0)/this.state.frameTimes.length;
+                if ((1000/avgDelta) < this.FPS_TARGET) this.initiateReboot();
+            },
+            initiateReboot() {
+                this.state.isAdapting = true;
+                this.warningOverlay.style.display = 'block';
                 setTimeout(() => {
-                    adaptationLevel++;
-                    onWindowResize();
-                    warningOverlay.style.display = 'none';
-                    isAdapting = false;
+                    this.state.adaptationLevel++;
+                    App.modules.resize.onWindowResize();
+                    this.warningOverlay.style.display = 'none';
+                    this.state.isAdapting = false;
                 }, 2500);
             }
-        }
+        };
 
-        function onWindowResize() {
-            const width = window.innerWidth, height = window.innerHeight, aspect = width / height;
-            renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
-            camera.aspect = aspect;
-            if (aspect < 1) {
-                camera.fov = 2 * Math.atan(Math.tan(BASE_FOV * Math.PI / 180 / 2) / aspect) * 180 / Math.PI;
-            } else {
-                camera.fov = BASE_FOV;
+        const FreecamController = {
+            init(renderer, camera, params, gui) {
+                this.renderer = renderer; this.camera = camera; this.params = params; this.gui = gui;
+                this.keyState = {}; this.cameraDirection = new THREE.Vector3();
+                document.addEventListener('pointerlockchange',()=>this.onPointerLockChange());
+                document.addEventListener('keydown',(e)=>this.keyState[e.code]=true);
+                document.addEventListener('keyup',(e)=>this.keyState[e.code]=false);
+                this.renderer.domElement.addEventListener('mousemove',(e)=>this.onFreecamMouseMove(e));
+                return this;
+            },
+            toggle(value) { if (value) this.renderer.domElement.requestPointerLock(); else document.exitPointerLock(); },
+            onPointerLockChange() {
+                const isActive = document.pointerLockElement === this.renderer.domElement;
+                this.params.freecam = isActive;
+                this.renderer.domElement.classList.toggle('freecam-active',isActive);
+                this.gui.controllers.forEach(c=>{if(c.property==='freecam')c.updateDisplay();});
+            },
+            onFreecamMouseMove(event) {
+                if (!this.params.freecam) return;
+                this.camera.rotation.y -= event.movementX*0.002;
+                this.camera.rotation.x -= event.movementY*0.002;
+                this.camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotation.x));
+            },
+            update(deltaTime) {
+                if (!this.params.freecam) return;
+                const moveSpeed = this.params.freecamSpeed*deltaTime;
+                this.camera.getWorldDirection(this.cameraDirection);
+                if(this.keyState['KeyW']||this.keyState['ArrowUp'])this.camera.position.addScaledVector(this.cameraDirection,moveSpeed);
+                if(this.keyState['KeyS']||this.keyState['ArrowDown'])this.camera.position.addScaledVector(this.cameraDirection,-moveSpeed);
+                if(this.keyState['KeyA']||this.keyState['ArrowLeft'])this.camera.position.addScaledVector(this.cameraDirection.cross(this.camera.up).normalize(),-moveSpeed);
+                if(this.keyState['KeyD']||this.keyState['ArrowRight'])this.camera.position.addScaledVector(this.cameraDirection.cross(this.camera.up).normalize(),moveSpeed);
+                if(this.keyState['KeyE'])this.camera.position.y+=moveSpeed;
+                if(this.keyState['KeyQ'])this.camera.position.y-=moveSpeed;
             }
-            camera.updateProjectionMatrix();
-        }
-        window.addEventListener('resize', onWindowResize);
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            const deltaTime = clock.getDelta();
-            const elapsedTime = clock.getElapsedTime();
-            
-            const now = performance.now();
-            frameTimes.push(now - lastFrameTime);
-            lastFrameTime = now;
-            if (frameTimes.length > 60) frameTimes.shift();
-            if (++frameCounter >= FPS_CHECK_INTERVAL) {
-                checkPerformanceAndAdapt();
-                frameCounter = 0;
-            }
+        };
 
-            if (sharedState.params.freecam && sharedState.updateFreecamPosition) {
-                sharedState.updateFreecamPosition(deltaTime);
-            } else {
-                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-                camera.position.z = 5;
-                camera.lookAt(artifactGroup.position);
+        const ArtifactController = {
+            init(renderer, params) {
+                this.renderer = renderer; this.params = params;
+                this.isDragging = false; this.previousPos = {x:0,y:0}; this.velocity = {x:0,y:0}; this.SENSITIVITY = 0.01;
+                const el = this.renderer.domElement;
+                el.addEventListener('mousedown',(e)=>this.onPointerDown(e)); el.addEventListener('mousemove',(e)=>this.onPointerMove(e));
+                el.addEventListener('mouseup',()=>this.onPointerUp()); el.addEventListener('mouseleave',()=>this.onPointerUp());
+                el.addEventListener('touchstart',(e)=>this.onPointerDown(e)); el.addEventListener('touchmove',(e)=>this.onPointerMove(e));
+                el.addEventListener('touchend',()=>this.onPointerUp());
+                return this;
+            },
+            onPointerDown(event){ if(this.params.freecam)return; this.isDragging=true; this.renderer.domElement.classList.add('grabbing'); this.previousPos.x=event.clientX||event.touches[0].clientX; this.previousPos.y=event.clientY||event.touches[0].clientY; },
+            onPointerMove(event){ if(event.touches&&event.touches.length>1)return; event.preventDefault(); if(this.isDragging&&!this.params.freecam){ const cX=event.clientX||event.touches[0].clientX,cY=event.clientY||event.touches[0].clientY; this.velocity.y+=(cX-this.previousPos.x)*this.SENSITIVITY; this.velocity.x+=(cY-this.previousPos.y)*this.SENSITIVITY; this.previousPos.x=cX;this.previousPos.y=cY; }},
+            onPointerUp(){ this.isDragging=false; this.renderer.domElement.classList.remove('grabbing'); },
+            update(deltaTime) {
+                if (this.params.freecam) return;
+                const artifact = App.modules.artifact.group;
+                artifact.rotation.x += this.velocity.x; artifact.rotation.y += this.velocity.y;
+                if (!this.isDragging) { this.velocity.x *= this.params.damping; this.velocity.y *= this.params.damping; }
             }
+        };
 
-            artifactGroup.rotation.x += sharedState.rotationVelocity.x;
-            artifactGroup.rotation.y += sharedState.rotationVelocity.y;
-            if (!sharedState.isDragging) {
-                sharedState.rotationVelocity.x *= sharedState.params.damping;
-                sharedState.rotationVelocity.y *= sharedState.params.damping;
+        const ResizeHandler = {
+            init(camera, renderer, perfState) {
+                this.camera = camera; this.renderer = renderer; this.perfState = perfState;
+                window.addEventListener('resize', () => this.onWindowResize());
+                this.onWindowResize();
+                return this;
+            },
+            onWindowResize() {
+                const {width, height} = this.renderer.domElement;
+                if (width !== window.innerWidth || height !== window.innerHeight) {
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+                this.renderer.setPixelRatio(window.devicePixelRatio * PerformanceMonitor.ADAPTATION_STEPS[this.perfState.adaptationLevel]);
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                if (this.camera.aspect < 1) { this.camera.fov = 2*Math.atan(Math.tan(CoreEngine.BASE_FOV*Math.PI/180/2)/this.camera.aspect)*180/Math.PI; } 
+                else { this.camera.fov = CoreEngine.BASE_FOV; }
+                this.camera.updateProjectionMatrix();
             }
-            
-            renderer.render(scene, camera);
-        }
+        };
 
-        initCoreExperience();
-        camera.rotation.order = 'YXZ';
-        onWindowResize();
-        animate();
-        
-        setTimeout(initAdvancedFeatures, 10000);
+        App.init();
     </script>
 </body>
 </html>
