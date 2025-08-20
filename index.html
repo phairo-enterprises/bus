@@ -21,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v2.1 (UI INIT TEST) //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v2.2 (FORCED ERROR TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v8.1 (THE AIRLOCK PROTOCOL - STEP 2) ---
+        // --- STABLE FOUNDATION v8.2 (THE FINAL DIAGNOSTIC) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -76,19 +76,27 @@
             scene.add(cave);
         }
 
+        function attemptUIInitialization() {
+            try {
+                // --- THE SINGLE, ISOLATED TEST ---
+                gui = new lil.GUI();
+                console.log("SUCCESS: lil.GUI initialized without error.");
+            } catch (error) {
+                console.error("FAILURE: Error during lil.GUI initialization.");
+                console.error(error);
+            }
+        }
+
         function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
 
-            // --- STEP 1: VERBATIM CODE FROM v1.0 ---
             const redColor = new THREE.Color(0xFF0000);
             if (pointLight) pointLight.color.set(redColor);
             if (bodyMaterial) bodyMaterial.color.set(redColor);
 
-            // --- STEP 2: THE SINGLE, ADDITIVE CHANGE ---
-            // Initialize the UI panel. It will be empty.
-            gui = new lil.GUI();
+            attemptUIInitialization();
         }
         document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
