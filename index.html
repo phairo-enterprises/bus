@@ -18,21 +18,13 @@
             cursor: pointer; z-index: 100; transition: opacity 0.5s;
         }
         #loadButton:hover { background-color: rgba(255, 255, 255, 0.1); }
-        #warningOverlay {
-            display: none; position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; background-color: rgba(255, 0, 0, 0.1);
-            color: rgba(255, 100, 100, 0.5); font-family: monospace; font-size: 6vw;
-            text-align: center; padding-top: 40vh; box-sizing: border-box;
-            transform: rotate(-15deg) scale(1.5); text-shadow: 0 0 5px #FF0000;
-            z-index: 10;
-        }
     </style>
 </head>
 <body>
     <button id="loadButton">// ENGAGE ADVANCED PROTOCOLS //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v5.2 (FINAL CORRECTED VERSION) ---
+        // --- STABLE FOUNDATION v5.2 (SCOPING ERROR CORRECTED) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -42,6 +34,7 @@
         const artifactGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
         let params = { damping: 0.95 };
+        let gui; // DECLARED GLOBALLY. This is the critical fix.
 
         function initBaseModule() {
             renderer.setPixelRatio(window.devicePixelRatio);
@@ -93,7 +86,8 @@
             Object.assign(params, {
                 scale: 1.0, lightIntensity: 1.5, color: '#00ffff'
             });
-            const gui = new lil.GUI();
+
+            gui = new lil.GUI(); // INITIALIZED here, but declared globally.
             const artifactFolder = gui.addFolder('Artifact Controls');
             artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => artifactGroup.scale.set(v, v, v));
             artifactFolder.add(params, 'damping', 0.9, 0.995).name('Damping');
@@ -102,35 +96,6 @@
                 artifactGroup.getObjectByProperty('isPointLight').color.set(v);
                 artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
             });
-
-            // --- RE-INTEGRATION OF PERFORMANCE MONITORING PROTOCOL ---
-            const warningOverlay = document.getElementById('warningOverlay');
-            const frameTimes = [];
-            let lastFrameTime = performance.now(), frameCounter = 0, isAdapting = false, adaptationLevel = 0;
-            const ADAPTATION_STEPS = [1, 0.75, 0.5];
-            
-            params.checkPerformance = () => {
-                const now = performance.now();
-                frameTimes.push(now - lastFrameTime);
-                lastFrameTime = now;
-                if (frameTimes.length > 60) frameTimes.shift();
-
-                if (++frameCounter < 120) return;
-                frameCounter = 0;
-                
-                if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
-                const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-                if ((1000 / averageDelta) < 30) {
-                    isAdapting = true;
-                    warningOverlay.style.display = 'block';
-                    setTimeout(() => {
-                        adaptationLevel++;
-                        onWindowResize(ADAPTATION_STEPS[adaptationLevel]);
-                        warningOverlay.style.display = 'none';
-                        isAdapting = false;
-                    }, 2500);
-                }
-            };
         }
         document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
 
@@ -178,10 +143,6 @@
         function animate() {
             requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
-
-            if (advancedProtocolsLoaded) {
-                params.checkPerformance();
-            }
 
             camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
             camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
