@@ -30,10 +30,10 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.6 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.7 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v6.2 (INCREMENTAL ADDITION: FREECAM TOGGLE) ---
+        // --- STABLE FOUNDATION v6.3 (INCREMENTAL ADDITION: FREECAM MOUSE LOOK) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -111,7 +111,6 @@
                 camera.fov = value;
                 camera.updateProjectionMatrix();
             });
-            // --- SINGLE FEATURE ADDITION: FREECAM TOGGLE LOGIC ---
             cameraFolder.add(params, 'freecam').name('Freecam Mode').onChange(toggleFreecam);
         }
         document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
@@ -161,6 +160,16 @@
                 }
             }
         });
+
+        // --- SINGLE FEATURE ADDITION: FREECAM MOUSE LOOK LOGIC ---
+        function onFreecamMouseMove(event) {
+            if (advancedProtocolsLoaded && params.freecam) {
+                camera.rotation.y -= event.movementX * 0.002;
+                camera.rotation.x -= event.movementY * 0.002;
+                // Clamp the vertical rotation to prevent camera flipping
+                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+            }
+        }
 
         let lastFrameTime = performance.now();
         const frameTimes = [];
@@ -233,6 +242,7 @@
 
         initBaseModule();
         onWindowResize();
+        camera.rotation.order = 'YXZ'; // Set rotation order for proper freecam look
         renderer.domElement.addEventListener('mousedown', onPointerDown);
         renderer.domElement.addEventListener('mousemove', onPointerMove);
         renderer.domElement.addEventListener('mouseup', onPointerUp);
@@ -240,6 +250,7 @@
         renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
         renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
         renderer.domElement.addEventListener('touchend', onPointerUp);
+        renderer.domElement.addEventListener('mousemove', onFreecamMouseMove); // Add the new listener
         window.addEventListener('resize', onWindowResize);
         animate();
     </script>
