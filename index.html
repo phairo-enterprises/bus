@@ -21,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.3 (UI REVEAL TEST) //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v2.0 (UI INIT TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v7.5 (CORRECT UI INITIALIZATION) ---
+        // --- STABLE FOUNDATION v8.0 (THE ULTIMATE RESET) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -31,7 +31,7 @@
         const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
         const clock = new THREE.Clock();
         const artifactGroup = new THREE.Group();
-        let params = { damping: 0.95, scale: 1.0 };
+        let params = { damping: 0.95 };
         let pointLight, bodyMaterial, gui;
 
         function initBaseModule() {
@@ -76,27 +76,16 @@
             scene.add(cave);
         }
 
-        function createAdvancedUI() {
-            gui = new lil.GUI();
-            const artifactFolder = gui.addFolder('Artifact Controls');
-            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
-                artifactGroup.scale.set(v, v, v);
-            });
-            gui.hide(); // Hide the UI immediately after creation.
-        }
-
-        function engageProtocols() {
+        function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
 
-            const redColor = new THREE.Color(0xFF0000);
-            if (pointLight) pointLight.color.set(redColor);
-            if (bodyMaterial) bodyMaterial.color.set(redColor);
-
-            if (gui) gui.show(); // Reveal the pre-made UI.
+            // --- THE SINGLE, ISOLATED TEST ---
+            // The only action is to create the UI panel.
+            gui = new lil.GUI();
         }
-        document.getElementById('loadButton').addEventListener('click', engageProtocols);
+        document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
@@ -127,7 +116,6 @@
             const width = window.innerWidth;
             const height = window.innerHeight;
             renderer.setSize(width, height);
-
             renderer.setPixelRatio(window.devicePixelRatio);
             camera.aspect = width / height;
             
@@ -162,7 +150,6 @@
         }
 
         initBaseModule();
-        createAdvancedUI(); // Create the UI on load.
         onWindowResize();
         renderer.domElement.addEventListener('mousedown', onPointerDown);
         renderer.domElement.addEventListener('mousemove', onPointerMove);
