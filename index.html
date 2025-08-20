@@ -29,10 +29,10 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.4 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.5 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v5.9 (INCREMENTAL ADDITION: FOV SLIDER) ---
+        // --- STABLE FOUNDATION v6.0 (CORRECT UI BINDING) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -92,7 +92,7 @@
             advancedProtocolsLoaded = true;
             
             Object.assign(params, {
-                scale: 1.0, lightIntensity: 1.5, color: '#00ffff'
+                scale: 1.0, lightIntensity: 1.5, color: '#00ffff', cameraFov: camera.fov
             });
 
             gui = new lil.GUI();
@@ -105,9 +105,11 @@
                 artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
             });
 
-            // --- SINGLE FEATURE ADDITION: CAMERA FOLDER + FOV SLIDER ---
             const cameraFolder = gui.addFolder('Camera Controls');
-            cameraFolder.add(camera, 'fov', 30, 120).name('Field of View').onChange(() => {
+            // --- THE CORRECT IMPLEMENTATION ---
+            // Bind to the simple 'params' object, then manually update the camera.
+            cameraFolder.add(params, 'cameraFov', 30, 120).name('Field of View').onChange(value => {
+                camera.fov = value;
                 camera.updateProjectionMatrix();
             });
         }
@@ -171,11 +173,14 @@
             renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
             camera.aspect = width / height;
             
-            const horizontalFovInRadians = BASE_FOV * Math.PI / 180;
+            // This logic is now partially controlled by the FOV slider,
+            // but the base FOV for portrait mode calculation remains.
+            const currentBaseFov = advancedProtocolsLoaded ? params.cameraFov : BASE_FOV;
             if (camera.aspect < 1) {
+                const horizontalFovInRadians = currentBaseFov * Math.PI / 180;
                 camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
             } else {
-                camera.fov = BASE_FOV;
+                camera.fov = currentBaseFov;
             }
             camera.updateProjectionMatrix();
         }
@@ -189,7 +194,7 @@
             }
 
             camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-            camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+            camera.position.y = Math.cos( elapsedTime * 0.3) * 1.0;
             camera.position.z = 5;
             camera.lookAt(0, 0, 0);
 
