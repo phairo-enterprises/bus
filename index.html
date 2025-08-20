@@ -21,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.1 (UI INIT TEST) //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.2 (SCALE TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v7.3 (VERBATIM BASELINE + UI INIT) ---
+        // --- STABLE FOUNDATION v7.4 (INCREMENTAL ADDITION: SCALE SLIDER) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -81,14 +81,19 @@
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
 
-            // --- STEP 1: VERBATIM CODE FROM v1.0 ---
             const redColor = new THREE.Color(0xFF0000);
             if (pointLight) pointLight.color.set(redColor);
             if (bodyMaterial) bodyMaterial.color.set(redColor);
 
-            // --- STEP 2: THE SINGLE, TINY ADDITION ---
-            // Initialize the UI panel. It will be empty.
+            // --- SINGLE FEATURE ADDITION: SCALE SLIDER ---
+            Object.assign(params, {
+                scale: 1.0
+            });
             gui = new lil.GUI();
+            const artifactFolder = gui.addFolder('Artifact Controls');
+            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
+                artifactGroup.scale.set(v, v, v);
+            });
         }
         document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
