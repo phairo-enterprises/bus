@@ -5,52 +5,124 @@
     <title>backupstrats.com</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lil-gui/0.17.0/lil-gui.umd.min.js"></script>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #000000;
+        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #000000; }
+        canvas { display: block; touch-action: none; cursor: grab; }
+        canvas.grabbing { cursor: grabbing; }
+        canvas.freecam-active { cursor: crosshair; }
+        #loadButton {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px; font-family: monospace; font-size: 20px;
+            color: white; background-color: transparent; border: 1px solid white;
+            cursor: pointer; z-index: 100; transition: opacity 0.5s;
         }
-        canvas {
-            display: block;
-            touch-action: none;
-            cursor: grab;
-        }
-        canvas.grabbing {
-            cursor: grabbing;
+        #loadButton:hover { background-color: rgba(255, 255, 255, 0.1); }
+        #warningOverlay {
+            display: none; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background-color: rgba(255, 0, 0, 0.1);
+            color: rgba(255, 100, 100, 0.5); font-family: monospace; font-size: 6vw;
+            text-align: center; padding-top: 40vh; box-sizing: border-box;
+            transform: rotate(-15deg) scale(1.5); text-shadow: 0 0 5px #FF0000;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.6 //</button>
+    <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v5.0 (VERBATIM RESTORATION) ---
+        // --- STABLE FOUNDATION v6.2 (INCREMENTAL ADDITION: FREECAM TOGGLE) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
         const BASE_FOV = 75;
-        const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 5;
-
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-        
+        const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
         const clock = new THREE.Clock();
+        const artifactGroup = new THREE.Group();
+        let advancedProtocolsLoaded = false;
+        let params = { damping: 0.95 };
+        let gui;
 
-        const geometry = new THREE.BoxGeometry(2, 2, 2);
-        const edges = new THREE.EdgesGeometry(geometry);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
-        const cube = new THREE.LineSegments(edges, lineMaterial);
-        scene.add(cube);
+        function initBaseModule() {
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+            camera.position.z = 5;
+
+            const ambientLight = new THREE.AmbientLight(0x404080, 2);
+            scene.add(ambientLight);
+            const pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
+
+            scene.add(artifactGroup);
+            const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.1 });
+            const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
+            artifactGroup.add(cubeBody);
+            const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
+            artifactGroup.add(cubeWireframe);
+            artifactGroup.add(pointLight);
+            
+            const caveGeometry = new THREE.BufferGeometry();
+            const caveVertices = [], radius = 20, depth = 50, segments = 12;
+            for (let i = 0; i < segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), -depth/2 + (Math.random()-0.5)*5);
+                caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), depth/2 + (Math.random()-0.5)*5);
+            }
+            caveVertices.push(0, 0, depth/2);
+            const caveIndices = [];
+            for (let i = 0; i < segments; i++) {
+                const current = i * 2, next = ((i + 1) % segments) * 2;
+                caveIndices.push(current, current + 1, next);
+                caveIndices.push(next, current + 1, next + 1);
+                caveIndices.push(((i + 1) % segments) * 2 + 1, (i * 2) + 1, caveVertices.length/3 - 1);
+            }
+            caveGeometry.setIndex(caveIndices);
+            caveGeometry.setAttribute('position', new THREE.Float32BufferAttribute(caveVertices, 3));
+            caveGeometry.computeVertexNormals();
+            const caveMaterial = new THREE.MeshStandardMaterial({ color: 0x223366, flatShading: true, side: THREE.BackSide });
+            const cave = new THREE.Mesh(caveGeometry, caveMaterial);
+            scene.add(cave);
+        }
+
+        function initAdvancedModule() {
+            const loadButton = document.getElementById('loadButton');
+            loadButton.style.opacity = '0';
+            setTimeout(() => loadButton.remove(), 500);
+            advancedProtocolsLoaded = true;
+            
+            Object.assign(params, {
+                scale: 1.0, lightIntensity: 1.5, color: '#00ffff', cameraFov: camera.fov, freecam: false
+            });
+
+            gui = new lil.GUI();
+            const artifactFolder = gui.addFolder('Artifact Controls');
+            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => artifactGroup.scale.set(v, v, v));
+            artifactFolder.add(params, 'damping', 0.9, 0.995).name('Damping');
+            artifactFolder.add(params, 'lightIntensity', 0, 4.0).name('Light Intensity').onChange(v => artifactGroup.getObjectByProperty('isPointLight').intensity = v);
+            artifactFolder.addColor(params, 'color').name('Color').onChange(v => {
+                artifactGroup.getObjectByProperty('isPointLight').color.set(v);
+                artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
+            });
+
+            const cameraFolder = gui.addFolder('Camera Controls');
+            cameraFolder.add(params, 'cameraFov', 30, 120).name('Field of View').onChange(value => {
+                camera.fov = value;
+                camera.updateProjectionMatrix();
+            });
+            // --- SINGLE FEATURE ADDITION: FREECAM TOGGLE LOGIC ---
+            cameraFolder.add(params, 'freecam').name('Freecam Mode').onChange(toggleFreecam);
+        }
+        document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
 
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0, y: 0 };
-        const DAMPING_FACTOR = 0.95;
-        const SENSITIVITY = 0.01;
+        const SENSITIVITY = 0.004;
 
         function onPointerDown(event) {
+            if (advancedProtocolsLoaded && params.freecam) return;
             isDragging = true;
             renderer.domElement.classList.add('grabbing');
             previousPointerPosition.x = event.clientX || event.touches[0].clientX;
@@ -59,22 +131,108 @@
         function onPointerMove(event) {
             if(event.touches && event.touches.length > 1) return;
             event.preventDefault();
-            if (isDragging) {
+            if (isDragging && (!advancedProtocolsLoaded || !params.freecam)) {
                 const clientX = event.clientX || event.touches[0].clientX;
                 const clientY = event.clientY || event.touches[0].clientY;
-                const deltaX = clientX - previousPointerPosition.x;
-                const deltaY = clientY - previousPointerPosition.y;
-                rotationVelocity.y += deltaX * SENSITIVITY;
-                rotationVelocity.x += deltaY * SENSITIVITY;
+                rotationVelocity.y += (clientX - previousPointerPosition.x) * SENSITIVITY;
+                rotationVelocity.x += (clientY - previousPointerPosition.y) * SENSITIVITY;
                 previousPointerPosition.x = clientX;
                 previousPointerPosition.y = clientY;
             }
         }
-        function onPointerUp() { 
-            isDragging = false; 
-            renderer.domElement.classList.remove('grabbing');
+        function onPointerUp() { isDragging = false; renderer.domElement.classList.remove('grabbing'); }
+        
+        function toggleFreecam(value) {
+            if (value) {
+                renderer.domElement.requestPointerLock();
+            } else {
+                document.exitPointerLock();
+            }
+        }
+        document.addEventListener('pointerlockchange', () => {
+            const isActive = document.pointerLockElement === renderer.domElement;
+            if (advancedProtocolsLoaded) {
+                params.freecam = isActive;
+                renderer.domElement.classList.toggle('freecam-active', isActive);
+                if (gui) {
+                    gui.controllers.forEach(c => {
+                        if (c.property === 'freecam') c.updateDisplay();
+                    });
+                }
+            }
+        });
+
+        let lastFrameTime = performance.now();
+        const frameTimes = [];
+        const FPS_CHECK_INTERVAL = 120;
+        const FPS_TARGET = 30;
+        let frameCounter = 0;
+        let isAdapting = false;
+        let adaptationLevel = 0;
+        const ADAPTATION_STEPS = [1, 0.75, 0.5];
+        const warningOverlay = document.getElementById('warningOverlay');
+
+        function checkPerformanceAndAdapt() {
+            if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
+            const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+            const currentFps = 1000 / averageDelta;
+            if (currentFps < FPS_TARGET) {
+                isAdapting = true;
+                warningOverlay.style.display = 'block';
+                setTimeout(() => {
+                    adaptationLevel++;
+                    onWindowResize();
+                    warningOverlay.style.display = 'none';
+                    isAdapting = false;
+                }, 2500);
+            }
         }
 
+        function onWindowResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
+            camera.aspect = width / height;
+            
+            const currentBaseFov = advancedProtocolsLoaded ? params.cameraFov : BASE_FOV;
+            if (camera.aspect < 1) {
+                const horizontalFovInRadians = currentBaseFov * Math.PI / 180;
+                camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
+            } else {
+                camera.fov = currentBaseFov;
+            }
+            camera.updateProjectionMatrix();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            if (advancedProtocolsLoaded) {
+                checkPerformanceAndAdapt();
+            }
+
+            if (!advancedProtocolsLoaded || !params.freecam) {
+                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+                camera.position.z = 5;
+                camera.lookAt(0, 0, 0);
+            }
+
+            artifactGroup.rotation.x += rotationVelocity.x;
+            artifactGroup.rotation.y += rotationVelocity.y;
+            
+            if (!isDragging) {
+                rotationVelocity.x *= params.damping;
+                rotationVelocity.y *= params.damping;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        initBaseModule();
+        onWindowResize();
         renderer.domElement.addEventListener('mousedown', onPointerDown);
         renderer.domElement.addEventListener('mousemove', onPointerMove);
         renderer.domElement.addEventListener('mouseup', onPointerUp);
@@ -82,38 +240,7 @@
         renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
         renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
         renderer.domElement.addEventListener('touchend', onPointerUp);
-        
-        function onWindowResize() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            const aspect = width / height;
-            renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            camera.aspect = aspect;
-            if (aspect < 1) {
-                const horizontalFovInRadians = BASE_FOV * Math.PI / 180;
-                camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / aspect) * 180 / Math.PI;
-            } else {
-                camera.fov = BASE_FOV;
-            }
-            camera.updateProjectionMatrix();
-        }
         window.addEventListener('resize', onWindowResize);
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            cube.rotation.x += rotationVelocity.x;
-            cube.rotation.y += rotationVelocity.y;
-            if (!isDragging) {
-                rotationVelocity.x *= DAMPING_FACTOR;
-                rotationVelocity.y *= DAMPING_FACTOR;
-            }
-            
-            renderer.render(scene, camera);
-        }
-
-        onWindowResize();
         animate();
     </script>
 </body>
