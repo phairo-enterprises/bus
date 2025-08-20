@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.42 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.43 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -74,7 +74,6 @@
         document.body.appendChild(renderer.domElement);
         camera.position.z = 5;
         camera.rotation.order = 'YXZ';
-        scene.add(camera);
 
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
@@ -254,7 +253,7 @@
         const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
         const freecamState = { forward: 0, right: 0, up: 0 };
-        const touchState = { forward: 0, right: 0, up: 0 };
+        const touchState = { fwd: 0, back: 0, left: 0, right: 0, up: 0, down: 0 };
         const lookTouch = { id: -1, lastX: 0, lastY: 0 };
         
         const frameTimes = [];
@@ -547,9 +546,9 @@
                 rotationVelocity.x *= params.damping;
                 rotationVelocity.y *= params.damping;
             } else if (cameraMode === 'free') {
-                const totalForward = freecamState.forward + touchState.forward;
-                const totalRight = freecamState.right + touchState.right;
-                const totalUp = freecamState.up + touchState.up;
+                const totalForward = freecamState.forward + (touchState.fwd || -touchState.back);
+                const totalRight = freecamState.right + (touchState.right || -touchState.left);
+                const totalUp = freecamState.up + (touchState.up || -touchState.down);
 
                 const moveDirection = new THREE.Vector3(totalRight, 0, -totalForward);
                 moveDirection.normalize();
@@ -581,4 +580,4 @@
         animate();
     </script>
 </body>
-</html>```
+</html>
