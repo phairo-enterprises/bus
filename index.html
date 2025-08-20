@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.26 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.27 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -205,6 +205,7 @@
             createSliderWithLabel("sensitivitySlider", "SENSITIVITY", -3.5, initialSensitivityValue, freecamUiGroup);
             createSliderWithLabel("rollSlider", "ROLL", -4.0, 0.5, freecamUiGroup);
             createSliderWithLabel("pitchSlider", "PITCH", -4.5, 0.5, freecamUiGroup);
+            createSliderWithLabel("yawSlider", "YAW", -5.0, 0.5, freecamUiGroup);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -320,6 +321,9 @@
                         case "pitchSlider":
                             camera.rotation.x = (value - 0.5) * -Math.PI;
                             break;
+                        case "yawSlider":
+                            camera.rotation.y = (value - 0.5) * -Math.PI;
+                            break;
                     }
                 }
             } else if (isDragging && cameraMode === 'bob') {
@@ -424,4 +428,26 @@
                 moveDirection.normalize();
                 moveDirection.applyQuaternion(camera.quaternion);
                 camera.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
-                camera.position.y += freecamState.
+                camera.position.y += freecamState.up * FREECAM_SPEED * delta;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        onWindowResize();
+        renderer.domElement.addEventListener('mousedown', onPointerDown);
+        renderer.domElement.addEventListener('mousemove', onPointerMove);
+        renderer.domElement.addEventListener('mouseup', onPointerUp);
+        renderer.domElement.addEventListener('mouseleave', onPointerUp);
+        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
+        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
+        renderer.domElement.addEventListener('touchend', onPointerUp);
+        window.addEventListener('resize', onWindowResize);
+        window.addEventListener('keypress', onKeyPress);
+        window.addEventListener('keydown', (e) => onKey(e, true));
+        window.addEventListener('keyup', (e) => onKey(e, false));
+        document.addEventListener('pointerlockchange', onPointerLockChange);
+        animate();
+    </script>
+</body>
+</html>
