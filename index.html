@@ -415,4 +415,30 @@
                 rotationVelocity.x *= params.damping;
                 rotationVelocity.y *= params.damping;
             } else if (cameraMode === 'free') {
-                const moveDirection = new THREE.Vector3(freecamState.right, 0, -fre
+                const moveDirection = new THREE.Vector3(freecamState.right, 0, -freecamState.forward);
+                moveDirection.normalize();
+                moveDirection.applyQuaternion(camera.quaternion);
+                camera.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
+                camera.position.y += freecamState.up * FREECAM_SPEED * delta;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        onWindowResize();
+        renderer.domElement.addEventListener('mousedown', onPointerDown);
+        renderer.domElement.addEventListener('mousemove', onPointerMove);
+        renderer.domElement.addEventListener('mouseup', onPointerUp);
+        renderer.domElement.addEventListener('mouseleave', onPointerUp);
+        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
+        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
+        renderer.domElement.addEventListener('touchend', onPointerUp);
+        window.addEventListener('resize', onWindowResize);
+        window.addEventListener('keypress', onKeyPress);
+        window.addEventListener('keydown', (e) => onKey(e, true));
+        window.addEventListener('keyup', (e) => onKey(e, false));
+        document.addEventListener('pointerlockchange', onPointerLockChange);
+        animate();
+    </script>
+</body>
+</html>
