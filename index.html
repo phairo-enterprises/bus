@@ -5,225 +5,307 @@
     <title>backupstrats.com</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #000000; }
-        canvas { display: block; touch-action: none; cursor: grab; }
-        canvas.grabbing { cursor: grabbing; }
-        canvas.freecam-active { cursor: crosshair; }
-        #warningOverlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255,0,0,0.1); color: rgba(255,100,100,0.5); font-family: monospace; font-size: 6vw; text-align: center; padding-top: 40vh; box-sizing: border-box; transform: rotate(-15deg) scale(1.5); text-shadow: 0 0 5px #FF0000; z-index: 10; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        canvas {
+            display: block;
+            touch-action: none;
+            cursor: grab;
+        }
+        canvas.grabbing {
+            cursor: grabbing;
+        }
+        canvas.freecam-active {
+            cursor: crosshair;
+        }
+        #loadButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-family: monospace;
+            font-size: 20px;
+            color: white;
+            background-color: transparent;
+            border: 1px solid white;
+            cursor: pointer;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+        #loadButton:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        #warningOverlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.1);
+            color: rgba(255, 100, 100, 0.5);
+            font-family: monospace;
+            font-size: 6vw;
+            text-align: center;
+            padding-top: 40vh;
+            box-sizing: border-box;
+            transform: rotate(-15deg) scale(1.5);
+            text-shadow: 0 0 5px #FF0000;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
+    <button id="loadButton">// ENGAGE ADVANCED PROTOCOLS //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lil-gui/0.17.0/lil-gui.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        const App = {
-            modules: {},
-            params: {
+        // --- STABLE FOUNDATION v4.0 (MODULAR) ---
+
+        // --- 1. CORE SCENE SETUP (GLOBAL SCOPE) ---
+        const scene = new THREE.Scene();
+        const renderer = new THREE.WebGLRenderer({ antialiased: true });
+        const BASE_FOV = 75;
+        const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
+        const clock = new THREE.Clock();
+        const artifactGroup = new THREE.Group();
+        let advancedProtocolsLoaded = false;
+        let params = {}; // Will be populated by the advanced module
+
+        // --- 2. BASE MODULE INITIALIZATION ---
+        function initBaseModule() {
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+            
+            camera.position.z = 5;
+
+            const ambientLight = new THREE.AmbientLight(0x404080, 2);
+            scene.add(ambientLight);
+            const pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
+            
+            scene.add(artifactGroup);
+            const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.1 });
+            const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
+            artifactGroup.add(cubeBody);
+            const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
+            artifactGroup.add(cubeWireframe);
+            artifactGroup.add(pointLight);
+
+            const caveGeometry = new THREE.BufferGeometry();
+            const caveVertices = [];
+            const radius = 20, depth = 50, segments = 12;
+            for (let i = 0; i < segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), -depth/2 + (Math.random()-0.5)*5);
+                caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), depth/2 + (Math.random()-0.5)*5);
+            }
+            caveVertices.push(0, 0, depth/2);
+            const backCenterIndex = caveVertices.length/3 - 1;
+            const caveIndices = [];
+            for (let i = 0; i < segments; i++) {
+                const current = i * 2, next = ((i + 1) % segments) * 2;
+                caveIndices.push(current, current + 1, next);
+                caveIndices.push(next, current + 1, next + 1);
+                caveIndices.push(next + 1, current + 1, backCenterIndex);
+            }
+            caveGeometry.setIndex(caveIndices);
+            caveGeometry.setAttribute('position', new THREE.Float32BufferAttribute(caveVertices, 3));
+            caveGeometry.computeVertexNormals();
+            const caveMaterial = new THREE.MeshStandardMaterial({ color: 0x223366, flatShading: true, side: THREE.BackSide });
+            const cave = new THREE.Mesh(caveGeometry, caveMaterial);
+            scene.add(cave);
+        }
+
+        // --- 3. DYNAMIC MODULE LOADER ---
+        function loadAdvancedProtocols() {
+            const loadButton = document.getElementById('loadButton');
+            loadButton.style.opacity = '0';
+            setTimeout(() => loadButton.remove(), 500);
+
+            const guiScript = document.createElement('script');
+            guiScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/lil-gui/0.17.0/lil-gui.umd.min.js';
+            document.head.appendChild(guiScript);
+
+            guiScript.onload = () => {
+                initAdvancedModule();
+                advancedProtocolsLoaded = true;
+            };
+        }
+        document.getElementById('loadButton').addEventListener('click', loadAdvancedProtocols);
+
+        // --- 4. ADVANCED MODULE INITIALIZATION (RUNS ON-DEMAND) ---
+        function initAdvancedModule() {
+            const warningOverlay = document.getElementById('warningOverlay');
+            
+            params = {
                 scale: 1.0, damping: 0.95, lightIntensity: 1.5, color: '#00ffff', freecam: false, freecamSpeed: 5.0,
-            },
-            init() {
-                this.modules.core = CoreEngine.init(this);
-                this.modules.env = Environment.init(this.modules.core.scene);
-                this.modules.artifact = Artifact.init(this.modules.core.scene, this.modules.env.pointLight, this.params);
-                this.modules.ui = UIControls.init(this.modules.artifact.group, this.modules.core.camera, this.params);
-                this.modules.perf = PerformanceMonitor.init(this.modules.core.renderer);
-                this.modules.freecam = FreecamController.init(this.modules.core.renderer, this.modules.core.camera, this.params, this.modules.ui.gui);
-                this.modules.artifactControls = ArtifactController.init(this.modules.core.renderer, this.params);
-                this.modules.resize = ResizeHandler.init(this.modules.core.camera, this.modules.core.renderer, this.modules.perf.state);
-                CoreEngine.start();
-            }
-        };
+            };
+            const gui = new lil.GUI();
+            const artifactFolder = gui.addFolder('Artifact Controls');
+            artifactFolder.add(params, 'scale', 0.2, 2.5).onChange(v => artifactGroup.scale.set(v, v, v));
+            artifactFolder.add(params, 'damping', 0.9, 0.995);
+            artifactFolder.add(params, 'lightIntensity', 0, 4.0).onChange(v => artifactGroup.getObjectByProperty('isPointLight').intensity = v);
+            artifactFolder.addColor(params, 'color').onChange(v => {
+                artifactGroup.getObjectByProperty('isPointLight').color.set(v);
+                artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
+            });
+            const cameraFolder = gui.addFolder('Camera Controls');
+            cameraFolder.add(params, 'freecam').name('Freecam Mode').onChange(toggleFreecam);
+            cameraFolder.add(camera, 'fov', 30, 120).onChange(() => camera.updateProjectionMatrix());
+            cameraFolder.add(params, 'freecamSpeed', 1, 20).name('Move Speed');
 
-        const CoreEngine = {
-            init(app) {
-                this.app = app;
-                this.scene = new THREE.Scene();
-                this.renderer = new THREE.WebGLRenderer({ antialiased: true });
-                this.BASE_FOV = 75;
-                this.camera = new THREE.PerspectiveCamera(this.BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
-                this.clock = new THREE.Clock();
-                this.renderer.setPixelRatio(window.devicePixelRatio);
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-                document.body.appendChild(this.renderer.domElement);
-                this.camera.rotation.order = 'YXZ';
-                return this;
-            },
-            start() {
-                this.animate();
-            },
-            animate() {
-                requestAnimationFrame(() => this.animate());
-                const deltaTime = this.clock.getDelta();
-                const elapsedTime = this.clock.getElapsedTime();
+            const keyState = {};
+            document.addEventListener('keydown', (e) => keyState[e.code] = true);
+            document.addEventListener('keyup', (e) => keyState[e.code] = false);
 
-                Object.values(this.app.modules).forEach(module => {
-                    if (module.update) module.update(deltaTime, elapsedTime);
-                });
+            params.toggleFreecam = (value) => { if (value) renderer.domElement.requestPointerLock(); else document.exitPointerLock(); };
+            document.addEventListener('pointerlockchange', () => {
+                const isActive = document.pointerLockElement === renderer.domElement;
+                params.freecam = isActive;
+                renderer.domElement.classList.toggle('freecam-active', isActive);
+                gui.controllers.forEach(c => { if(c.property === 'freecam') c.updateDisplay(); });
+            });
+            
+            params.onFreecamMouseMove = (event) => {
+                if (!params.freecam) return;
+                camera.rotation.y -= event.movementX * 0.002;
+                camera.rotation.x -= event.movementY * 0.002;
+                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+            };
+            renderer.domElement.addEventListener('mousemove', params.onFreecamMouseMove);
+            
+            params.updateFreecamPosition = (deltaTime) => {
+                const moveSpeed = params.freecamSpeed * deltaTime;
+                const cameraDirection = new THREE.Vector3();
+                camera.getWorldDirection(cameraDirection);
+                if (keyState['KeyW'] || keyState['ArrowUp']) camera.position.addScaledVector(cameraDirection, moveSpeed);
+                if (keyState['KeyS'] || keyState['ArrowDown']) camera.position.addScaledVector(cameraDirection, -moveSpeed);
+                if (keyState['KeyA'] || keyState['ArrowLeft']) camera.position.addScaledVector(cameraDirection.cross(camera.up).normalize(), -moveSpeed);
+                if (keyState['KeyD'] || keyState['ArrowRight']) camera.position.addScaledVector(cameraDirection.cross(camera.up).normalize(), moveSpeed);
+                if (keyState['KeyE']) camera.position.y += moveSpeed;
+                if (keyState['KeyQ']) camera.position.y -= moveSpeed;
+            };
 
-                this.renderer.render(this.scene, this.camera);
-            }
-        };
+            const frameTimes = [];
+            let lastFrameTime = performance.now(), frameCounter = 0, isAdapting = false, adaptationLevel = 0;
+            const ADAPTATION_STEPS = [1, 0.75, 0.5];
+            
+            params.checkPerformance = () => {
+                const now = performance.now();
+                frameTimes.push(now - lastFrameTime);
+                lastFrameTime = now;
+                if (frameTimes.length > 60) frameTimes.shift();
 
-        const Environment = {
-            init(scene) {
-                const ambientLight = new THREE.AmbientLight(0x404080, 2);
-                scene.add(ambientLight);
-                this.pointLight = new THREE.PointLight(App.params.color, App.params.lightIntensity, 50);
-                scene.add(this.pointLight);
+                if (++frameCounter < 120) return;
+                frameCounter = 0;
                 
-                const caveGeometry = new THREE.BufferGeometry();
-                const v = []; const r=20,d=50,s=12; for(let i=0;i<s;i++){const a=(i/s)*Math.PI*2;v.push(Math.cos(a)*r*(1+Math.random()*0.2),Math.sin(a)*r*(1+Math.random()*0.2),-d/2+(Math.random()-0.5)*5);v.push(Math.cos(a)*r*(1+Math.random()*0.2),Math.sin(a)*r*(1+Math.random()*0.2),d/2+(Math.random()-0.5)*5);} v.push(0,0,d/2); const bI=v.length/3-1; const idx=[]; for(let i=0;i<s;i++){const c=i*2,n=((i+1)%s)*2;idx.push(c,c+1,n);idx.push(n,c+1,n+1);idx.push(n+1,c+1,bI);}
-                caveGeometry.setIndex(idx); caveGeometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3)); caveGeometry.computeVertexNormals();
-                const caveMaterial = new THREE.MeshStandardMaterial({color:0x223366,flatShading:true,side:THREE.BackSide});
-                const cave = new THREE.Mesh(caveGeometry, caveMaterial);
-                scene.add(cave);
-                return this;
-            }
-        };
-        
-        const Artifact = {
-            init(scene, pointLight, params) {
-                this.group = new THREE.Group();
-                scene.add(this.group);
-                this.bodyMaterial = new THREE.MeshBasicMaterial({ color: params.color, transparent: true, opacity: 0.15 });
-                const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), this.bodyMaterial);
-                this.group.add(cubeBody);
-                const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
-                this.group.add(cubeWireframe);
-                this.group.add(pointLight);
-                return this;
-            }
-        };
-
-        const UIControls = {
-            init(artifactGroup, camera, params) {
-                this.gui = new lil.GUI();
-                const artifactFolder = this.gui.addFolder('Artifact Controls');
-                artifactFolder.add(params,'scale',0.2,2.5).onChange(v=>artifactGroup.scale.set(v,v,v));
-                artifactFolder.add(params, 'damping', 0.9, 0.995);
-                artifactFolder.add(params,'lightIntensity',0,4.0).onChange(v=>App.modules.env.pointLight.intensity=v);
-                artifactFolder.addColor(params,'color').onChange(v=>{ App.modules.env.pointLight.color.set(v); App.modules.artifact.bodyMaterial.color.set(v); });
-                const cameraFolder = this.gui.addFolder('Camera Controls');
-                cameraFolder.add(params,'freecam').name('Freecam Mode').onChange(v=>App.modules.freecam.toggle(v));
-                cameraFolder.add(camera,'fov',30,120).onChange(()=>camera.updateProjectionMatrix());
-                cameraFolder.add(params,'freecamSpeed',1,20).name('Move Speed');
-                cameraFolder.close();
-                return this;
-            }
-        };
-
-        const PerformanceMonitor = {
-            init(renderer) {
-                this.renderer = renderer;
-                this.warningOverlay = document.getElementById('warningOverlay');
-                this.state = { lastFrameTime: performance.now(), frameTimes: [], frameCounter: 0, isAdapting: false, adaptationLevel: 0 };
-                this.ADAPTATION_STEPS = [1, 0.75, 0.5];
-                this.FPS_CHECK_INTERVAL = 120;
-                this.FPS_TARGET = 30;
-                return this;
-            },
-            update(deltaTime) {
-                this.state.frameTimes.push(deltaTime * 1000);
-                if (this.state.frameTimes.length > 60) this.state.frameTimes.shift();
-                if (++this.state.frameCounter >= this.FPS_CHECK_INTERVAL) { this.check(); this.state.frameCounter = 0; }
-            },
-            check() {
-                if (this.state.isAdapting || this.state.adaptationLevel >= this.ADAPTATION_STEPS.length - 1) return;
-                const avgDelta = this.state.frameTimes.reduce((a,b)=>a+b,0)/this.state.frameTimes.length;
-                if ((1000/avgDelta) < this.FPS_TARGET) this.initiateReboot();
-            },
-            initiateReboot() {
-                this.state.isAdapting = true;
-                this.warningOverlay.style.display = 'block';
-                setTimeout(() => {
-                    this.state.adaptationLevel++;
-                    App.modules.resize.onWindowResize();
-                    this.warningOverlay.style.display = 'none';
-                    this.state.isAdapting = false;
-                }, 2500);
-            }
-        };
-
-        const FreecamController = {
-            init(renderer, camera, params, gui) {
-                this.renderer = renderer; this.camera = camera; this.params = params; this.gui = gui;
-                this.keyState = {}; this.cameraDirection = new THREE.Vector3();
-                document.addEventListener('pointerlockchange',()=>this.onPointerLockChange());
-                document.addEventListener('keydown',(e)=>this.keyState[e.code]=true);
-                document.addEventListener('keyup',(e)=>this.keyState[e.code]=false);
-                this.renderer.domElement.addEventListener('mousemove',(e)=>this.onFreecamMouseMove(e));
-                return this;
-            },
-            toggle(value) { if (value) this.renderer.domElement.requestPointerLock(); else document.exitPointerLock(); },
-            onPointerLockChange() {
-                const isActive = document.pointerLockElement === this.renderer.domElement;
-                this.params.freecam = isActive;
-                this.renderer.domElement.classList.toggle('freecam-active',isActive);
-                this.gui.controllers.forEach(c=>{if(c.property==='freecam')c.updateDisplay();});
-            },
-            onFreecamMouseMove(event) {
-                if (!this.params.freecam) return;
-                this.camera.rotation.y -= event.movementX*0.002;
-                this.camera.rotation.x -= event.movementY*0.002;
-                this.camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotation.x));
-            },
-            update(deltaTime) {
-                if (!this.params.freecam) return;
-                const moveSpeed = this.params.freecamSpeed*deltaTime;
-                this.camera.getWorldDirection(this.cameraDirection);
-                if(this.keyState['KeyW']||this.keyState['ArrowUp'])this.camera.position.addScaledVector(this.cameraDirection,moveSpeed);
-                if(this.keyState['KeyS']||this.keyState['ArrowDown'])this.camera.position.addScaledVector(this.cameraDirection,-moveSpeed);
-                if(this.keyState['KeyA']||this.keyState['ArrowLeft'])this.camera.position.addScaledVector(this.cameraDirection.cross(this.camera.up).normalize(),-moveSpeed);
-                if(this.keyState['KeyD']||this.keyState['ArrowRight'])this.camera.position.addScaledVector(this.cameraDirection.cross(this.camera.up).normalize(),moveSpeed);
-                if(this.keyState['KeyE'])this.camera.position.y+=moveSpeed;
-                if(this.keyState['KeyQ'])this.camera.position.y-=moveSpeed;
-            }
-        };
-
-        const ArtifactController = {
-            init(renderer, params) {
-                this.renderer = renderer; this.params = params;
-                this.isDragging = false; this.previousPos = {x:0,y:0}; this.velocity = {x:0,y:0}; this.SENSITIVITY = 0.01;
-                const el = this.renderer.domElement;
-                el.addEventListener('mousedown',(e)=>this.onPointerDown(e)); el.addEventListener('mousemove',(e)=>this.onPointerMove(e));
-                el.addEventListener('mouseup',()=>this.onPointerUp()); el.addEventListener('mouseleave',()=>this.onPointerUp());
-                el.addEventListener('touchstart',(e)=>this.onPointerDown(e)); el.addEventListener('touchmove',(e)=>this.onPointerMove(e));
-                el.addEventListener('touchend',()=>this.onPointerUp());
-                return this;
-            },
-            onPointerDown(event){ if(this.params.freecam)return; this.isDragging=true; this.renderer.domElement.classList.add('grabbing'); this.previousPos.x=event.clientX||event.touches[0].clientX; this.previousPos.y=event.clientY||event.touches[0].clientY; },
-            onPointerMove(event){ if(event.touches&&event.touches.length>1)return; event.preventDefault(); if(this.isDragging&&!this.params.freecam){ const cX=event.clientX||event.touches[0].clientX,cY=event.clientY||event.touches[0].clientY; this.velocity.y+=(cX-this.previousPos.x)*this.SENSITIVITY; this.velocity.x+=(cY-this.previousPos.y)*this.SENSITIVITY; this.previousPos.x=cX;this.previousPos.y=cY; }},
-            onPointerUp(){ this.isDragging=false; this.renderer.domElement.classList.remove('grabbing'); },
-            update(deltaTime) {
-                if (this.params.freecam) return;
-                const artifact = App.modules.artifact.group;
-                artifact.rotation.x += this.velocity.x; artifact.rotation.y += this.velocity.y;
-                if (!this.isDragging) { this.velocity.x *= this.params.damping; this.velocity.y *= this.params.damping; }
-            }
-        };
-
-        const ResizeHandler = {
-            init(camera, renderer, perfState) {
-                this.camera = camera; this.renderer = renderer; this.perfState = perfState;
-                window.addEventListener('resize', () => this.onWindowResize());
-                this.onWindowResize();
-                return this;
-            },
-            onWindowResize() {
-                const {width, height} = this.renderer.domElement;
-                if (width !== window.innerWidth || height !== window.innerHeight) {
-                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
+                const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+                if ((1000 / averageDelta) < 30) {
+                    isAdapting = true;
+                    warningOverlay.style.display = 'block';
+                    setTimeout(() => {
+                        adaptationLevel++;
+                        onWindowResize(ADAPTATION_STEPS[adaptationLevel]);
+                        warningOverlay.style.display = 'none';
+                        isAdapting = false;
+                    }, 2500);
                 }
-                this.renderer.setPixelRatio(window.devicePixelRatio * PerformanceMonitor.ADAPTATION_STEPS[this.perfState.adaptationLevel]);
-                this.camera.aspect = window.innerWidth / window.innerHeight;
-                if (this.camera.aspect < 1) { this.camera.fov = 2*Math.atan(Math.tan(CoreEngine.BASE_FOV*Math.PI/180/2)/this.camera.aspect)*180/Math.PI; } 
-                else { this.camera.fov = CoreEngine.BASE_FOV; }
-                this.camera.updateProjectionMatrix();
-            }
-        };
+            };
+        }
 
-        App.init();
+        // --- 5. CORE INTERACTIVITY & ANIMATION LOOP ---
+        let isDragging = false;
+        const previousPointerPosition = { x: 0, y: 0 };
+        const rotationVelocity = { x: 0, y: 0 };
+        const SENSITIVITY = 0.004;
+
+        function onPointerDown(event) {
+            if (advancedProtocolsLoaded && params.freecam) return;
+            isDragging = true;
+            renderer.domElement.classList.add('grabbing');
+            previousPointerPosition.x = event.clientX || event.touches[0].clientX;
+            previousPointerPosition.y = event.clientY || event.touches[0].clientY;
+        }
+        function onPointerMove(event) {
+            if(event.touches && event.touches.length > 1) return;
+            event.preventDefault();
+            if (isDragging && (!advancedProtocolsLoaded || !params.freecam)) {
+                const clientX = event.clientX || event.touches[0].clientX;
+                const clientY = event.clientY || event.touches[0].clientY;
+                rotationVelocity.y += (clientX - previousPointerPosition.x) * SENSITIVITY;
+                rotationVelocity.x += (clientY - previousPointerPosition.y) * SENSITIVITY;
+                previousPointerPosition.x = clientX;
+                previousPointerPosition.y = clientY;
+            }
+        }
+        function onPointerUp() { isDragging = false; renderer.domElement.classList.remove('grabbing'); }
+        
+        function onWindowResize(pixelRatioFactor = 1) {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio * pixelRatioFactor);
+            camera.aspect = width / height;
+            if (camera.aspect < 1) {
+                camera.fov = 2 * Math.atan(Math.tan(BASE_FOV * Math.PI / 180 / 2) / camera.aspect) * 180 / Math.PI;
+            } else {
+                camera.fov = BASE_FOV;
+            }
+            camera.updateProjectionMatrix();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            const deltaTime = clock.getDelta();
+            const elapsedTime = clock.getElapsedTime();
+
+            if (advancedProtocolsLoaded) {
+                params.checkPerformance();
+                if (params.freecam) {
+                    params.updateFreecamPosition(deltaTime);
+                } else {
+                    camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+                    camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+                    camera.position.z = 5;
+                    camera.lookAt(0, 0, 0);
+                }
+            } else {
+                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+                camera.lookAt(0, 0, 0);
+            }
+
+            artifactGroup.rotation.x += rotationVelocity.x;
+            artifactGroup.rotation.y += rotationVelocity.y;
+            if (!isDragging) {
+                const damping = advancedProtocolsLoaded ? params.damping : 0.95;
+                rotationVelocity.x *= damping;
+                rotationVelocity.y *= damping;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // --- 6. IGNITION ---
+        initBaseModule();
+        onWindowResize();
+        camera.rotation.order = 'YXZ';
+        renderer.domElement.addEventListener('mousedown', onPointerDown);
+        renderer.domElement.addEventListener('mousemove', onPointerMove);
+        renderer.domElement.addEventListener('mouseup', onPointerUp);
+        renderer.domElement.addEventListener('mouseleave', onPointerUp);
+        renderer.domElement.addEventListener('touchstart', onPointerDown);
+        renderer.domElement.addEventListener('touchmove', onPointerMove);
+        renderer.domElement.addEventListener('touchend', onPointerUp);
+        window.addEventListener('resize', onWindowResize);
+        animate();
     </script>
 </body>
 </html>
