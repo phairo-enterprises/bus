@@ -21,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.1 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.2 //</button>
     <script>
-        // --- STABLE FOUNDATION v10.1 (INCREMENTAL ADDITION: CAVE ENVIRONMENT) ---
+        // --- STABLE FOUNDATION v10.2 (INCREMENTAL ADDITION: CAMERA BOB) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -48,7 +48,6 @@
         const uiGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
 
-        // --- SINGLE FEATURE ADDITION: CAVE & LIGHTING ---
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
         const pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
@@ -193,6 +192,12 @@
         
         function animate() {
             requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // --- SINGLE FEATURE ADDITION: CAMERA BOB ---
+            camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+            camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+            camera.lookAt(0, 0, 0);
             
             artifactGroup.rotation.x += rotationVelocity.x;
             artifactGroup.rotation.y += rotationVelocity.y;
