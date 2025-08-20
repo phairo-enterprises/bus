@@ -33,7 +33,7 @@
     <button id="loadButton">// ENGAGE ADVANCED PROTOCOLS //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v4.2 (MODULAR RESTORATION) ---
+        // --- STABLE FOUNDATION v5.0 (PHASE 1: UI TEST) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -42,7 +42,7 @@
         const clock = new THREE.Clock();
         const artifactGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
-        let params = { damping: 0.95 };
+        let params = { damping: 0.95 }; // Base controls start here.
 
         function initBaseModule() {
             renderer.setPixelRatio(window.devicePixelRatio);
@@ -61,23 +61,22 @@
             const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
             artifactGroup.add(cubeWireframe);
             artifactGroup.add(pointLight);
-
+            
+            // Cave geometry is included for correct scene rendering
             const caveGeometry = new THREE.BufferGeometry();
-            const caveVertices = [];
-            const radius = 20, depth = 50, segments = 12;
+            const caveVertices = [], radius = 20, depth = 50, segments = 12;
             for (let i = 0; i < segments; i++) {
                 const angle = (i / segments) * Math.PI * 2;
                 caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), -depth/2 + (Math.random()-0.5)*5);
                 caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), depth/2 + (Math.random()-0.5)*5);
             }
             caveVertices.push(0, 0, depth/2);
-            const backCenterIndex = caveVertices.length/3 - 1;
             const caveIndices = [];
             for (let i = 0; i < segments; i++) {
                 const current = i * 2, next = ((i + 1) % segments) * 2;
                 caveIndices.push(current, current + 1, next);
                 caveIndices.push(next, current + 1, next + 1);
-                caveIndices.push(next + 1, current + 1, backCenterIndex);
+                caveIndices.push(((i + 1) % segments) * 2 + 1, (i * 2) + 1, caveVertices.length/3 - 1);
             }
             caveGeometry.setIndex(caveIndices);
             caveGeometry.setAttribute('position', new THREE.Float32BufferAttribute(caveVertices, 3));
@@ -87,98 +86,35 @@
             scene.add(cave);
         }
 
+        // --- ADVANCED MODULE INITIALIZATION (GUI ONLY) ---
         function initAdvancedModule() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
             advancedProtocolsLoaded = true;
-
-            const warningOverlay = document.getElementById('warningOverlay');
+            
             Object.assign(params, {
                 scale: 1.0, lightIntensity: 1.5, color: '#00ffff', freecam: false, freecamSpeed: 5.0,
             });
             const gui = new lil.GUI();
             const artifactFolder = gui.addFolder('Artifact Controls');
-            artifactFolder.add(params, 'scale', 0.2, 2.5).onChange(v => artifactGroup.scale.set(v, v, v));
-            artifactFolder.add(params, 'damping', 0.9, 0.995);
-            artifactFolder.add(params, 'lightIntensity', 0, 4.0).onChange(v => artifactGroup.getObjectByProperty('isPointLight').intensity = v);
-            artifactFolder.addColor(params, 'color').onChange(v => {
+            artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => artifactGroup.scale.set(v, v, v));
+            artifactFolder.add(params, 'damping', 0.9, 0.995).name('Damping');
+            artifactFolder.add(params, 'lightIntensity', 0, 4.0).name('Light Intensity').onChange(v => artifactGroup.getObjectByProperty('isPointLight').intensity = v);
+            artifactFolder.addColor(params, 'color').name('Color').onChange(v => {
                 artifactGroup.getObjectByProperty('isPointLight').color.set(v);
                 artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
             });
-            const cameraFolder = gui.addFolder('Camera Controls');
-            cameraFolder.add(params, 'freecam').name('Freecam Mode').onChange(toggleFreecam);
-            cameraFolder.add(camera, 'fov', 30, 120).onChange(() => camera.updateProjectionMatrix());
-            cameraFolder.add(params, 'freecamSpeed', 1, 20).name('Move Speed');
-
-            const keyState = {};
-            document.addEventListener('keydown', (e) => keyState[e.code] = true);
-            document.addEventListener('keyup', (e) => keyState[e.code] = false);
-
-            params.toggleFreecam = (value) => { if (value) renderer.domElement.requestPointerLock(); else document.exitPointerLock(); };
-            document.addEventListener('pointerlockchange', () => {
-                const isActive = document.pointerLockElement === renderer.domElement;
-                params.freecam = isActive;
-                renderer.domElement.classList.toggle('freecam-active', isActive);
-                gui.controllers.forEach(c => { if(c.property === 'freecam') c.updateDisplay(); });
-            });
-            
-            params.onFreecamMouseMove = (event) => {
-                if (!params.freecam) return;
-                camera.rotation.y -= event.movementX * 0.002;
-                camera.rotation.x -= event.movementY * 0.002;
-                camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-            };
-            renderer.domElement.addEventListener('mousemove', params.onFreecamMouseMove);
-            
-            const cameraDirection = new THREE.Vector3();
-            params.updateFreecamPosition = (deltaTime) => {
-                const moveSpeed = params.freecamSpeed * deltaTime;
-                camera.getWorldDirection(cameraDirection);
-                if (keyState['KeyW'] || keyState['ArrowUp']) camera.position.addScaledVector(cameraDirection, moveSpeed);
-                if (keyState['KeyS'] || keyState['ArrowDown']) camera.position.addScaledVector(cameraDirection, -moveSpeed);
-                if (keyState['KeyA'] || keyState['ArrowLeft']) camera.position.addScaledVector(cameraDirection.cross(camera.up).normalize(), -moveSpeed);
-                if (keyState['KeyD'] || keyState['ArrowRight']) camera.position.addScaledVector(cameraDirection.cross(camera.up).normalize(), moveSpeed);
-                if (keyState['KeyE']) camera.position.y += moveSpeed;
-                if (keyState['KeyQ']) camera.position.y -= moveSpeed;
-            };
-
-            const frameTimes = [];
-            let lastFrameTime = performance.now(), frameCounter = 0, isAdapting = false, adaptationLevel = 0;
-            const ADAPTATION_STEPS = [1, 0.75, 0.5];
-            
-            params.checkPerformance = () => {
-                const now = performance.now();
-                frameTimes.push(now - lastFrameTime);
-                lastFrameTime = now;
-                if (frameTimes.length > 60) frameTimes.shift();
-
-                if (++frameCounter < 120) return;
-                frameCounter = 0;
-                
-                if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
-                const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-                if ((1000 / averageDelta) < 30) {
-                    isAdapting = true;
-                    warningOverlay.style.display = 'block';
-                    setTimeout(() => {
-                        adaptationLevel++;
-                        onWindowResize(ADAPTATION_STEPS[adaptationLevel]);
-                        warningOverlay.style.display = 'none';
-                        isAdapting = false;
-                    }, 2500);
-                }
-            };
         }
         document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
 
+        // --- CORE INTERACTIVITY & ANIMATION LOOP ---
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0, y: 0 };
         const SENSITIVITY = 0.004;
 
         function onPointerDown(event) {
-            if (advancedProtocolsLoaded && params.freecam) return;
             isDragging = true;
             renderer.domElement.classList.add('grabbing');
             previousPointerPosition.x = event.clientX || event.touches[0].clientX;
@@ -187,7 +123,7 @@
         function onPointerMove(event) {
             if(event.touches && event.touches.length > 1) return;
             event.preventDefault();
-            if (isDragging && (!advancedProtocolsLoaded || !params.freecam)) {
+            if (isDragging) {
                 const clientX = event.clientX || event.touches[0].clientX;
                 const clientY = event.clientY || event.touches[0].clientY;
                 rotationVelocity.y += (clientX - previousPointerPosition.x) * SENSITIVITY;
@@ -204,8 +140,10 @@
             renderer.setSize(width, height);
             renderer.setPixelRatio(window.devicePixelRatio * pixelRatioFactor);
             camera.aspect = width / height;
+            
+            const horizontalFovInRadians = BASE_FOV * Math.PI / 180;
             if (camera.aspect < 1) {
-                camera.fov = 2 * Math.atan(Math.tan(BASE_FOV * Math.PI / 180 / 2) / camera.aspect) * 180 / Math.PI;
+                camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
             } else {
                 camera.fov = BASE_FOV;
             }
@@ -214,39 +152,30 @@
         
         function animate() {
             requestAnimationFrame(animate);
-            const deltaTime = clock.getDelta();
             const elapsedTime = clock.getElapsedTime();
 
-            if (advancedProtocolsLoaded) {
-                params.checkPerformance();
-                if (params.freecam) {
-                    params.updateFreecamPosition(deltaTime);
-                } else {
-                    camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-                    camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-                    camera.position.z = 5;
-                    camera.lookAt(0, 0, 0);
-                }
-            } else {
-                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-                camera.lookAt(0, 0, 0);
-            }
+            // Cinematic camera bob
+            camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+            camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+            camera.position.z = 5;
+            camera.lookAt(0, 0, 0);
 
+            // Artifact Rotation
             artifactGroup.rotation.x += rotationVelocity.x;
             artifactGroup.rotation.y += rotationVelocity.y;
+            
+            // Damping (now controlled by params if advanced module is loaded)
             if (!isDragging) {
-                const damping = advancedProtocolsLoaded ? params.damping : 0.95;
-                rotationVelocity.x *= damping;
-                rotationVelocity.y *= damping;
+                rotationVelocity.x *= params.damping;
+                rotationVelocity.y *= params.damping;
             }
             
             renderer.render(scene, camera);
         }
 
+        // --- IGNITION ---
         initBaseModule();
         onWindowResize();
-        camera.rotation.order = 'YXZ';
         renderer.domElement.addEventListener('mousedown', onPointerDown);
         renderer.domElement.addEventListener('mousemove', onPointerMove);
         renderer.domElement.addEventListener('mouseup', onPointerUp);
