@@ -50,14 +50,14 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.5 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.6 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
     </div>
 
     <script>
-        // --- STABLE FOUNDATION v10.5 (INCREMENTAL ADDITION: VISUAL CONSOLE) ---
+        // --- STABLE FOUNDATION v10.6 (INCREMENTAL ADDITION: CONSOLE STATUS REPORTING) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -112,31 +112,34 @@
         const cave = new THREE.Mesh(caveGeometry, caveMaterial);
         scene.add(cave);
         
-        // --- NEW FEATURE: CONSOLE LOGGING SYSTEM ---
         function logToConsole(message) {
             const consoleDiv = document.getElementById('consoleOutput');
             if (consoleDiv) {
                 const line = document.createElement('div');
                 line.textContent = `> ${message}`;
                 consoleDiv.appendChild(line);
-                consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
             }
-            console.log(message); // Retain browser console logging for debugging
+            console.log(message);
         }
 
         function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
-            advancedProtocolsLoaded = true;
-
-            // --- FEATURE UPDATE: VISUAL CONSOLE FADE-IN ---
+            
             const consoleContainer = document.getElementById('consoleContainer');
             consoleContainer.style.opacity = '1';
+            
+            // --- FEATURE UPDATE: CONSOLE STATUS REPORTING ---
             logToConsole('// CONSOLE BOOT SEQUENCE INITIATED //');
+            
+            advancedProtocolsLoaded = true;
+            setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
 
             bodyMaterial.color.set(0xFF0000);
             pointLight.color.set(0xFF0000);
+            setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
 
             scene.add(uiGroup);
             const scaleSliderTrack = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0x333333 }));
@@ -164,6 +167,7 @@
             intensitySliderHandle.position.x = 0;
             intensitySliderHandle.name = "intensitySlider";
             uiGroup.add(intensitySliderHandle);
+            setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
         }
         document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
@@ -192,11 +196,14 @@
             if (currentFps < FPS_TARGET) {
                 isAdapting = true;
                 warningOverlay.style.display = 'block';
+                // --- CONSOLE INTEGRATION ---
+                logToConsole(`// PROTOCOL UNSTABLE // FPS: ${currentFps.toFixed(1)} // ADAPTING...`);
                 setTimeout(() => {
                     adaptationLevel++;
                     onWindowResize();
                     warningOverlay.style.display = 'none';
                     isAdapting = false;
+                    logToConsole(`// ADAPTATION COMPLETE // NEW RENDER SCALE: ${ADAPTATION_STEPS[adaptationLevel]}`);
                 }, 2500);
             }
         }
