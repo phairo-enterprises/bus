@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.28 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.29 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -90,7 +90,6 @@
 
         const params = { damping: 0.95 };
         const uiGroup = new THREE.Group();
-        const freecamUiGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
         let FREECAM_SPEED = 5.0;
@@ -188,22 +187,21 @@
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
             scene.add(uiGroup);
-            scene.add(freecamUiGroup);
-            freecamUiGroup.visible = false;
             bodyMaterial.color.set(0xFF0000);
 
             createSliderWithLabel("scaleSlider", "SCALE", -2.5, 0.5, uiGroup);
             createSliderWithLabel("dampingSlider", "DAMPING", -3.0, 0.84, uiGroup);
             createSliderWithLabel("intensitySlider", "INTENSITY", -3.5, 0.375, uiGroup);
             createSliderWithLabel("opacitySlider", "OPACITY", -4.0, 0.1, uiGroup);
-
             const initialFovValue = (BASE_FOV - 30) / (120 - 30);
-            createSliderWithLabel("fovSlider", "FOV", -2.5, initialFovValue, freecamUiGroup);
+            createSliderWithLabel("fovSlider", "FOV", -4.5, initialFovValue, uiGroup);
             const initialSpeedValue = (FREECAM_SPEED - 1) / (20 - 1);
-            createSliderWithLabel("speedSlider", "SPEED", -3.0, initialSpeedValue, freecamUiGroup);
+            createSliderWithLabel("speedSlider", "SPEED", -5.0, initialSpeedValue, uiGroup);
             const initialSensitivityValue = (SENSITIVITY_LOOK - 0.0005) / (0.005 - 0.0005);
-            createSliderWithLabel("sensitivitySlider", "SENSITIVITY", -3.5, initialSensitivityValue, freecamUiGroup);
-            createSliderWithLabel("rollSlider", "ROLL", -4.0, 0.5, freecamUiGroup);
+            createSliderWithLabel("sensitivitySlider", "SENSITIVITY", -5.5, initialSensitivityValue, uiGroup);
+            createSliderWithLabel("rollSlider", "ROLL", -6.0, 0.5, uiGroup);
+            createSliderWithLabel("pitchSlider", "PITCH", -6.5, 0.5, uiGroup);
+            createSliderWithLabel("yawSlider", "YAW", -7.0, 0.5, uiGroup);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -256,8 +254,7 @@
             pointer.y = - (clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
             
-            const activeUiGroup = cameraMode === 'bob' ? uiGroup : freecamUiGroup;
-            const intersects = raycaster.intersectObjects(activeUiGroup.children);
+            const intersects = raycaster.intersectObjects(uiGroup.children);
             
             if (advancedProtocolsLoaded && intersects.length > 0) {
                 selectedObject = intersects.find(i => i.object.name.endsWith("Slider"))?.object;
@@ -316,6 +313,12 @@
                         case "rollSlider":
                             camera.rotation.z = (value - 0.5) * (Math.PI / 2);
                             break;
+                        case "pitchSlider":
+                            camera.rotation.x = (value - 0.5) * -Math.PI;
+                            break;
+                        case "yawSlider":
+                            camera.rotation.y = (value - 0.5) * -Math.PI;
+                            break;
                     }
                 }
             } else if (isDragging && cameraMode === 'bob') {
@@ -356,15 +359,11 @@
                 if (cameraMode === 'bob') {
                     cameraMode = 'free';
                     logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE LOOK)');
-                    uiGroup.visible = false;
-                    freecamUiGroup.visible = true;
                 } else {
                     cameraMode = 'bob';
                     logToConsole('CAMERA MODE: BOB ENGAGED');
                     document.exitPointerLock();
                     camera.rotation.set(0, 0, 0);
-                    uiGroup.visible = true;
-                    freecamUiGroup.visible = false;
                 }
             }
         }
@@ -416,30 +415,4 @@
                 rotationVelocity.x *= params.damping;
                 rotationVelocity.y *= params.damping;
             } else if (cameraMode === 'free') {
-                const moveDirection = new THREE.Vector3(freecamState.right, 0, -freecamState.forward);
-                moveDirection.normalize();
-                moveDirection.applyQuaternion(camera.quaternion);
-                camera.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
-                camera.position.y += freecamState.up * FREECAM_SPEED * delta;
-            }
-            
-            renderer.render(scene, camera);
-        }
-
-        onWindowResize();
-        renderer.domElement.addEventListener('mousedown', onPointerDown);
-        renderer.domElement.addEventListener('mousemove', onPointerMove);
-        renderer.domElement.addEventListener('mouseup', onPointerUp);
-        renderer.domElement.addEventListener('mouseleave', onPointerUp);
-        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
-        renderer.domElement.addEventListener('touchend', onPointerUp);
-        window.addEventListener('resize', onWindowResize);
-        window.addEventListener('keypress', onKeyPress);
-        window.addEventListener('keydown', (e) => onKey(e, true));
-        window.addEventListener('keyup', (e) => onKey(e, false));
-        document.addEventListener('pointerlockchange', onPointerLockChange);
-        animate();
-    </script>
-</body>
-</html>
+                const moveDirection = new THREE.Vector3(freecamState.right, 0, -fre
