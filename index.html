@@ -32,7 +32,7 @@
     <button id="loadButton">// ENGAGE DIAGNOSTIC v0.3 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v5.7 (INCREMENTAL ADDITION: CAMERA UI) ---
+        // --- STABLE FOUNDATION v5.8 (INCREMENTAL ADDITION: EMPTY CAMERA FOLDER) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -92,7 +92,7 @@
             advancedProtocolsLoaded = true;
             
             Object.assign(params, {
-                scale: 1.0, lightIntensity: 1.5, color: '#00ffff', freecam: false, freecamSpeed: 5.0
+                scale: 1.0, lightIntensity: 1.5, color: '#00ffff'
             });
 
             gui = new lil.GUI();
@@ -105,15 +105,8 @@
                 artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
             });
 
-            // --- SINGLE FEATURE ADDITION: CAMERA UI ---
+            // --- SINGLE FEATURE ADDITION: EMPTY CAMERA FOLDER ---
             const cameraFolder = gui.addFolder('Camera Controls');
-            cameraFolder.add(params, 'freecam').name('Freecam Mode').onChange(value => {
-                console.log("Freecam Toggled:", value); // Non-functional placeholder
-            });
-            cameraFolder.add(camera, 'fov', 30, 120).name('Field of View').onChange(() => {
-                camera.updateProjectionMatrix();
-            });
-            cameraFolder.add(params, 'freecamSpeed', 1, 20).name('Move Speed');
         }
         document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
 
