@@ -24,7 +24,7 @@
 </head>
 <body>
     <script>
-        // --- STABLE FOUNDATION v0.9 (VERBATIM BASELINE + GLOW & SLOW) ---
+        // --- STABLE FOUNDATION v5.0 (VERBATIM RESTORATION) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -38,34 +38,17 @@
         
         const clock = new THREE.Clock();
 
-        // --- MINIMAL CHANGE 1: The "Glow" ---
-        // The 'cube' is now an 'artifactGroup' to hold multiple objects.
-        const artifactGroup = new THREE.Group();
-        scene.add(artifactGroup);
-
-        const bodyGeometry = new THREE.BoxGeometry(2, 2, 2);
-        
-        // The glowing body (a semi-transparent mesh)
-        const bodyMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00FFFF, // Blue glow
-            transparent: true,
-            opacity: 0.1
-        });
-        const cubeBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        artifactGroup.add(cubeBody);
-
-        // The wireframe
-        const edges = new THREE.EdgesGeometry(bodyGeometry);
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        const edges = new THREE.EdgesGeometry(geometry);
         const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
-        const cubeWireframe = new THREE.LineSegments(edges, lineMaterial);
-        artifactGroup.add(cubeWireframe);
-        
+        const cube = new THREE.LineSegments(edges, lineMaterial);
+        scene.add(cube);
+
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0, y: 0 };
         const DAMPING_FACTOR = 0.95;
-        // --- MINIMAL CHANGE 2: Slow the Rotation ---
-        const SENSITIVITY = 0.004; // Reduced from 0.01
+        const SENSITIVITY = 0.01;
 
         function onPointerDown(event) {
             isDragging = true;
@@ -120,22 +103,14 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            // The group is rotated, not the individual cube.
-            artifactGroup.rotation.x += rotationVelocity.x;
-            artifactGroup.rotation.y += rotationVelocity.y;
+            cube.rotation.x += rotationVelocity.x;
+            cube.rotation.y += rotationVelocity.y;
             if (!isDragging) {
                 rotationVelocity.x *= DAMPING_FACTOR;
                 rotationVelocity.y *= DAMPING_FACTOR;
             }
             
             renderer.render(scene, camera);
-        }
-
-        onWindowResize();
-        animate();
-    </script>
-</body>
-</html>            renderer.render(scene, camera);
         }
 
         onWindowResize();
