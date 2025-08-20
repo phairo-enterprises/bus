@@ -26,13 +26,38 @@
             transform: rotate(-15deg) scale(1.5); text-shadow: 0 0 5px #FF0000;
             z-index: 10;
         }
+        #consoleContainer {
+            position: absolute; bottom: 10px; left: 10px;
+            width: 400px; max-width: 90%;
+            background-color: rgba(0, 20, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            font-family: monospace; font-size: 14px;
+            color: lime;
+            z-index: 200;
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none; /* Prevent interaction */
+        }
+        #consoleOutput {
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #consoleOutput > div {
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.4 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.5 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
+    <div id="consoleContainer">
+        <div id="consoleOutput"></div>
+    </div>
+
     <script>
-        // --- STABLE FOUNDATION v10.4 (INCREMENTAL ADDITION: CONSOLE LOG) ---
+        // --- STABLE FOUNDATION v10.5 (INCREMENTAL ADDITION: VISUAL CONSOLE) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -86,15 +111,29 @@
         const caveMaterial = new THREE.MeshStandardMaterial({ color: 0x223366, flatShading: true, side: THREE.BackSide });
         const cave = new THREE.Mesh(caveGeometry, caveMaterial);
         scene.add(cave);
+        
+        // --- NEW FEATURE: CONSOLE LOGGING SYSTEM ---
+        function logToConsole(message) {
+            const consoleDiv = document.getElementById('consoleOutput');
+            if (consoleDiv) {
+                const line = document.createElement('div');
+                line.textContent = `> ${message}`;
+                consoleDiv.appendChild(line);
+                consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll
+            }
+            console.log(message); // Retain browser console logging for debugging
+        }
 
         function engageDiagnostic() {
-            // --- SINGLE FEATURE ADDITION: CONSOLE LOG ---
-            console.log('// CONSOLE BOOT SEQUENCE INITIATED //');
-
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
             advancedProtocolsLoaded = true;
+
+            // --- FEATURE UPDATE: VISUAL CONSOLE FADE-IN ---
+            const consoleContainer = document.getElementById('consoleContainer');
+            consoleContainer.style.opacity = '1';
+            logToConsole('// CONSOLE BOOT SEQUENCE INITIATED //');
 
             bodyMaterial.color.set(0xFF0000);
             pointLight.color.set(0xFF0000);
