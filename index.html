@@ -4,182 +4,29 @@
     <meta charset="UTF-8">
     <title>backupstrats.com</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lil-gui/0.17.0/lil-gui.umd.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #000000; }
-        canvas { display: block; touch-action: none; cursor: grab; }
-        canvas.grabbing { cursor: grabbing; }
-        #loadButton {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 15px 30px; font-family: monospace; font-size: 20px;
-            color: white; background-color: transparent; border: 1px solid white;
-            cursor: pointer; z-index: 100; transition: opacity 0.5s;
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background-color: #000000; 
         }
-        #loadButton:hover { background-color: rgba(255, 255, 255, 0.1); }
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v2.3 (SCALE TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v8.3 (INCREMENTAL ADDITION: SCALE SLIDER) ---
+        // --- FINAL DIAGNOSTIC: THE CLEAN ROOM ---
+        // --- ISOLATING THE SINGLE POINT OF FAILURE ---
 
-        const scene = new THREE.Scene();
-        const renderer = new THREE.WebGLRenderer({ antialiased: true });
-        const BASE_FOV = 75;
-        const camera = new THREE.PerspectiveCamera(BASE_FOV, window.innerWidth / window.innerHeight, 0.1, 100);
-        const clock = new THREE.Clock();
-        const artifactGroup = new THREE.Group();
-        let params = { damping: 0.95 };
-        let pointLight, bodyMaterial, gui;
-
-        function initBaseModule() {
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-            camera.position.z = 5;
-
-            const ambientLight = new THREE.AmbientLight(0x404080, 2);
-            scene.add(ambientLight);
-            
-            pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
-            bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.1 });
-
-            scene.add(artifactGroup);
-            const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
-            artifactGroup.add(cubeBody);
-            const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
-            artifactGroup.add(cubeWireframe);
-            artifactGroup.add(pointLight);
-            
-            const caveGeometry = new THREE.BufferGeometry();
-            const caveVertices = [], radius = 20, depth = 50, segments = 12;
-            for (let i = 0; i < segments; i++) {
-                const angle = (i / segments) * Math.PI * 2;
-                caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), -depth/2 + (Math.random()-0.5)*5);
-                caveVertices.push(Math.cos(angle)*radius*(1+Math.random()*0.2), Math.sin(angle)*radius*(1+Math.random()*0.2), depth/2 + (Math.random()-0.5)*5);
-            }
-            caveVertices.push(0, 0, depth/2);
-            const caveIndices = [];
-            for (let i = 0; i < segments; i++) {
-                const current = i * 2, next = ((i + 1) % segments) * 2;
-                caveIndices.push(current, current + 1, next);
-                caveIndices.push(next, current + 1, next + 1);
-                caveIndices.push(((i + 1) % segments) * 2 + 1, (i * 2) + 1, caveVertices.length/3 - 1);
-            }
-            caveGeometry.setIndex(caveIndices);
-            caveGeometry.setAttribute('position', new THREE.Float32BufferAttribute(caveVertices, 3));
-            caveGeometry.computeVertexNormals();
-            const caveMaterial = new THREE.MeshStandardMaterial({ color: 0x223366, flatShading: true, side: THREE.BackSide });
-            const cave = new THREE.Mesh(caveGeometry, caveMaterial);
-            scene.add(cave);
+        try {
+            // The only line of code that matters.
+            const gui = new lil.GUI();
+            console.log("SUCCESS: lil.GUI initialized.");
+        } catch (error) {
+            console.error("FAILURE: Could not initialize lil.GUI.");
+            console.error(error);
         }
-
-        function attemptUIInitialization() {
-            try {
-                gui = new lil.GUI();
-                
-                // --- THE SINGLE, ADDITIVE CHANGE ---
-                Object.assign(params, { scale: 1.0 });
-                const artifactFolder = gui.addFolder('Artifact Controls');
-                artifactFolder.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
-                    artifactGroup.scale.set(v, v, v);
-                });
-                
-                console.log("SUCCESS: lil.GUI and Scale slider initialized without error.");
-            } catch (error) {
-                console.error("FAILURE: Error during UI initialization.");
-                console.error(error);
-            }
-        }
-
-        function engageDiagnostic() {
-            const loadButton = document.getElementById('loadButton');
-            loadButton.style.opacity = '0';
-            setTimeout(() => loadButton.remove(), 500);
-
-            const redColor = new THREE.Color(0xFF0000);
-            if (pointLight) pointLight.color.set(redColor);
-            if (bodyMaterial) bodyMaterial.color.set(redColor);
-
-            attemptUIInitialization();
-        }
-        document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
-
-        let isDragging = false;
-        const previousPointerPosition = { x: 0, y: 0 };
-        const rotationVelocity = { x: 0, y: 0 };
-        const SENSITIVITY = 0.004;
-
-        function onPointerDown(event) {
-            isDragging = true;
-            renderer.domElement.classList.add('grabbing');
-            previousPointerPosition.x = event.clientX || event.touches[0].clientX;
-            previousPointerPosition.y = event.clientY || event.touches[0].clientY;
-        }
-        function onPointerMove(event) {
-            if(event.touches && event.touches.length > 1) return;
-            event.preventDefault();
-            if (isDragging) {
-                const clientX = event.clientX || event.touches[0].clientX;
-                const clientY = event.clientY || event.touches[0].clientY;
-                rotationVelocity.y += (clientX - previousPointerPosition.x) * SENSITIVITY;
-                rotationVelocity.x += (clientY - previousPointerPosition.y) * SENSITIVITY;
-                previousPointerPosition.x = clientX;
-                previousPointerPosition.y = clientY;
-            }
-        }
-        function onPointerUp() { isDragging = false; renderer.domElement.classList.remove('grabbing'); }
-        
-        function onWindowResize() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            camera.aspect = width / height;
-            
-            const currentBaseFov = BASE_FOV;
-            if (camera.aspect < 1) {
-                const horizontalFovInRadians = currentBaseFov * Math.PI / 180;
-                camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
-            } else {
-                camera.fov = currentBaseFov;
-            }
-            camera.updateProjectionMatrix();
-        }
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            const elapsedTime = clock.getElapsedTime();
-
-            camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-            camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-            camera.position.z = 5;
-            camera.lookAt(0, 0, 0);
-
-            artifactGroup.rotation.x += rotationVelocity.x;
-            artifactGroup.rotation.y += rotationVelocity.y;
-            
-            if (!isDragging) {
-                rotationVelocity.x *= params.damping;
-                rotationVelocity.y *= params.damping;
-            }
-            
-            renderer.render(scene, camera);
-        }
-
-        initBaseModule();
-        onWindowResize();
-        renderer.domElement.addEventListener('mousedown', onPointerDown);
-        renderer.domElement.addEventListener('mousemove', onPointerMove);
-        renderer.domElement.addEventListener('mouseup', onPointerUp);
-        renderer.domElement.addEventListener('mouseleave', onPointerUp);
-        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
-        renderer.domElement.addEventListener('touchend', onPointerUp);
-        window.addEventListener('resize', onWindowResize);
-        animate();
     </script>
 </body>
 </html>
