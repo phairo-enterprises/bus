@@ -20,9 +20,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.9 (COLOR TEST) //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.0 (COLOR TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v7.1 (ROBUST TARGETING) ---
+        // --- STABLE FOUNDATION v7.2 (FINAL SCOPING FIX) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -32,6 +32,9 @@
         const artifactGroup = new THREE.Group();
         let params = { damping: 0.95 };
 
+        // --- CRITICAL FIX: Declare key object variables in the global scope ---
+        let pointLight, bodyMaterial;
+
         function initBaseModule() {
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -40,13 +43,13 @@
 
             const ambientLight = new THREE.AmbientLight(0x404080, 2);
             scene.add(ambientLight);
-            const pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
-            pointLight.name = "artifactLight"; // Give the light a name
+            
+            // Assign to the global variables
+            pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
+            bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.1 });
 
             scene.add(artifactGroup);
-            const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.1 });
             const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
-            cubeBody.name = "glowingBody"; // Give the body a name
             artifactGroup.add(cubeBody);
             const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
             artifactGroup.add(cubeWireframe);
@@ -80,12 +83,11 @@
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
 
-            const pointLight = scene.getObjectByName("artifactLight");
-            const bodyMesh = scene.getObjectByName("glowingBody");
             const redColor = new THREE.Color(0xFF0000);
             
+            // Now these variables are accessible and the command will work.
             if (pointLight) pointLight.color.set(redColor);
-            if (bodyMesh) bodyMesh.material.color.set(redColor);
+            if (bodyMaterial) bodyMaterial.color.set(redColor);
         }
         document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
