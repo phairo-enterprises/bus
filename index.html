@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.23 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.24 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -203,6 +203,7 @@
             createSliderWithLabel("speedSlider", "SPEED", -3.0, initialSpeedValue, freecamUiGroup);
             const initialSensitivityValue = (SENSITIVITY_LOOK - 0.0005) / (0.005 - 0.0005);
             createSliderWithLabel("sensitivitySlider", "SENSITIVITY", -3.5, initialSensitivityValue, freecamUiGroup);
+            createSliderWithLabel("rollSlider", "ROLL", -4.0, 0.5, freecamUiGroup);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -312,6 +313,9 @@
                         case "sensitivitySlider":
                             SENSITIVITY_LOOK = 0.0005 + value * (0.005 - 0.0005);
                             break;
+                        case "rollSlider":
+                            camera.rotation.z = (value - 0.5) * (Math.PI / 2);
+                            break;
                     }
                 }
             } else if (isDragging && cameraMode === 'bob') {
@@ -358,6 +362,7 @@
                     cameraMode = 'bob';
                     logToConsole('CAMERA MODE: BOB ENGAGED');
                     document.exitPointerLock();
+                    camera.rotation.z = 0;
                     uiGroup.visible = true;
                     freecamUiGroup.visible = false;
                 }
@@ -395,46 +400,4 @@
         
         function animate() {
             requestAnimationFrame(animate);
-            const delta = clock.getDelta();
-            const elapsedTime = clock.getElapsedTime();
-            frameTimes.push(delta * 1000);
-            if (frameTimes.length > 60) frameTimes.shift();
-            if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) checkPerformanceAndAdapt();
-
-            if (cameraMode === 'bob') {
-                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-                camera.lookAt(0, 0, 0);
-                
-                artifactGroup.rotation.x += rotationVelocity.x;
-                artifactGroup.rotation.y += rotationVelocity.y;
-                rotationVelocity.x *= params.damping;
-                rotationVelocity.y *= params.damping;
-            } else if (cameraMode === 'free') {
-                const moveDirection = new THREE.Vector3(freecamState.right, 0, -freecamState.forward);
-                moveDirection.normalize();
-                moveDirection.applyQuaternion(camera.quaternion);
-                camera.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
-                camera.position.y += freecamState.up * FREECAM_SPEED * delta;
-            }
-            
-            renderer.render(scene, camera);
-        }
-
-        onWindowResize();
-        renderer.domElement.addEventListener('mousedown', onPointerDown);
-        renderer.domElement.addEventListener('mousemove', onPointerMove);
-        renderer.domElement.addEventListener('mouseup', onPointerUp);
-        renderer.domElement.addEventListener('mouseleave', onPointerUp);
-        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
-        renderer.domElement.addEventListener('touchend', onPointerUp);
-        window.addEventListener('resize', onWindowResize);
-        window.addEventListener('keypress', onKeyPress);
-        window.addEventListener('keydown', (e) => onKey(e, true));
-        window.addEventListener('keyup', (e) => onKey(e, false));
-        document.addEventListener('pointerlockchange', onPointerLockChange);
-        animate();
-    </script>
-</body>
-</html>
+            const del
