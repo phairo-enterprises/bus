@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.39 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.40 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -77,11 +77,11 @@
 
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
-        
+
         const uiGroup = new THREE.Group();
-        scene.add(uiGroup);
+        artifactGroup.add(uiGroup);
         const freecamUiGroup = new THREE.Group();
-        scene.add(freecamUiGroup);
+        artifactGroup.add(freecamUiGroup);
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
@@ -143,7 +143,7 @@
         function createButton(name, labelText, position, size, targetGroup) {
             const buttonMaterial = new THREE.MeshBasicMaterial({ color: 0x444444, transparent: true, opacity: 0.8 });
             const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), buttonMaterial);
-            button.position.set(position.x, position.y, 0);
+            button.position.set(position.x, position.y, position.z);
             button.name = name;
             targetGroup.add(button);
 
@@ -175,9 +175,9 @@
             canvas.height = 80; 
             context.font = font;
             context.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            context.textAlign = 'right';
+            context.textAlign = 'center';
             context.textBaseline = 'middle';
-            context.fillText(labelText, canvas.width - 10, canvas.height / 2);
+            context.fillText(labelText, canvas.width / 2, canvas.height / 2);
             const texture = new THREE.CanvasTexture(canvas);
             const labelMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
             const labelGeometry = new THREE.PlaneGeometry(canvas.width / 150, canvas.height / 150);
@@ -186,11 +186,11 @@
             targetGroup.add(labelMesh);
         }
 
-        function createControlRow(param, labelText, yPos, uiTarget, labelTarget) {
-            createLabel(labelText, new THREE.Vector3(-1.8, yPos, 0.1), labelTarget);
+        function createControlRow(param, labelText, yPos, targetGroup) {
+            createLabel(labelText, new THREE.Vector3(0, yPos, 0), targetGroup);
             const buttonSize = new THREE.Vector2(0.6, 0.6);
-            createButton(`${param}_dec`, '-', new THREE.Vector2(2.0, yPos), buttonSize, uiTarget);
-            createButton(`${param}_inc`, '+', new THREE.Vector2(2.8, yPos), buttonSize, uiTarget);
+            createButton(`${param}_dec`, '-', new THREE.Vector3(2.0, yPos, 0), buttonSize, targetGroup);
+            createButton(`${param}_inc`, '+', new THREE.Vector3(2.8, yPos, 0), buttonSize, targetGroup);
         }
 
         function engageDiagnostic() {
@@ -206,13 +206,9 @@
             freecamUiGroup.visible = false;
             
             const artifactVertices = new Float32Array([
-                -1.5, -2, 0,  1.5, -2, 0,  1.5, 2, 0,  -1.5, 2, 0, 
-                -1, -1.5, -1, 1, -1.5, -1, 1, 1.5, -1, -1, 1.5, -1 
+                -1.5, -2, 0,  1.5, -2, 0,  2.0, 2, 0,  -2.0, 2, 0
             ]);
-            const artifactIndices = [
-                0, 1, 2,  0, 2, 3,  4, 5, 1,  4, 1, 0,  5, 6, 2,  5, 2, 1,
-                6, 7, 3,  6, 3, 2,  7, 4, 0,  7, 0, 3,  4, 7, 6,  4, 6, 5
-            ];
+            const artifactIndices = [ 0, 1, 2,  0, 2, 3 ];
             const artifactGeometry = new THREE.BufferGeometry();
             artifactGeometry.setAttribute('position', new THREE.BufferAttribute(artifactVertices, 3));
             artifactGeometry.setIndex(artifactIndices);
@@ -223,16 +219,16 @@
             artifactGroup.add(wireframe);
 
             let yPos = 1.2, yStep = 0.8;
-            createControlRow('scale', 'SCALE', yPos, uiGroup, artifactGroup); yPos -= yStep;
-            createControlRow('damping', 'DAMPING', yPos, uiGroup, artifactGroup); yPos -= yStep;
-            createControlRow('intensity', 'INTENSITY', yPos, uiGroup, artifactGroup); yPos -= yStep;
-            createControlRow('opacity', 'OPACITY', yPos, uiGroup, artifactGroup);
+            createControlRow('scale', 'SCALE', yPos, uiGroup); yPos -= yStep;
+            createControlRow('damping', 'DAMPING', yPos, uiGroup); yPos -= yStep;
+            createControlRow('intensity', 'INTENSITY', yPos, uiGroup); yPos -= yStep;
+            createControlRow('opacity', 'OPACITY', yPos, uiGroup);
 
             yPos = 1.2;
-            createControlRow('fov', 'FOV', yPos, freecamUiGroup, artifactGroup); yPos -= yStep;
-            createControlRow('speed', 'SPEED', yPos, freecamUiGroup, artifactGroup); yPos -= yStep;
-            createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamUiGroup, artifactGroup); yPos -= yStep;
-            createControlRow('roll', 'ROLL', yPos, freecamUiGroup, artifactGroup);
+            createControlRow('fov', 'FOV', yPos, freecamUiGroup); yPos -= yStep;
+            createControlRow('speed', 'SPEED', yPos, freecamUiGroup); yPos -= yStep;
+            createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamUiGroup); yPos -= yStep;
+            createControlRow('roll', 'ROLL', yPos, freecamUiGroup);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -280,6 +276,8 @@
             const step = action === 'inc' ? 1 : -1;
             const label = param.toUpperCase();
             let logMessage = "";
+            const artifactBody = artifactGroup.children.find(c => c.type === 'Mesh');
+            const wireframe = artifactGroup.children.find(c => c.type === 'LineSegments');
 
             switch(param) {
                 case 'scale':
@@ -296,8 +294,8 @@
                     logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`;
                     break;
                 case 'opacity':
-                    const artifactBody = artifactGroup.children.find(c => c.type === 'Mesh');
-                    artifactBody.material.opacity = Math.max(0, Math.min(1, artifactBody.material.opacity + step * 0.05));
+                    if (artifactBody) artifactBody.material.opacity = Math.max(0, Math.min(1, artifactBody.material.opacity + step * 0.05));
+                    if (wireframe) wireframe.material.opacity = Math.max(0, Math.min(1, wireframe.material.opacity + step * 0.05));
                     logMessage = `// ${label} SET TO ${artifactBody.material.opacity.toFixed(2)} //`;
                     break;
                 case 'fov':
@@ -329,10 +327,10 @@
             
             raycaster.setFromCamera(pointer, camera);
             const activeUiGroup = cameraMode === 'bob' ? uiGroup : freecamUiGroup;
-            const intersects = raycaster.intersectObjects(activeUiGroup.children);
+            const intersects = raycaster.intersectObjects(activeUiGroup.children, true);
 
             if (advancedProtocolsLoaded && intersects.length > 0) {
-                const button = intersects[0].object;
+                const button = intersects[0].object.parent;
                 const [param, action] = button.name.split('_');
                 if (param && action) {
                     updateAndLogParameter(param, action);
@@ -399,8 +397,6 @@
                     logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE LOOK)');
                     uiGroup.visible = false;
                     freecamUiGroup.visible = true;
-                    artifactGroup.children.filter(c => c.type === 'Mesh' && c.material.map).forEach(label => label.visible = false);
-                    freecamUiGroup.children.filter(c => c.type === 'Mesh' && c.material.map).forEach(label => label.visible = true);
                 } else {
                     cameraMode = 'bob';
                     logToConsole('CAMERA MODE: BOB ENGAGED');
@@ -408,8 +404,6 @@
                     camera.rotation.set(0, 0, 0);
                     uiGroup.visible = true;
                     freecamUiGroup.visible = false;
-                    artifactGroup.children.filter(c => c.type === 'Mesh' && c.material.map).forEach(label => label.visible = true);
-                    freecamUiGroup.children.filter(c => c.type === 'Mesh' && c.material.map).forEach(label => label.visible = false);
                 }
             }
         }
