@@ -29,10 +29,10 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.x //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.4 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v10.4 (INCREMENTAL ADDITION: INTENSITY SLIDER) ---
+        // --- STABLE FOUNDATION v10.4 (INCREMENTAL ADDITION: CONSOLE LOG) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -88,6 +88,9 @@
         scene.add(cave);
 
         function engageDiagnostic() {
+            // --- SINGLE FEATURE ADDITION: CONSOLE LOG ---
+            console.log('// CONSOLE BOOT SEQUENCE INITIATED //');
+
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
@@ -114,13 +117,12 @@
             dampingSliderHandle.name = "dampingSlider";
             uiGroup.add(dampingSliderHandle);
 
-            // --- SINGLE FEATURE ADDITION: INTENSITY SLIDER ---
             const intensitySliderTrack = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0x333333 }));
             intensitySliderTrack.position.y = -3.5;
             uiGroup.add(intensitySliderTrack);
             const intensitySliderHandle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xAAAAAA }));
             intensitySliderHandle.position.y = -3.5;
-            intensitySliderHandle.position.x = 0; // Default center position
+            intensitySliderHandle.position.x = 0;
             intensitySliderHandle.name = "intensitySlider";
             uiGroup.add(intensitySliderHandle);
         }
