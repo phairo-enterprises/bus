@@ -14,7 +14,7 @@
 </head>
 <body>
     <script>
-        // --- STABLE FOUNDATION v9.1 (DIEGETIC UI: SCALE SLIDER) ---
+        // --- STABLE FOUNDATION v9.2 (DIEGETIC UI: DAMPING SLIDER) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -35,24 +35,33 @@
         const cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF }));
         artifactGroup.add(cubeWireframe);
 
+        const params = {
+            damping: 0.95
+        };
+
         // --- DIEGETIC UI ELEMENTS ---
         const uiGroup = new THREE.Group();
         scene.add(uiGroup);
 
-        // Slider Track
-        const sliderTrackGeo = new THREE.BoxGeometry(3, 0.1, 0.1);
-        const sliderTrackMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
-        const sliderTrack = new THREE.Mesh(sliderTrackGeo, sliderTrackMat);
-        sliderTrack.position.y = -2.5;
-        uiGroup.add(sliderTrack);
+        // Slider 1: Scale
+        const scaleSliderTrack = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0x333333 }));
+        scaleSliderTrack.position.y = -2.5;
+        uiGroup.add(scaleSliderTrack);
+        const scaleSliderHandle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xAAAAAA }));
+        scaleSliderHandle.position.y = -2.5;
+        scaleSliderHandle.name = "scaleSlider";
+        uiGroup.add(scaleSliderHandle);
 
-        // Slider Handle
-        const sliderHandleGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-        const sliderHandleMat = new THREE.MeshBasicMaterial({ color: 0xAAAAAA });
-        const sliderHandle = new THREE.Mesh(sliderHandleGeo, sliderHandleMat);
-        sliderHandle.position.y = -2.5;
-        sliderHandle.name = "scaleSlider"; // Name for raycasting
-        uiGroup.add(sliderHandle);
+        // --- SINGLE FEATURE ADDITION: DAMPING SLIDER ---
+        const dampingSliderTrack = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0x333333 }));
+        dampingSliderTrack.position.y = -3.0; // Positioned below the scale slider
+        uiGroup.add(dampingSliderTrack);
+        const dampingSliderHandle = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xAAAAAA }));
+        dampingSliderHandle.position.y = -3.0;
+        dampingSliderHandle.position.x = 0; // Default center position
+        dampingSliderHandle.name = "dampingSlider";
+        uiGroup.add(dampingSliderHandle);
+
 
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
@@ -75,27 +84,31 @@
         }
 
         function onPointerMove(event) {
-            if (selectedObject && selectedObject.name === "scaleSlider") {
-                pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-                pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-                
-                const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-                raycaster.setFromCamera(pointer, camera);
-                const intersectPoint = new THREE.Vector3();
-                raycaster.ray.intersectPlane(plane, intersectPoint);
+            const clientX = event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0);
+            const clientY = event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0);
+            
+            pointer.x = (clientX / window.innerWidth) * 2 - 1;
+            pointer.y = - (clientY / window.innerHeight) * 2 + 1;
+            
+            const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+            raycaster.setFromCamera(pointer, camera);
+            const intersectPoint = new THREE.Vector3();
+            raycaster.ray.intersectPlane(plane, intersectPoint);
+            let newX = intersectPoint.x;
+            newX = Math.max(-1.5, Math.min(1.5, newX));
 
-                let newX = intersectPoint.x;
-                newX = Math.max(-1.5, Math.min(1.5, newX)); // Clamp to track bounds
-                sliderHandle.position.x = newX;
-
-                const scaleValue = 0.2 + ((newX + 1.5) / 3) * (2.5 - 0.2); // Map position to scale
-                artifactGroup.scale.set(scaleValue, scaleValue, scaleValue);
-
+            if (selectedObject) {
+                selectedObject.position.x = newX;
+                if (selectedObject.name === "scaleSlider") {
+                    const scaleValue = 0.2 + ((newX + 1.5) / 3) * (2.5 - 0.2);
+                    artifactGroup.scale.set(scaleValue, scaleValue, scaleValue);
+                } else if (selectedObject.name === "dampingSlider") {
+                    // Map position to damping value (0.9 to 0.995)
+                    params.damping = 0.9 + ((newX + 1.5) / 3) * (0.995 - 0.9);
+                }
             } else if (isDragging) {
                 if(event.touches && event.touches.length > 1) return;
                 event.preventDefault();
-                const clientX = event.clientX || event.touches[0].clientX;
-                const clientY = event.clientY || event.touches[0].clientY;
                 const deltaX = clientX - previousPointerPosition.x;
                 const deltaY = clientY - previousPointerPosition.y;
                 rotationVelocity.y += deltaX * SENSITIVITY;
@@ -114,7 +127,6 @@
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0, y: 0 };
-        const DAMPING_FACTOR = 0.95;
         const SENSITIVITY = 0.004;
         
         function onWindowResize() {
@@ -138,8 +150,8 @@
             artifactGroup.rotation.x += rotationVelocity.x;
             artifactGroup.rotation.y += rotationVelocity.y;
             if (!isDragging) {
-                rotationVelocity.x *= DAMPING_FACTOR;
-                rotationVelocity.y *= DAMPING_FACTOR;
+                rotationVelocity.x *= params.damping;
+                rotationVelocity.y *= params.damping;
             }
             
             renderer.render(scene, camera);
