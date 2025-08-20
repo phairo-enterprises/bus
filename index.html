@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.19 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.21 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -93,6 +93,8 @@
         const freecamUiGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
+        let FREECAM_SPEED = 5.0;
+        let SENSITIVITY_LOOK = 0.002;
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -197,6 +199,11 @@
 
             const initialFovValue = (BASE_FOV - 30) / (120 - 30);
             createSliderWithLabel("fovSlider", "FOV", -2.5, initialFovValue, freecamUiGroup);
+            const initialSpeedValue = (FREECAM_SPEED - 1) / (20 - 1);
+            createSliderWithLabel("speedSlider", "SPEED", -3.0, initialSpeedValue, freecamUiGroup);
+            const initialSensitivityValue = (SENSITIVITY_LOOK - 0.0005) / (0.005 - 0.0005);
+            createSliderWithLabel("sensitivitySlider", "SENSITIVITY", -3.5, initialSensitivityValue, freecamUiGroup);
+
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -210,8 +217,6 @@
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
-        const SENSITIVITY_LOOK = 0.002;
-        const FREECAM_SPEED = 5.0;
         const freecamState = { forward: 0, right: 0, up: 0 };
         
         const frameTimes = [];
@@ -302,6 +307,12 @@
                             camera.fov = 30 + value * (120 - 30);
                             camera.updateProjectionMatrix();
                             break;
+                        case "speedSlider":
+                            FREECAM_SPEED = 1.0 + value * 19.0;
+                            break;
+                        case "sensitivitySlider":
+                            SENSITIVITY_LOOK = 0.0005 + value * (0.005 - 0.0005);
+                            break;
                     }
                 }
             } else if (isDragging && cameraMode === 'bob') {
@@ -330,97 +341,4 @@
         }
 
         function onPointerLockMove(event) {
-            if (cameraMode !== 'free') return;
-            camera.rotation.y -= event.movementX * SENSITIVITY_LOOK;
-            camera.rotation.x -= event.movementY * SENSITIVITY_LOOK;
-            camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-        }
-
-        function onKeyPress(event) {
-            if (event.key.toLowerCase() === 'c' && advancedProtocolsLoaded) {
-                if (cameraMode === 'bob') {
-                    cameraMode = 'free';
-                    logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE LOOK)');
-                    uiGroup.visible = false;
-                    freecamUiGroup.visible = true;
-                } else {
-                    cameraMode = 'bob';
-                    logToConsole('CAMERA MODE: BOB ENGAGED');
-                    document.exitPointerLock();
-                    uiGroup.visible = true;
-                    freecamUiGroup.visible = false;
-                }
-            }
-        }
-
-        function onKey(event, isDown) {
-            if (cameraMode !== 'free') return;
-            const value = isDown ? 1 : 0;
-            switch(event.key.toLowerCase()) {
-                case 'w': freecamState.forward = value; break;
-                case 's': freecamState.forward = -value; break;
-                case 'a': freecamState.right = -value; break;
-                case 'd': freecamState.right = value; break;
-                case 'q': freecamState.up = -value; break;
-                case 'e': freecamState.up = value; break;
-            }
-        }
-        
-        function onWindowResize() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
-            camera.aspect = width / height;
-            if (camera.aspect < 1) {
-                const horizontalFovInRadians = (camera.fov * Math.PI / 180);
-                camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
-            }
-            camera.updateProjectionMatrix();
-        }
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            const delta = clock.getDelta();
-            const elapsedTime = clock.getElapsedTime();
-            frameTimes.push(delta * 1000);
-            if (frameTimes.length > 60) frameTimes.shift();
-            if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) checkPerformanceAndAdapt();
-
-            if (cameraMode === 'bob') {
-                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-                camera.lookAt(0, 0, 0);
-                
-                artifactGroup.rotation.x += rotationVelocity.x;
-                artifactGroup.rotation.y += rotationVelocity.y;
-                rotationVelocity.x *= params.damping;
-                rotationVelocity.y *= params.damping;
-            } else if (cameraMode === 'free') {
-                const moveDirection = new THREE.Vector3(freecamState.right, 0, -freecamState.forward);
-                moveDirection.normalize();
-                moveDirection.applyQuaternion(camera.quaternion);
-                camera.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
-                camera.position.y += freecamState.up * FREECAM_SPEED * delta;
-            }
-            
-            renderer.render(scene, camera);
-        }
-
-        onWindowResize();
-        renderer.domElement.addEventListener('mousedown', onPointerDown);
-        renderer.domElement.addEventListener('mousemove', onPointerMove);
-        renderer.domElement.addEventListener('mouseup', onPointerUp);
-        renderer.domElement.addEventListener('mouseleave', onPointerUp);
-        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
-        renderer.domElement.addEventListener('touchend', onPointerUp);
-        window.addEventListener('resize', onWindowResize);
-        window.addEventListener('keypress', onKeyPress);
-        window.addEventListener('keydown', (e) => onKey(e, true));
-        window.addEventListener('keyup', (e) => onKey(e, false));
-        document.addEventListener('pointerlockchange', onPointerLockChange);
-        animate();
-    </script>
-</body>
-</html>
+      
