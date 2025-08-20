@@ -5,6 +5,7 @@
     <title>backupstrats.com</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lil-gui/0.17.0/lil-gui.umd.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #000000; }
         canvas { display: block; touch-action: none; cursor: grab; }
@@ -20,9 +21,9 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.0 (COLOR TEST) //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v1.1 (SCALE TEST) //</button>
     <script>
-        // --- STABLE FOUNDATION v7.2 (FINAL SCOPING FIX) ---
+        // --- STABLE FOUNDATION v7.3 (INCREMENTAL ADDITION: SCALE SLIDER) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -31,9 +32,7 @@
         const clock = new THREE.Clock();
         const artifactGroup = new THREE.Group();
         let params = { damping: 0.95 };
-
-        // --- CRITICAL FIX: Declare key object variables in the global scope ---
-        let pointLight, bodyMaterial;
+        let pointLight, bodyMaterial, gui;
 
         function initBaseModule() {
             renderer.setPixelRatio(window.devicePixelRatio);
@@ -44,7 +43,6 @@
             const ambientLight = new THREE.AmbientLight(0x404080, 2);
             scene.add(ambientLight);
             
-            // Assign to the global variables
             pointLight = new THREE.PointLight(0x00FFFF, 1.5, 50);
             bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.1 });
 
@@ -78,18 +76,21 @@
             scene.add(cave);
         }
 
-        function engageDiagnostic() {
+        function engageProtocols() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
 
-            const redColor = new THREE.Color(0xFF0000);
-            
-            // Now these variables are accessible and the command will work.
-            if (pointLight) pointLight.color.set(redColor);
-            if (bodyMaterial) bodyMaterial.color.set(redColor);
+            Object.assign(params, {
+                scale: 1.0
+            });
+
+            gui = new lil.GUI();
+            gui.add(params, 'scale', 0.2, 2.5).name('Scale').onChange(v => {
+                artifactGroup.scale.set(v, v, v);
+            });
         }
-        document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
+        document.getElementById('loadButton').addEventListener('click', engageProtocols);
 
         let isDragging = false;
         const previousPointerPosition = { x: 0, y: 0 };
