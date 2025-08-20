@@ -29,10 +29,10 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.5 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v0.6 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <script>
-        // --- STABLE FOUNDATION v6.0 (CORRECT UI BINDING) ---
+        // --- STABLE FOUNDATION v6.1 (THE AIRLOCK PROTOCOL - STEP 1: RESTORE BASE) ---
 
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialiased: true });
@@ -92,7 +92,7 @@
             advancedProtocolsLoaded = true;
             
             Object.assign(params, {
-                scale: 1.0, lightIntensity: 1.5, color: '#00ffff', cameraFov: camera.fov
+                scale: 1.0, lightIntensity: 1.5, color: '#00ffff'
             });
 
             gui = new lil.GUI();
@@ -103,14 +103,6 @@
             artifactFolder.addColor(params, 'color').name('Color').onChange(v => {
                 artifactGroup.getObjectByProperty('isPointLight').color.set(v);
                 artifactGroup.getObjectByProperty('isMesh').material.color.set(v);
-            });
-
-            const cameraFolder = gui.addFolder('Camera Controls');
-            // --- THE CORRECT IMPLEMENTATION ---
-            // Bind to the simple 'params' object, then manually update the camera.
-            cameraFolder.add(params, 'cameraFov', 30, 120).name('Field of View').onChange(value => {
-                camera.fov = value;
-                camera.updateProjectionMatrix();
             });
         }
         document.getElementById('loadButton').addEventListener('click', initAdvancedModule);
@@ -160,65 +152,7 @@
                 setTimeout(() => {
                     adaptationLevel++;
                     onWindowResize();
-                    warningOverlay.style.display = 'none';
-                    isAdapting = false;
-                }, 2500);
-            }
-        }
-
-        function onWindowResize() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio * ADAPTATION_STEPS[adaptationLevel]);
-            camera.aspect = width / height;
-            
-            // This logic is now partially controlled by the FOV slider,
-            // but the base FOV for portrait mode calculation remains.
-            const currentBaseFov = advancedProtocolsLoaded ? params.cameraFov : BASE_FOV;
-            if (camera.aspect < 1) {
-                const horizontalFovInRadians = currentBaseFov * Math.PI / 180;
-                camera.fov = 2 * Math.atan(Math.tan(horizontalFovInRadians / 2) / camera.aspect) * 180 / Math.PI;
-            } else {
-                camera.fov = currentBaseFov;
-            }
-            camera.updateProjectionMatrix();
-        }
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            const elapsedTime = clock.getElapsedTime();
-
-            if (advancedProtocolsLoaded) {
-                checkPerformanceAndAdapt();
-            }
-
-            camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
-            camera.position.y = Math.cos( elapsedTime * 0.3) * 1.0;
-            camera.position.z = 5;
-            camera.lookAt(0, 0, 0);
-
-            artifactGroup.rotation.x += rotationVelocity.x;
-            artifactGroup.rotation.y += rotationVelocity.y;
-            
-            if (!isDragging) {
-                rotationVelocity.x *= params.damping;
-                rotationVelocity.y *= params.damping;
-            }
-            
-            renderer.render(scene, camera);
-        }
-
-        initBaseModule();
-        onWindowResize();
-        renderer.domElement.addEventListener('mousedown', onPointerDown);
-        renderer.domElement.addEventListener('mousemove', onPointerMove);
-        renderer.domElement.addEventListener('mouseup', onPointerUp);
-        renderer.domElement.addEventListener('mouseleave', onPointerUp);
-        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: false });
-        renderer.domElement.addEventListener('touchmove', onPointerMove, { passive: false });
-        renderer.domElement.addEventListener('touchend', onPointerUp);
-        window.addEventListener('resize', onWindowResize);
+                    warningOverlay.sty        window.addEventListener('resize', onWindowResize);
         animate();
     </script>
 </body>
