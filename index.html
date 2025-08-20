@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.22 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.23 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -93,6 +93,8 @@
         const freecamUiGroup = new THREE.Group();
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
+        let FREECAM_SPEED = 5.0;
+        let SENSITIVITY_LOOK = 0.002;
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -197,6 +199,10 @@
 
             const initialFovValue = (BASE_FOV - 30) / (120 - 30);
             createSliderWithLabel("fovSlider", "FOV", -2.5, initialFovValue, freecamUiGroup);
+            const initialSpeedValue = (FREECAM_SPEED - 1) / (20 - 1);
+            createSliderWithLabel("speedSlider", "SPEED", -3.0, initialSpeedValue, freecamUiGroup);
+            const initialSensitivityValue = (SENSITIVITY_LOOK - 0.0005) / (0.005 - 0.0005);
+            createSliderWithLabel("sensitivitySlider", "SENSITIVITY", -3.5, initialSensitivityValue, freecamUiGroup);
 
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
@@ -210,8 +216,6 @@
         const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
-        const SENSITIVITY_LOOK = 0.002;
-        const FREECAM_SPEED = 5.0;
         const freecamState = { forward: 0, right: 0, up: 0 };
         
         const frameTimes = [];
@@ -301,6 +305,12 @@
                         case "fovSlider":
                             camera.fov = 30 + value * (120 - 30);
                             camera.updateProjectionMatrix();
+                            break;
+                        case "speedSlider":
+                            FREECAM_SPEED = 1.0 + value * 19.0;
+                            break;
+                        case "sensitivitySlider":
+                            SENSITIVITY_LOOK = 0.0005 + value * (0.005 - 0.0005);
                             break;
                     }
                 }
