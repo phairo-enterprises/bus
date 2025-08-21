@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.43 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.44 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -87,8 +87,6 @@
         camera.add(freecamUiGroup);
         const touchUiGroup = new THREE.Group();
         camera.add(touchUiGroup);
-
-        uiGroup.position.set(-2.5, 0, 0);
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
@@ -373,7 +371,7 @@
                  intersects = raycaster.intersectObjects(freecamUiGroup.children, true);
             }
 
-            if (advancedProtocolsLoaded && intersects.length > 0 && intersects[0].distance < 100) {
+            if (advancedProtocolsLoaded && intersects.length > 0) {
                 const button = intersects[0].object;
                 if (button && button.name) {
                     const [param, action] = button.name.split('_');
@@ -491,7 +489,7 @@
                     }
                     
                     activeTouch.lastX = touch.clientX;
-                    activeTouch.lastY = touch.clientY;
+                    activeTouch.lastY = clientY;
                 }
             }
         }
@@ -550,9 +548,10 @@
         }
         
         function updateUiPositions() {
-             const zPos = -3.5;
+            const zPos = -3.5;
             const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
             const w = h * camera.aspect;
+            uiContainer.position.set(-w + 2.5, 0, zPos);
             freecamUiGroup.position.set(w - 2.5, 0, zPos);
             touchUiGroup.position.set(0, -h + 1.2, zPos);
         }
