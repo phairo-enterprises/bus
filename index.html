@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.59 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.60 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -73,17 +73,18 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
         camera.rotation.order = 'YXZ';
-        
+
         const cameraRig = new THREE.Group();
         scene.add(cameraRig);
         cameraRig.add(camera);
+        cameraRig.position.z = 5;
 
         const artifactGroup = new THREE.Group();
         artifactGroup.scale.setScalar(0.8);
         scene.add(artifactGroup);
 
         const hudGroup = new THREE.Group();
-        camera.add(hudGroup);
+        cameraRig.add(hudGroup);
 
         const bobControls = new THREE.Group();
         hudGroup.add(bobControls);
@@ -489,42 +490,50 @@
             } else {
                 intersects = raycaster.intersectObjects(freecamControls.children, true).concat(raycaster.intersectObjects(touchUiGroup.children, true));
             }
-            if (!advancedProtocolsLoaded || intersects.length === 0) {
-                if(cameraMode === 'free') {
-                    renderer.domElement.requestPointerLock();
-                }
-                return;
-            }
-            const object = intersects[0].object;
-            if (object.name === 'hitbox') {
-                const buttonGroup = object.parent;
-                if (buttonGroup.name === 'mode_switch') {
-                    cameraMode = (cameraMode === 'bob') ? 'free' : 'bob';
-                    logToConsole(`// UI MODE: ${bobControls.visible ? 'BOB' : 'FREECAM'} //`);
-                } else if (buttonGroup.name === 'touch_up') {
-                    freecamState.up = 1;
-                    pressedButton = buttonGroup;
-                    buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
-                } else if (buttonGroup.name === 'touch_down') {
-                    freecamState.up = -1;
-                    pressedButton = buttonGroup;
-                    buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
-                } else if (buttonGroup.name.includes('_')) {
-                    const [param, action] = buttonGroup.name.split('_');
-                    if (param && action) {
-                        updateAndLogParameter(param, action);
+            if (!advancedProtocolsLoaded) return;
+
+            if (intersects.length > 0) {
+                 const object = intersects[0].object;
+                if (object.name === 'hitbox') {
+                    const buttonGroup = object.parent;
+                    if (buttonGroup.name === 'mode_switch') {
+                        if (cameraMode === 'bob') {
+                            cameraMode = 'free';
+                            cameraRig.position.set(0, 0, 5);
+                            cameraRig.rotation.set(0, 0, 0);
+                            camera.rotation.set(0, 0, 0);
+                        } else {
+                            cameraMode = 'bob';
+                            document.exitPointerLock();
+                        }
+                        logToConsole(`// CAMERA MODE: ${cameraMode.toUpperCase()} //`);
+                    } else if (buttonGroup.name === 'touch_up') {
+                        freecamState.up = 1;
                         pressedButton = buttonGroup;
                         buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
+                    } else if (buttonGroup.name === 'touch_down') {
+                        freecamState.up = -1;
+                        pressedButton = buttonGroup;
+                        buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
+                    } else if (buttonGroup.name.includes('_')) {
+                        const [param, action] = buttonGroup.name.split('_');
+                        if (param && action) {
+                            updateAndLogParameter(param, action);
+                            pressedButton = buttonGroup;
+                            buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
+                        }
                     }
+                } else if (object.name === 'swipeTarget') {
+                    isSwiping = true;
+                    swipeStartX = pointer.x;
+                } else if (object.name === 'mainUiHandle') {
+                    isSpinningArtifact = true;
+                    renderer.domElement.classList.add('grabbing');
+                    previousPointerPosition.x = clientX;
+                    previousPointerPosition.y = clientY;
                 }
-            } else if (object.name === 'swipeTarget') {
-                isSwiping = true;
-                swipeStartX = pointer.x;
-            } else if (object.name === 'mainUiHandle') {
-                isSpinningArtifact = true;
-                renderer.domElement.classList.add('grabbing');
-                previousPointerPosition.x = clientX;
-                previousPointerPosition.y = clientY;
+            } else if (cameraMode === 'free') {
+                 renderer.domElement.requestPointerLock();
             }
         }
 
@@ -729,9 +738,9 @@
             freecamControls.visible = (cameraMode === 'free');
             
             if (cameraMode === 'bob') {
+                cameraRig.position.set(0, 0, 5);
                 cameraRig.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
                 cameraRig.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
-                cameraRig.position.z = 5;
                 cameraRig.lookAt(0,0,0);
                 const targetAngle = -targetArtifactIndex * ANGLE_STEP;
                 targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
@@ -769,10 +778,9 @@
                 const totalRight = freecamState.right;
                 const totalUp = freecamState.up;
                 const moveDirection = new THREE.Vector3(totalRight, 0, -totalForward);
-                moveDirection.normalize();
-                moveDirection.applyQuaternion(camera.quaternion);
-                camera.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
-                camera.position.y += totalUp * FREECAM_SPEED * delta;
+                moveDirection.normalize().applyQuaternion(camera.quaternion);
+                cameraRig.position.addScaledVector(moveDirection, FREECAM_SPEED * delta);
+                cameraRig.position.y += totalUp * FREECAM_SPEED * delta;
             }
             renderer.render(scene, camera);
         }
