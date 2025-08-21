@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.41 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.42 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -83,14 +83,13 @@
         const freecamUiGroup = new THREE.Group();
         const touchUiGroup = new THREE.Group();
         
-        // --- PARENTING CHANGE ---
-        artifactGroup.add(uiGroup);
-        artifactGroup.add(freecamUiGroup);
-        camera.add(touchUiGroup); // Touch UI remains a static overlay
+        // --- CORRECTED PARENTING ---
+        artifactGroup.add(uiGroup); // Bob mode UI moves with the artifact
+        camera.add(freecamUiGroup); // Freecam UI is a static HUD
+        camera.add(touchUiGroup);   // Touch UI is a static HUD
 
         // --- FIXED POSITIONING ---
-        uiGroup.position.set(-2.5, 0, 0);
-        freecamUiGroup.position.set(2.5, 0, 0);
+        uiGroup.position.set(-2.5, 0, 0); // Local to artifact
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
@@ -369,21 +368,24 @@
             raycaster.setFromCamera(pointer, camera);
             
             let activeUiGroup;
+            let intersects;
+
             if (cameraMode === 'bob') {
+                // Raycast in world space for bob mode UI
                 const worldPointer = new THREE.Vector3(pointer.x, pointer.y, 0.5).unproject(camera);
                 const dir = worldPointer.sub(camera.position).normalize();
-                const distance = -camera.position.z / dir.z;
+                const distance = -camera.position.z / dir.z; 
                 const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-                const localPos = artifactGroup.worldToLocal(pos);
-                raycaster.set(localPos, new THREE.Vector3(0,0,1));
-                activeUiGroup = uiGroup;
+                const localPos = artifactGroup.worldToLocal(pos.clone());
+                const localDir = artifactGroup.worldToLocal(camera.position.clone()).sub(localPos).normalize();
+                raycaster.set(localPos, localDir);
+                intersects = raycaster.intersectObjects(uiGroup.children, true);
             } else {
-                 activeUiGroup = freecamUiGroup;
+                 // Raycast in screen space for freecam UI
+                 intersects = raycaster.intersectObjects(freecamUiGroup.children, true);
             }
 
-            const intersects = raycaster.intersectObjects(activeUiGroup.children, true);
-
-            if (advancedProtocolsLoaded && intersects.length > 0) {
+            if (advancedProtocolsLoaded && intersects.length > 0 && intersects[0].distance < 100) {
                 const button = intersects[0].object.parent;
                 if (button && button.name) {
                     const [param, action] = button.name.split('_');
@@ -559,6 +561,14 @@
             }
         }
         
+        function updateUiPositions() {
+             const zPos = -3.5;
+            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
+            const w = h * camera.aspect;
+            freecamUiGroup.position.set(w - 2.5, 0, zPos);
+            touchUiGroup.position.set(0, -h + 1.2, zPos);
+        }
+
         function onWindowResize() {
             const width = window.innerWidth;
             const height = window.innerHeight;
@@ -573,10 +583,7 @@
                 camera.fov = BASE_FOV;
             }
             camera.updateProjectionMatrix();
-            
-            const zPos = -3.5;
-            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
-            touchUiGroup.position.set(0, -h + 1.2, zPos);
+            updateUiPositions();
         }
         
         function animate() {
