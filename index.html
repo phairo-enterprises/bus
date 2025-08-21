@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.45 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.46 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -87,16 +87,14 @@
         camera.add(freecamUiGroup);
         const touchUiGroup = new THREE.Group();
         camera.add(touchUiGroup);
-        
-        uiContainer.position.set(0, 0, 0);
-        freecamUiGroup.position.set(2.5, 0, -3.5);
-        touchUiGroup.position.set(0, -1.5, -3.5);
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
         let FREECAM_SPEED = 5.0;
         let SENSITIVITY_LOOK = 0.002;
         let bodyMaterial, cubeWireframe;
+        let artifacts = [];
+        let currentArtifactIndex = 0;
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -128,16 +126,60 @@
         const cave = new THREE.Mesh(caveGeometry, caveMaterial);
         scene.add(cave);
         
-        bodyMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xFF0000, 
-            transparent: true, 
-            opacity: 0.1,
-            depthWrite: false
-        });
-        const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
-        artifactGroup.add(cubeBody);
-        cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
-        artifactGroup.add(cubeWireframe);
+        function createHypercube() {
+            const group = new THREE.Group();
+            bodyMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, transparent: true, opacity: 0.1, depthWrite: false });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
+            group.add(body);
+            cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(body.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
+            group.add(cubeWireframe);
+            return group;
+        }
+
+        function createSphere() {
+            const group = new THREE.Group();
+            const material = new THREE.MeshBasicMaterial({ color: 0x00FF00, transparent: true, opacity: 0.1, depthWrite: false });
+            const body = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 16), material);
+            group.add(body);
+            return group;
+        }
+
+        function createPyramid() {
+            const group = new THREE.Group();
+            const material = new THREE.MeshBasicMaterial({ color: 0x0000FF, transparent: true, opacity: 0.1, depthWrite: false });
+            const body = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.5, 4), material);
+            group.add(body);
+            return group;
+        }
+
+        function createHyperdodecahedron() {
+            const group = new THREE.Group();
+            const material = new THREE.MeshBasicMaterial({ color: 0xFFFF00, transparent: true, opacity: 0.1, depthWrite: false });
+            const body = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5), material);
+            group.add(body);
+            const wireframe = new THREE.LineSegments(new THREE.EdgesGeometry(body.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
+            group.add(wireframe);
+            return group;
+        }
+        
+        const shapeCatalog = [
+            { name: 'Hypercube', generator: createHypercube },
+            { name: 'Sphere', generator: createSphere },
+            { name: 'Hyperdodecahedron', generator: createHyperdodecahedron },
+            { name: 'Pyramid', generator: createPyramid }
+        ];
+
+        function createArtifacts() {
+            shapeCatalog.forEach((shapeDef, index) => {
+                const artifact = shapeDef.generator();
+                artifact.name = shapeDef.name;
+                artifact.visible = (index === currentArtifactIndex);
+                artifactGroup.add(artifact);
+                artifacts.push(artifact);
+            });
+        }
+        
+        createArtifacts();
 
         let yPos = 1.6;
         const yStep = 0.5;
@@ -167,7 +209,7 @@
         }
 
         uiContainer.visible = false;
-        freecamUiGroup.visible = true;
+        freecamUiGroup.visible = false;
         touchUiGroup.visible = false;
 
         const consoleMessageQueue = [];
@@ -253,7 +295,6 @@
             advancedProtocolsLoaded = true;
             
             uiContainer.visible = true;
-            freecamUiGroup.visible = false;
 
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
@@ -321,23 +362,23 @@
                     logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`;
                     break;
                 case 'opacity':
-                    bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step * 0.05));
-                    cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
+                    if (bodyMaterial) bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step * 0.05));
+                    if (cubeWireframe) cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
                     logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`;
                     break;
                 case 'red':
                     pointLight.color.r = Math.max(0, Math.min(1, pointLight.color.r + step * 0.1));
-                    bodyMaterial.color.r = pointLight.color.r;
+                    if (bodyMaterial) bodyMaterial.color.r = pointLight.color.r;
                     logMessage = `// ${label} SET TO ${pointLight.color.r.toFixed(2)} //`;
                     break;
                 case 'green':
                     pointLight.color.g = Math.max(0, Math.min(1, pointLight.color.g + step * 0.1));
-                    bodyMaterial.color.g = pointLight.color.g;
+                    if (bodyMaterial) bodyMaterial.color.g = pointLight.color.g;
                     logMessage = `// ${label} SET TO ${pointLight.color.g.toFixed(2)} //`;
                     break;
                 case 'blue':
                     pointLight.color.b = Math.max(0, Math.min(1, pointLight.color.b + step * 0.1));
-                    bodyMaterial.color.b = pointLight.color.b;
+                    if (bodyMaterial) bodyMaterial.color.b = pointLight.color.b;
                     logMessage = `// ${label} SET TO ${pointLight.color.b.toFixed(2)} //`;
                     break;
                 case 'fov':
@@ -551,6 +592,15 @@
                 case 'e': freecamState.up = value; break;
             }
         }
+        
+        function updateUiPositions() {
+             const zPos = -3.5;
+            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
+            const w = h * camera.aspect;
+            uiContainer.position.set(-w + 2.5, 0, zPos);
+            freecamUiGroup.position.set(w - 2.5, 0, zPos);
+            touchUiGroup.position.set(0, -h + 1.2, zPos);
+        }
 
         function onWindowResize() {
             const width = window.innerWidth;
@@ -566,6 +616,7 @@
                 camera.fov = BASE_FOV;
             }
             camera.updateProjectionMatrix();
+            updateUiPositions();
         }
         
         function animate() {
