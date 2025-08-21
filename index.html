@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.62 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.63 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -83,7 +83,7 @@
         scene.add(artifactGroup);
 
         const hudGroup = new THREE.Group();
-        cameraRig.add(hudGroup);
+        camera.add(hudGroup);
 
         const bobControls = new THREE.Group();
         hudGroup.add(bobControls);
@@ -613,7 +613,15 @@
                     if (object.name === 'hitbox') {
                         const buttonGroup = object.parent;
                         if (buttonGroup.name === 'mode_switch') {
-                           cameraMode = (cameraMode === 'bob') ? 'free' : 'bob';
+                           if (cameraMode === 'bob') {
+                                cameraMode = 'free';
+                                cameraRig.position.set(0, 0, 5);
+                                cameraRig.rotation.set(0, 0, 0);
+                                camera.rotation.set(0, 0, 0);
+                            } else {
+                                cameraMode = 'bob';
+                                document.exitPointerLock();
+                            }
                            logToConsole(`// UI MODE: ${cameraMode.toUpperCase()} //`);
                         } else if (buttonGroup.name.includes('_')) {
                             const [param, action] = buttonGroup.name.split('_');
