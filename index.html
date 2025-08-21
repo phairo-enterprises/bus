@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.57 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.58 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -77,11 +77,11 @@
         scene.add(camera);
 
         const artifactGroup = new THREE.Group();
+        artifactGroup.scale.setScalar(0.8);
         scene.add(artifactGroup);
 
         const hudGroup = new THREE.Group();
         camera.add(hudGroup);
-        hudGroup.position.set(0, 0, -3.5);
 
         const bobControls = new THREE.Group();
         hudGroup.add(bobControls);
@@ -90,9 +90,6 @@
         hudGroup.add(freecamControls);
         freecamControls.visible = false;
         
-        const touchUiGroup = new THREE.Group();
-        camera.add(touchUiGroup);
-
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
         let FREECAM_SPEED = 5.0;
@@ -104,6 +101,13 @@
 
         const CAROUSEL_RADIUS = 4;
         const ANGLE_STEP = Math.PI / 5;
+
+        const colorPalette = {
+            neutral: new THREE.Color(0x555555),
+            mode: new THREE.Color(0x303060),
+            parameter: new THREE.Color(0x603030),
+            confirm: new THREE.Color(0x306030)
+        };
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -228,12 +232,12 @@
         }
         createArtifacts();
 
-        function createButton(name, labelText, position, size, targetGroup) {
+        function createButton(name, labelText, position, size, targetGroup, color = colorPalette.neutral) {
             const buttonGroup = new THREE.Group();
             buttonGroup.position.copy(position);
             buttonGroup.name = name;
             targetGroup.add(buttonGroup);
-            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 }));
+            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.6 }));
             buttonGroup.add(button);
             const hitbox = new THREE.Mesh(new THREE.PlaneGeometry(size.x * 1.4, size.y * 1.4), new THREE.MeshBasicMaterial({ visible: false }));
             hitbox.name = 'hitbox';
@@ -261,8 +265,8 @@
         function createControlRow(param, labelText, yPos, targetGroup) {
             const xOffset = 0.9;
             const buttonSize = new THREE.Vector2(0.4, 0.4);
-            createButton(`${param}_dec`, '-', new THREE.Vector3(xOffset, yPos, 0), buttonSize, targetGroup);
-            createButton(`${param}_inc`, '+', new THREE.Vector3(xOffset + 0.6, yPos, 0), buttonSize, targetGroup);
+            createButton(`${param}_dec`, '-', new THREE.Vector3(xOffset, yPos, 0), buttonSize, targetGroup, colorPalette.parameter);
+            createButton(`${param}_inc`, '+', new THREE.Vector3(xOffset + 0.6, yPos, 0), buttonSize, targetGroup, colorPalette.confirm);
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             const font = '32px monospace';
@@ -315,18 +319,13 @@
         createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamControls); yPos -= yStep;
         createControlRow('roll', 'ROLL', yPos, freecamControls);
         
-        const touchButtonSize = new THREE.Vector2(0.8, 0.8);
         const isTouchDevice = 'ontouchstart' in window;
         if (isTouchDevice) {
-            createButton('touch_fwd', '^', new THREE.Vector3(-2.2, 0, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_back', 'v', new THREE.Vector3(-2.2, -1.0, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_left', '<', new THREE.Vector3(-3.2, -0.5, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_right', '>', new THREE.Vector3(-1.2, -0.5, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_up', 'UP', new THREE.Vector3(2.2, 0, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_down', 'DN', new THREE.Vector3(2.2, -1.0, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_up', 'UP', new THREE.Vector3(0, 0.5, 0), new THREE.Vector2(0.8, 0.8), freecamControls, colorPalette.neutral);
+            createButton('touch_down', 'DN', new THREE.Vector3(0, -0.5, 0), new THREE.Vector2(0.8, 0.8), freecamControls, colorPalette.neutral);
         }
 
-        const switchButton = createButton('mode_switch', 'MODE', new THREE.Vector3(0, 2.2, 0), new THREE.Vector2(1, 0.4), hudGroup);
+        const switchButton = createButton('mode_switch', 'MODE', new THREE.Vector3(0, 2.2, 0), new THREE.Vector2(1, 0.4), hudGroup, colorPalette.mode);
         hudGroup.visible = false;
         
         const consoleMessageQueue = [];
@@ -365,7 +364,6 @@
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
-            setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
         }
         document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
@@ -506,9 +504,18 @@
             if (object.name === 'hitbox') {
                 const buttonGroup = object.parent;
                 if (buttonGroup.name === 'mode_switch') {
-                    bobControls.visible = !bobControls.visible;
-                    freecamControls.visible = !freecamControls.visible;
-                    logToConsole(`// UI MODE TOGGLED //`);
+                    cameraMode = (cameraMode === 'bob') ? 'free' : 'bob';
+                    logToConsole(`// CAMERA MODE: ${cameraMode.toUpperCase()} //`);
+                    document.exitPointerLock();
+                    camera.rotation.set(0,0,0);
+                } else if (buttonGroup.name === 'touch_up') {
+                    freecamState.up = 1;
+                    pressedButton = buttonGroup;
+                    buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
+                } else if (buttonGroup.name === 'touch_down') {
+                    freecamState.up = -1;
+                    pressedButton = buttonGroup;
+                    buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
                 } else if (buttonGroup.name.includes('_')) {
                     const [param, action] = buttonGroup.name.split('_');
                     if (param && action) {
@@ -562,6 +569,7 @@
             }
             isSwiping = false;
             isSpinningArtifact = false;
+            freecamState.up = 0;
             renderer.domElement.classList.remove('grabbing');
         }
 
@@ -600,9 +608,8 @@
                     if (object.name === 'hitbox') {
                         const buttonGroup = object.parent;
                         if (buttonGroup.name === 'mode_switch') {
-                           bobControls.visible = !bobControls.visible;
-                           freecamControls.visible = !freecamControls.visible;
-                           logToConsole(`// UI MODE TOGGLED //`);
+                           cameraMode = (cameraMode === 'bob') ? 'free' : 'bob';
+                           logToConsole(`// CAMERA MODE: ${cameraMode.toUpperCase()} //`);
                         } else if (buttonGroup.name.includes('_')) {
                             const [param, action] = buttonGroup.name.split('_');
                             updateAndLogParameter(param, action);
@@ -625,9 +632,7 @@
                 const touch = touches[i];
                 const activeTouch = activeTouches[touch.identifier];
                 if (!activeTouch) continue;
-
                 pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
-                
                 if (activeTouch.type === 'swipe') {
                     const deltaX = pointer.x - activeTouch.startX;
                     if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
@@ -720,9 +725,9 @@
             const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
             const w = h * camera.aspect;
             
-            bobControls.position.set(-w * 0.7, 0, 0);
-            freecamControls.position.set(w * 0.7, 0, 0);
-            touchUiGroup.position.set(0, -h + 1.2, zPos);
+            bobControls.position.set(-w + 2.5, 0, 0);
+            freecamControls.position.set(w - 2.5, 0, 0);
+            switchButton.position.set(-w + 1.2, 2.2, 0);
         }
         
         function animate() {
@@ -732,7 +737,11 @@
             frameTimes.push(delta * 1000);
             if (frameTimes.length > 60) frameTimes.shift();
             if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) checkPerformanceAndAdapt();
-
+            
+            bobControls.visible = (cameraMode === 'bob');
+            freecamControls.visible = (cameraMode === 'free');
+            touchUiGroup.visible = (cameraMode === 'free' && isTouchDevice);
+            
             if (cameraMode === 'bob') {
                 camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
                 camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
@@ -775,9 +784,9 @@
                 }
 
             } else if (cameraMode === 'free') {
-                const totalForward = freecamState.forward + touchState.forward;
-                const totalRight = freecamState.right + touchState.right;
-                const totalUp = freecamState.up + touchState.up;
+                const totalForward = freecamState.forward;
+                const totalRight = freecamState.right;
+                const totalUp = freecamState.up;
 
                 const moveDirection = new THREE.Vector3(totalRight, 0, -totalForward);
                 moveDirection.normalize();
