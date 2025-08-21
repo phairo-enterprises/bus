@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.55 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.57 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -77,19 +77,19 @@
         scene.add(camera);
 
         const artifactGroup = new THREE.Group();
-        artifactGroup.scale.setScalar(0.8);
         scene.add(artifactGroup);
 
-        const hudContainer = new THREE.Group();
-        camera.add(hudContainer);
+        const hudGroup = new THREE.Group();
+        camera.add(hudGroup);
+        hudGroup.position.set(0, 0, -3.5);
 
-        const uiContainer = new THREE.Group();
-        hudContainer.add(uiContainer);
-        const uiGroup = new THREE.Group();
-        uiContainer.add(uiGroup);
+        const bobControls = new THREE.Group();
+        hudGroup.add(bobControls);
 
-        const freecamUiGroup = new THREE.Group();
-        camera.add(freecamUiGroup);
+        const freecamControls = new THREE.Group();
+        hudGroup.add(freecamControls);
+        freecamControls.visible = false;
+        
         const touchUiGroup = new THREE.Group();
         camera.add(touchUiGroup);
 
@@ -167,28 +167,21 @@
             group.add(wireframe);
             return group;
         }
-
+        
         function createHypercube() {
             const group = new THREE.Group();
             const vertices4D = [];
             for (let i = 0; i < 16; i++) {
-                vertices4D.push([
-                    (i & 1) ? 1 : -1, (i & 2) ? 1 : -1,
-                    (i & 4) ? 1 : -1, (i & 8) ? 1 : -1,
-                ]);
+                vertices4D.push([(i & 1) ? 1 : -1, (i & 2) ? 1 : -1, (i & 4) ? 1 : -1, (i & 8) ? 1 : -1]);
             }
-
             const projectedVertices = [];
             const distance = 2;
             const scale = 1.5;
             vertices4D.forEach(v => {
                 const w = v[3];
                 const perspective = 1 / (distance - w);
-                projectedVertices.push(
-                    new THREE.Vector3(v[0] * perspective, v[1] * perspective, v[2] * perspective).multiplyScalar(scale)
-                );
+                projectedVertices.push(new THREE.Vector3(v[0] * perspective, v[1] * perspective, v[2] * perspective).multiplyScalar(scale));
             });
-
             const edges = [];
             for (let i = 0; i < 16; i++) {
                 for (let j = i + 1; j < 16; j++) {
@@ -200,18 +193,14 @@
                     if (diffs === 1) { edges.push(i, j); }
                 }
             }
-
             const geometry = new THREE.BufferGeometry().setFromPoints(projectedVertices);
             geometry.setIndex(edges);
-            
             const material = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 });
             material.userData.baseOpacity = 0.5;
             const hypercube = new THREE.LineSegments(geometry, material);
-            
             const invisibleBodyMaterial = new THREE.MeshBasicMaterial({ visible: false });
             invisibleBodyMaterial.userData = { baseOpacity: 0.0 };
             const invisibleBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), invisibleBodyMaterial);
-            
             group.add(invisibleBody);
             group.add(hypercube);
             return group;
@@ -227,130 +216,28 @@
         function createArtifacts() {
             const totalAngle = (shapeCatalog.length - 1) * ANGLE_STEP;
             const startAngle = -totalAngle / 2;
-
             shapeCatalog.forEach((shapeDef, index) => {
                 const artifact = shapeDef.generator();
                 artifact.name = shapeDef.name;
-                
                 const angle = startAngle + index * ANGLE_STEP;
-                artifact.position.set(
-                    CAROUSEL_RADIUS * Math.sin(angle),
-                    0,
-                    -CAROUSEL_RADIUS + CAROUSEL_RADIUS * Math.cos(angle)
-                );
-
+                artifact.position.set(CAROUSEL_RADIUS * Math.sin(angle), 0, -CAROUSEL_RADIUS + CAROUSEL_RADIUS * Math.cos(angle));
                 artifact.visible = true;
                 artifactGroup.add(artifact);
                 artifacts.push(artifact);
             });
         }
-        
         createArtifacts();
-
-        let yPos = 1.6;
-        const yStep = 0.5;
-        createControlRow('scale', 'SCALE', yPos, uiGroup); yPos -= yStep;
-        createControlRow('damping', 'DAMPING', yPos, uiGroup); yPos -= yStep;
-        createControlRow('intensity', 'INTENSITY', yPos, uiGroup); yPos -= yStep;
-        createControlRow('opacity', 'OPACITY', yPos, uiGroup); yPos -= yStep;
-        createControlRow('red', 'RED', yPos, uiGroup); yPos -= yStep;
-        createControlRow('green', 'GREEN', yPos, uiGroup); yPos -= yStep;
-        createControlRow('blue', 'BLUE', yPos, uiGroup);
-
-        const mainUiHandle = new THREE.Mesh(
-            new THREE.PlaneGeometry(3.5, 4),
-            new THREE.MeshBasicMaterial({ visible: false })
-        );
-        mainUiHandle.name = 'mainUiHandle';
-        mainUiHandle.position.z = -0.1;
-        uiGroup.add(mainUiHandle);
-
-        yPos = 1.3;
-        createControlRow('fov', 'FOV', yPos, freecamUiGroup); yPos -= yStep;
-        createControlRow('speed', 'SPEED', yPos, freecamUiGroup); yPos -= yStep;
-        createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamUiGroup); yPos -= yStep;
-        createControlRow('roll', 'ROLL', yPos, freecamUiGroup);
-        
-        const touchButtonSize = new THREE.Vector2(0.8, 0.8);
-        const isTouchDevice = 'ontouchstart' in window;
-        if (isTouchDevice) {
-            createButton('touch_fwd', '^', new THREE.Vector3(-2.2, 0, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_back', 'v', new THREE.Vector3(-2.2, -1.0, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_left', '<', new THREE.Vector3(-3.2, -0.5, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_right', '>', new THREE.Vector3(-1.2, -0.5, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_up', 'UP', new THREE.Vector3(2.2, 0, 0), touchButtonSize, touchUiGroup);
-            createButton('touch_down', 'DN', new THREE.Vector3(2.2, -1.0, 0), touchButtonSize, touchUiGroup);
-        }
-
-        function createSwipeBar() {
-            const swipeBar = new THREE.Group();
-            swipeBar.position.y = -2.5;
-            uiContainer.add(swipeBar);
-
-            const track = new THREE.Mesh(
-                new THREE.BoxGeometry(3, 0.1, 0.1),
-                new THREE.MeshBasicMaterial({ color: 0x333333 })
-            );
-            swipeBar.add(track);
-
-            swipeHandle = new THREE.Mesh(
-                new THREE.BoxGeometry(0.3, 0.3, 0.15),
-                new THREE.MeshBasicMaterial({ color: 0xCCCCCC })
-            );
-            swipeBar.add(swipeHandle);
-
-            const swipeTarget = new THREE.Mesh(
-                new THREE.PlaneGeometry(3.2, 0.6),
-                new THREE.MeshBasicMaterial({ visible: false })
-            );
-            swipeTarget.name = 'swipeTarget';
-            swipeTarget.position.z = -0.05;
-            swipeBar.add(swipeTarget);
-        }
-        createSwipeBar();
-
-        uiContainer.visible = false;
-        freecamUiGroup.visible = false;
-        touchUiGroup.visible = false;
-
-        const consoleMessageQueue = [];
-        let isConsoleLogging = false;
-
-        function processConsoleQueue() {
-            if (consoleMessageQueue.length === 0) { isConsoleLogging = false; return; }
-            isConsoleLogging = true;
-            const message = consoleMessageQueue.shift();
-            const consoleDiv = document.getElementById('consoleOutput');
-            const line = document.createElement('div');
-            line.textContent = `> ${message}`;
-            consoleDiv.appendChild(line);
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
-            const delay = message.length > 30 ? 350 : 150;
-            setTimeout(processConsoleQueue, delay);
-        }
-
-        function logToConsole(message) {
-            consoleMessageQueue.push(message);
-            if (!isConsoleLogging) { processConsoleQueue(); }
-            console.log(message);
-        }
 
         function createButton(name, labelText, position, size, targetGroup) {
             const buttonGroup = new THREE.Group();
             buttonGroup.position.copy(position);
             buttonGroup.name = name;
             targetGroup.add(buttonGroup);
-
             const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 }));
             buttonGroup.add(button);
-
-            const hitbox = new THREE.Mesh(
-                new THREE.PlaneGeometry(size.x * 1.4, size.y * 1.4),
-                new THREE.MeshBasicMaterial({ visible: false })
-            );
+            const hitbox = new THREE.Mesh(new THREE.PlaneGeometry(size.x * 1.4, size.y * 1.4), new THREE.MeshBasicMaterial({ visible: false }));
             hitbox.name = 'hitbox';
             buttonGroup.add(hitbox);
-
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             const font = '32px monospace';
@@ -376,7 +263,6 @@
             const buttonSize = new THREE.Vector2(0.4, 0.4);
             createButton(`${param}_dec`, '-', new THREE.Vector3(xOffset, yPos, 0), buttonSize, targetGroup);
             createButton(`${param}_inc`, '+', new THREE.Vector3(xOffset + 0.6, yPos, 0), buttonSize, targetGroup);
-            
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             const font = '32px monospace';
@@ -396,6 +282,75 @@
             targetGroup.add(labelMesh);
         }
 
+        let yPos = 1.6;
+        const yStep = 0.5;
+        createControlRow('scale', 'SCALE', yPos, bobControls); yPos -= yStep;
+        createControlRow('damping', 'DAMPING', yPos, bobControls); yPos -= yStep;
+        createControlRow('intensity', 'INTENSITY', yPos, bobControls); yPos -= yStep;
+        createControlRow('opacity', 'OPACITY', yPos, bobControls); yPos -= yStep;
+        createControlRow('red', 'RED', yPos, bobControls); yPos -= yStep;
+        createControlRow('green', 'GREEN', yPos, bobControls); yPos -= yStep;
+        createControlRow('blue', 'BLUE', yPos, bobControls);
+        
+        const mainUiHandle = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 4), new THREE.MeshBasicMaterial({ visible: false }));
+        mainUiHandle.name = 'mainUiHandle';
+        mainUiHandle.position.z = -0.1;
+        bobControls.add(mainUiHandle);
+
+        const swipeBar = new THREE.Group();
+        swipeBar.position.y = -2.5;
+        bobControls.add(swipeBar);
+        const track = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0x333333 }));
+        swipeBar.add(track);
+        swipeHandle = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.15), new THREE.MeshBasicMaterial({ color: 0xCCCCCC }));
+        swipeBar.add(swipeHandle);
+        const swipeTarget = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.6), new THREE.MeshBasicMaterial({ visible: false }));
+        swipeTarget.name = 'swipeTarget';
+        swipeTarget.position.z = -0.05;
+        swipeBar.add(swipeTarget);
+
+        yPos = 1.3;
+        createControlRow('fov', 'FOV', yPos, freecamControls); yPos -= yStep;
+        createControlRow('speed', 'SPEED', yPos, freecamControls); yPos -= yStep;
+        createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamControls); yPos -= yStep;
+        createControlRow('roll', 'ROLL', yPos, freecamControls);
+        
+        const touchButtonSize = new THREE.Vector2(0.8, 0.8);
+        const isTouchDevice = 'ontouchstart' in window;
+        if (isTouchDevice) {
+            createButton('touch_fwd', '^', new THREE.Vector3(-2.2, 0, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_back', 'v', new THREE.Vector3(-2.2, -1.0, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_left', '<', new THREE.Vector3(-3.2, -0.5, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_right', '>', new THREE.Vector3(-1.2, -0.5, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_up', 'UP', new THREE.Vector3(2.2, 0, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_down', 'DN', new THREE.Vector3(2.2, -1.0, 0), touchButtonSize, touchUiGroup);
+        }
+
+        const switchButton = createButton('mode_switch', 'MODE', new THREE.Vector3(0, 2.2, 0), new THREE.Vector2(1, 0.4), hudGroup);
+        hudGroup.visible = false;
+        
+        const consoleMessageQueue = [];
+        let isConsoleLogging = false;
+
+        function processConsoleQueue() {
+            if (consoleMessageQueue.length === 0) { isConsoleLogging = false; return; }
+            isConsoleLogging = true;
+            const message = consoleMessageQueue.shift();
+            const consoleDiv = document.getElementById('consoleOutput');
+            const line = document.createElement('div');
+            line.textContent = `> ${message}`;
+            consoleDiv.appendChild(line);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            const delay = message.length > 30 ? 350 : 150;
+            setTimeout(processConsoleQueue, delay);
+        }
+
+        function logToConsole(message) {
+            consoleMessageQueue.push(message);
+            if (!isConsoleLogging) { processConsoleQueue(); }
+            console.log(message);
+        }
+
         function engageDiagnostic() {
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
@@ -405,8 +360,7 @@
             logToConsole('// CONSOLE BOOT SEQUENCE INITIATED //');
             logToConsole('// DRAG SWIPE BAR TO SELECT ARTIFACT //');
             advancedProtocolsLoaded = true;
-            
-            hudContainer.visible = true;
+            hudGroup.visible = true;
 
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
@@ -491,27 +445,21 @@
                 case 'red':
                     pointLight.color.r = Math.max(0, Math.min(1, pointLight.color.r + step * 0.1));
                     artifacts[targetArtifactIndex].children.forEach(child => {
-                        if (child.isMesh && child.material.color) {
-                            child.material.color.r = pointLight.color.r;
-                        }
+                        if (child.isMesh && child.material.color) { child.material.color.r = pointLight.color.r; }
                     });
                     logMessage = `// ${label} SET TO ${pointLight.color.r.toFixed(2)} //`;
                     break;
                 case 'green':
                     pointLight.color.g = Math.max(0, Math.min(1, pointLight.color.g + step * 0.1));
                      artifacts[targetArtifactIndex].children.forEach(child => {
-                        if (child.isMesh && child.material.color) {
-                            child.material.color.g = pointLight.color.g;
-                        }
+                        if (child.isMesh && child.material.color) { child.material.color.g = pointLight.color.g; }
                     });
                     logMessage = `// ${label} SET TO ${pointLight.color.g.toFixed(2)} //`;
                     break;
                 case 'blue':
                     pointLight.color.b = Math.max(0, Math.min(1, pointLight.color.b + step * 0.1));
                      artifacts[targetArtifactIndex].children.forEach(child => {
-                        if (child.isMesh && child.material.color) {
-                            child.material.color.b = pointLight.color.b;
-                        }
+                        if (child.isMesh && child.material.color) { child.material.color.b = pointLight.color.b; }
                     });
                     logMessage = `// ${label} SET TO ${pointLight.color.b.toFixed(2)} //`;
                     break;
@@ -546,21 +494,22 @@
             
             let intersects = [];
             if (cameraMode === 'bob') {
-                intersects = raycaster.intersectObjects(hudContainer.children, true);
+                intersects = raycaster.intersectObjects(hudGroup.children, true);
             } else {
-                intersects = raycaster.intersectObjects(freecamUiGroup.children, true);
+                intersects = raycaster.intersectObjects(freecamControls.children, true).concat(raycaster.intersectObjects(touchUiGroup.children, true));
             }
 
             if (!advancedProtocolsLoaded || intersects.length === 0) return;
 
             const object = intersects[0].object;
             
-            if (object.name === 'swipeTarget') {
-                isSwiping = true;
-                swipeStartX = pointer.x;
-            } else if (object.name === 'hitbox') {
+            if (object.name === 'hitbox') {
                 const buttonGroup = object.parent;
-                if (buttonGroup && buttonGroup.name.includes('_')) {
+                if (buttonGroup.name === 'mode_switch') {
+                    bobControls.visible = !bobControls.visible;
+                    freecamControls.visible = !freecamControls.visible;
+                    logToConsole(`// UI MODE TOGGLED //`);
+                } else if (buttonGroup.name.includes('_')) {
                     const [param, action] = buttonGroup.name.split('_');
                     if (param && action) {
                         updateAndLogParameter(param, action);
@@ -568,6 +517,9 @@
                         buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
                     }
                 }
+            } else if (object.name === 'swipeTarget') {
+                isSwiping = true;
+                swipeStartX = pointer.x;
             } else if (object.name === 'mainUiHandle') {
                 isSpinningArtifact = true;
                 renderer.domElement.classList.add('grabbing');
@@ -637,42 +589,31 @@
                 pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
                 pointer.y = - (touch.clientY / window.innerHeight) * 2 + 1;
                 raycaster.setFromCamera(pointer, camera);
+                let intersects = raycaster.intersectObjects(hudGroup.children, true);
 
-                let intersects;
-                if (cameraMode === 'bob') {
-                    intersects = raycaster.intersectObjects(hudContainer.children, true);
-                    if (intersects.length > 0) {
-                        const object = intersects[0].object;
-                        if (object.name === 'swipeTarget') {
-                           activeTouches[touch.identifier] = { type: 'swipe', startX: pointer.x };
-                        } else if (object.name === 'hitbox') {
-                            const buttonGroup = object.parent;
-                            if (buttonGroup.name.includes('_')) {
-                                const [param, action] = buttonGroup.name.split('_');
-                                updateAndLogParameter(param, action);
-                            }
-                        } else if (object.name === 'mainUiHandle') {
-                           activeTouches[touch.identifier] = { type: 'spin', lastX: touch.clientX, lastY: touch.clientY };
+                if (cameraMode === 'free') {
+                    intersects = intersects.concat(raycaster.intersectObjects(touchUiGroup.children, true));
+                }
+
+                if (intersects.length > 0) {
+                    const object = intersects[0].object;
+                    if (object.name === 'hitbox') {
+                        const buttonGroup = object.parent;
+                        if (buttonGroup.name === 'mode_switch') {
+                           bobControls.visible = !bobControls.visible;
+                           freecamControls.visible = !freecamControls.visible;
+                           logToConsole(`// UI MODE TOGGLED //`);
+                        } else if (buttonGroup.name.includes('_')) {
+                            const [param, action] = buttonGroup.name.split('_');
+                            updateAndLogParameter(param, action);
                         }
+                    } else if (object.name === 'swipeTarget') {
+                       activeTouches[touch.identifier] = { type: 'swipe', startX: pointer.x };
+                    } else if (object.name === 'mainUiHandle') {
+                       activeTouches[touch.identifier] = { type: 'spin', lastX: touch.clientX, lastY: touch.clientY };
                     }
-                } else {
-                    intersects = raycaster.intersectObjects(touchUiGroup.children, true);
-                     if (intersects.length > 0) {
-                        const button = intersects[0].object.parent;
-                        button.scale.set(0.9, 0.9, 0.9);
-                        activeTouches[touch.identifier] = { type: 'button', button: button };
-                        const [type, direction] = button.name.split('_');
-                        switch (direction) {
-                            case 'fwd': touchState.forward = 1; break;
-                            case 'back': touchState.forward = -1; break;
-                            case 'left': touchState.right = -1; break;
-                            case 'right': touchState.right = 1; break;
-                            case 'up': touchState.up = 1; break;
-                            case 'down': touchState.up = -1; break;
-                        }
-                    } else {
-                         activeTouches[touch.identifier] = { type: 'look', lastX: touch.clientX, lastY: touch.clientY };
-                    }
+                } else if (cameraMode === 'free') {
+                    activeTouches[touch.identifier] = { type: 'look', lastX: touch.clientX, lastY: touch.clientY };
                 }
             }
         }
@@ -722,47 +663,13 @@
             const touches = event.changedTouches;
             for (let i = 0; i < touches.length; i++) {
                 const touch = touches[i];
-                const activeTouch = activeTouches[touch.identifier];
-                if (activeTouch && activeTouch.type === 'button') {
-                    activeTouch.button.scale.set(1, 1, 1);
-                }
                 delete activeTouches[touch.identifier];
-            }
-        }
-
-        function onKeyPress(event) {
-            if (event.key.toLowerCase() === 'c' && advancedProtocolsLoaded) {
-                warningOverlay.style.display = 'none';
-                if (cameraMode === 'bob') {
-                    cameraMode = 'free';
-                    logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE/TOUCH)');
-                    hudContainer.visible = false;
-                    freecamUiGroup.visible = true;
-                    if(isTouchDevice) touchUiGroup.visible = true;
-                } else {
-                    cameraMode = 'bob';
-                    logToConsole('CAMERA MODE: BOB ENGAGED');
-                    document.exitPointerLock();
-                    camera.rotation.set(0, 0, 0);
-                    hudContainer.visible = true;
-                    freecamUiGroup.visible = false;
-                    if(isTouchDevice) touchUiGroup.visible = false;
-                }
             }
         }
 
         function onKey(event, isDown) {
             if (isDown) {
-                if (cameraMode === 'free') {
-                    switch(event.key.toLowerCase()) {
-                        case 'w': freecamState.forward = 1; break;
-                        case 's': freecamState.forward = -1; break;
-                        case 'a': freecamState.right = -1; break;
-                        case 'd': freecamState.right = 1; break;
-                        case 'q': freecamState.up = -1; break;
-                        case 'e': freecamState.up = 1; break;
-                    }
-                } else {
+                if (cameraMode === 'bob') {
                      switch (event.key) {
                         case 'ArrowLeft':
                             targetArtifactIndex = Math.max(0, targetArtifactIndex - 1);
@@ -772,6 +679,15 @@
                             targetArtifactIndex = Math.min(artifacts.length - 1, targetArtifactIndex + 1);
                             logToConsole(`// ARTIFACT SELECTED: ${shapeCatalog[targetArtifactIndex].name} //`);
                             break;
+                    }
+                } else {
+                    switch(event.key.toLowerCase()) {
+                        case 'w': freecamState.forward = 1; break;
+                        case 's': freecamState.forward = -1; break;
+                        case 'a': freecamState.right = -1; break;
+                        case 'd': freecamState.right = 1; break;
+                        case 'q': freecamState.up = -1; break;
+                        case 'e': freecamState.up = 1; break;
                     }
                 }
             } else {
@@ -804,8 +720,8 @@
             const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
             const w = h * camera.aspect;
             
-            uiContainer.position.set(-w * 0.7, 0, 0);
-            freecamUiGroup.position.set(w - 2.5, 0, zPos);
+            bobControls.position.set(-w * 0.7, 0, 0);
+            freecamControls.position.set(w * 0.7, 0, 0);
             touchUiGroup.position.set(0, -h + 1.2, zPos);
         }
         
@@ -831,7 +747,6 @@
                     const isSelected = (index === targetArtifactIndex);
                     const targetScale = isSelected ? 1.1 : 0.8;
                     artifact.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
-
                     artifact.children.forEach(child => {
                         if (child.material?.userData) {
                             const baseOpacity = child.material.userData.baseOpacity ?? 0.1;
@@ -883,7 +798,6 @@
         renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
         renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
         window.addEventListener('resize', onWindowResize);
-        window.addEventListener('keypress', onKeyPress);
         window.addEventListener('keydown', (e) => onKey(e, true));
         window.addEventListener('keyup', (e) => onKey(e, false));
         document.addEventListener('pointerlockchange', onPointerLockChange);
