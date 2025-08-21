@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.42 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.43 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -79,17 +79,23 @@
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
 
+        const uiContainer = new THREE.Group();
+        scene.add(uiContainer);
+
         const uiGroup = new THREE.Group();
         const freecamUiGroup = new THREE.Group();
         const touchUiGroup = new THREE.Group();
         
-        // --- CORRECTED PARENTING ---
-        artifactGroup.add(uiGroup); // Bob mode UI moves with the artifact
-        camera.add(freecamUiGroup); // Freecam UI is a static HUD
-        camera.add(touchUiGroup);   // Touch UI is a static HUD
+        uiContainer.add(uiGroup);
+        camera.add(freecamUiGroup);
+        camera.add(touchUiGroup);
 
-        // --- FIXED POSITIONING ---
-        uiGroup.position.set(-2.5, 0, 0); // Local to artifact
+        const handleGeometry = new THREE.PlaneGeometry(3.5, 5);
+        const handleMaterial = new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.1, depthWrite: false });
+        const uiHandle = new THREE.Mesh(handleGeometry, handleMaterial);
+        uiHandle.name = 'uiHandle';
+        uiHandle.position.z = -0.1;
+        uiContainer.add(uiHandle);
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
@@ -165,7 +171,7 @@
             createButton('touch_down', 'DN', new THREE.Vector3(2.2, -1.0, 0), touchButtonSize, touchUiGroup);
         }
 
-        uiGroup.visible = false;
+        uiContainer.visible = false;
         freecamUiGroup.visible = false;
         touchUiGroup.visible = false;
 
@@ -192,10 +198,20 @@
         }
 
         function createButton(name, labelText, position, size, targetGroup) {
+            const buttonGroup = new THREE.Group();
+            buttonGroup.position.copy(position);
+            buttonGroup.name = name;
+            targetGroup.add(buttonGroup);
+
             const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 }));
-            button.position.copy(position);
-            button.name = name;
-            targetGroup.add(button);
+            buttonGroup.add(button);
+            
+            const hitboxSize = 1.4;
+            const hitboxGeometry = new THREE.PlaneGeometry(size.x * hitboxSize, size.y * hitboxSize);
+            const hitboxMaterial = new THREE.MeshBasicMaterial({ visible: false });
+            const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
+            hitbox.name = 'hitbox';
+            buttonGroup.add(hitbox);
 
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
@@ -213,8 +229,9 @@
             const labelGeometry = new THREE.PlaneGeometry(size.x * 0.9, size.y * 0.9);
             const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
             labelMesh.position.z = 0.06;
-            button.add(labelMesh);
-            return button;
+            buttonGroup.add(labelMesh);
+
+            return buttonGroup;
         }
 
         function createControlRow(param, labelText, yPos, targetGroup) {
@@ -222,7 +239,6 @@
             const buttonSize = new THREE.Vector2(0.4, 0.4);
             createButton(`${param}_dec`, '-', new THREE.Vector3(xOffset, yPos, 0), buttonSize, targetGroup);
             createButton(`${param}_inc`, '+', new THREE.Vector3(xOffset + 0.6, yPos, 0), buttonSize, targetGroup);
-            
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             const font = '32px monospace';
@@ -246,13 +262,10 @@
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
-            
             document.getElementById('consoleContainer').classList.add('visible');
             logToConsole('// CONSOLE BOOT SEQUENCE INITIATED //');
             advancedProtocolsLoaded = true;
-            
-            uiGroup.visible = true;
-
+            uiContainer.visible = true;
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
@@ -262,12 +275,14 @@
 
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
-        let isDragging = false;
         let pressedButton = null;
         let params = { damping: 0.95 };
         const previousPointerPosition = { x: 0, y: 0 };
-        const rotationVelocity = { x: 0.001, y: 0.002 };
+
+        let isDraggingUI = false;
+        const uiRotationVelocity = { x: 0, y: 0 };
         const SENSITIVITY_DRAG = 0.004;
+        
         const freecamState = { forward: 0, right: 0, up: 0 };
         const touchState = { forward: 0, right: 0, up: 0 };
         let activeTouches = {};
@@ -282,7 +297,7 @@
         const warningOverlay = document.getElementById('warningOverlay');
 
         function checkPerformanceAndAdapt() {
-            if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
+             if (isAdapting || adaptationLevel >= ADAPTATION_STEPS.length - 1) return;
             const averageDelta = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
             const currentFps = 1000 / averageDelta;
             if (currentFps < FPS_TARGET) {
@@ -303,7 +318,6 @@
             const step = action === 'inc' ? 1 : -1;
             const label = param.toUpperCase();
             let logMessage = "";
-
             switch(param) {
                 case 'scale':
                     const s = artifactGroup.scale.x + step * 0.1;
@@ -364,58 +378,47 @@
             const clientY = event.clientY;
             pointer.x = (clientX / window.innerWidth) * 2 - 1;
             pointer.y = - (clientY / window.innerHeight) * 2 + 1;
-            
             raycaster.setFromCamera(pointer, camera);
             
-            let activeUiGroup;
-            let intersects;
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            let hitProcessed = false;
 
-            if (cameraMode === 'bob') {
-                // Raycast in world space for bob mode UI
-                const worldPointer = new THREE.Vector3(pointer.x, pointer.y, 0.5).unproject(camera);
-                const dir = worldPointer.sub(camera.position).normalize();
-                const distance = -camera.position.z / dir.z; 
-                const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-                const localPos = artifactGroup.worldToLocal(pos.clone());
-                const localDir = artifactGroup.worldToLocal(camera.position.clone()).sub(localPos).normalize();
-                raycaster.set(localPos, localDir);
-                intersects = raycaster.intersectObjects(uiGroup.children, true);
-            } else {
-                 // Raycast in screen space for freecam UI
-                 intersects = raycaster.intersectObjects(freecamUiGroup.children, true);
-            }
-
-            if (advancedProtocolsLoaded && intersects.length > 0 && intersects[0].distance < 100) {
-                const button = intersects[0].object.parent;
-                if (button && button.name) {
-                    const [param, action] = button.name.split('_');
-                    if (param && action) {
-                        updateAndLogParameter(param, action);
-                        pressedButton = button;
-                        button.scale.set(0.9, 0.9, 0.9);
+            for (const intersect of intersects) {
+                if (intersect.object.name === 'hitbox') {
+                    const button = intersect.object.parent;
+                    if (button && button.name) {
+                        const [param, action] = button.name.split('_');
+                        if (param && action) {
+                            updateAndLogParameter(param, action);
+                            pressedButton = button;
+                            button.children[0].scale.set(0.9, 0.9, 0.9);
+                        }
                     }
+                    hitProcessed = true;
+                    break;
+                } else if (intersect.object.name === 'uiHandle' && cameraMode === 'bob') {
+                    isDraggingUI = true;
+                    renderer.domElement.classList.add('grabbing');
+                    previousPointerPosition.x = clientX;
+                    previousPointerPosition.y = clientY;
+                    hitProcessed = true;
+                    break;
                 }
-                return;
             }
 
-            if (cameraMode === 'free' && document.pointerLockElement !== renderer.domElement) {
+            if (!hitProcessed && cameraMode === 'free' && document.pointerLockElement !== renderer.domElement) {
                 renderer.domElement.requestPointerLock();
-            } else if (cameraMode === 'bob') {
-                isDragging = true;
-                renderer.domElement.classList.add('grabbing');
-                previousPointerPosition.x = clientX;
-                previousPointerPosition.y = clientY;
             }
         }
 
         function onPointerMove(event) {
-            if (isDragging && cameraMode === 'bob') {
+            if (isDraggingUI && cameraMode === 'bob') {
                 const clientX = event.clientX;
                 const clientY = event.clientY;
                 const deltaX = clientX - previousPointerPosition.x;
                 const deltaY = clientY - previousPointerPosition.y;
-                rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
-                rotationVelocity.x += deltaY * SENSITIVITY_DRAG;
+                uiRotationVelocity.y += deltaX * SENSITIVITY_DRAG;
+                uiRotationVelocity.x += deltaY * SENSITIVITY_DRAG;
                 previousPointerPosition.x = clientX;
                 previousPointerPosition.y = clientY;
             }
@@ -423,10 +426,10 @@
 
         function onPointerUp() { 
             if (pressedButton) {
-                pressedButton.scale.set(1, 1, 1);
+                pressedButton.children[0].scale.set(1, 1, 1);
                 pressedButton = null;
             }
-            isDragging = false; 
+            isDraggingUI = false; 
             renderer.domElement.classList.remove('grabbing');
         }
 
@@ -454,15 +457,14 @@
                 pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
                 pointer.y = - (touch.clientY / window.innerHeight) * 2 + 1;
                 raycaster.setFromCamera(pointer, camera);
-
-                let intersects;
-                let hitButton = false;
-
-                if (cameraMode === 'free') {
-                    intersects = raycaster.intersectObjects(touchUiGroup.children, true);
-                     if (intersects.length > 0) {
-                        const button = intersects[0].object.parent;
-                        button.scale.set(0.9, 0.9, 0.9);
+                const intersects = raycaster.intersectObjects(scene.children, true);
+                let hitProcessed = false;
+                for (const intersect of intersects) {
+                    const objectName = intersect.object.name;
+                    const parentGroup = intersect.object.parent;
+                    if (objectName === 'hitbox' && parentGroup && parentGroup.name.startsWith('touch_')) {
+                        const button = parentGroup;
+                        button.children[0].scale.set(0.9, 0.9, 0.9);
                         activeTouches[touch.identifier] = { type: 'button', button: button };
                         const [type, direction] = button.name.split('_');
                         switch (direction) {
@@ -473,11 +475,11 @@
                             case 'up': touchState.up = 1; break;
                             case 'down': touchState.up = -1; break;
                         }
-                        hitButton = true;
+                        hitProcessed = true;
+                        break;
                     }
                 }
-
-                if (!hitButton) {
+                if (!hitProcessed) {
                     activeTouches[touch.identifier] = { type: 'look', lastX: touch.clientX, lastY: touch.clientY };
                 }
             }
@@ -492,16 +494,11 @@
                 if (activeTouch && activeTouch.type === 'look') {
                     const deltaX = touch.clientX - activeTouch.lastX;
                     const deltaY = touch.clientY - activeTouch.lastY;
-                    
-                    if(cameraMode === 'free') {
+                    if (cameraMode === 'free') {
                         camera.rotation.y -= deltaX * SENSITIVITY_LOOK * 2;
                         camera.rotation.x -= deltaY * SENSITIVITY_LOOK * 2;
                         camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-                    } else if (cameraMode === 'bob') {
-                        rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
-                        rotationVelocity.x += deltaY * SENSITIVITY_DRAG;
                     }
-                    
                     activeTouch.lastX = touch.clientX;
                     activeTouch.lastY = touch.clientY;
                 }
@@ -515,7 +512,7 @@
                 const touch = touches[i];
                 const activeTouch = activeTouches[touch.identifier];
                 if (activeTouch && activeTouch.type === 'button') {
-                    activeTouch.button.scale.set(1, 1, 1);
+                    activeTouch.button.children[0].scale.set(1, 1, 1);
                     const [type, direction] = activeTouch.button.name.split('_');
                     switch (direction) {
                         case 'fwd': case 'back': touchState.forward = 0; break;
@@ -533,7 +530,7 @@
                 if (cameraMode === 'bob') {
                     cameraMode = 'free';
                     logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE/TOUCH)');
-                    uiGroup.visible = false;
+                    uiContainer.visible = false;
                     freecamUiGroup.visible = true;
                     if(isTouchDevice) touchUiGroup.visible = true;
                 } else {
@@ -541,7 +538,7 @@
                     logToConsole('CAMERA MODE: BOB ENGAGED');
                     document.exitPointerLock();
                     camera.rotation.set(0, 0, 0);
-                    uiGroup.visible = true;
+                    uiContainer.visible = true;
                     freecamUiGroup.visible = false;
                     if(isTouchDevice) touchUiGroup.visible = false;
                 }
@@ -594,16 +591,19 @@
             if (frameTimes.length > 60) frameTimes.shift();
             if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) checkPerformanceAndAdapt();
 
+            artifactGroup.rotation.x += 0.0005;
+            artifactGroup.rotation.y += 0.0007;
+
             if (cameraMode === 'bob') {
                 camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
                 camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
                 camera.position.z = 5;
-                camera.lookAt(artifactGroup.position);
+                camera.lookAt(0,0,0);
                 
-                artifactGroup.rotation.x += rotationVelocity.x;
-                artifactGroup.rotation.y += rotationVelocity.y;
-                rotationVelocity.x *= params.damping;
-                rotationVelocity.y *= params.damping;
+                uiContainer.rotation.x += uiRotationVelocity.x;
+                uiContainer.rotation.y += uiRotationVelocity.y;
+                uiRotationVelocity.x *= params.damping;
+                uiRotationVelocity.y *= params.damping;
             } else if (cameraMode === 'free') {
                 const totalForward = freecamState.forward + touchState.forward;
                 const totalRight = freecamState.right + touchState.right;
