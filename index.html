@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.41 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.43 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -79,12 +79,16 @@
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
 
+        const uiContainer = new THREE.Group();
+        scene.add(uiContainer);
         const uiGroup = new THREE.Group();
-        camera.add(uiGroup);
+        uiContainer.add(uiGroup);
         const freecamUiGroup = new THREE.Group();
         camera.add(freecamUiGroup);
         const touchUiGroup = new THREE.Group();
         camera.add(touchUiGroup);
+
+        uiGroup.position.set(-2.5, 0, 0);
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
@@ -96,17 +100,6 @@
         scene.add(ambientLight);
         const pointLight = new THREE.PointLight(0xFF0000, 1.5, 50);
         artifactGroup.add(pointLight);
-        
-        bodyMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xFF0000, 
-            transparent: true, 
-            opacity: 0.1,
-            depthWrite: false
-        });
-        const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
-        artifactGroup.add(cubeBody);
-        cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
-        artifactGroup.add(cubeWireframe);
 
         const caveGeometry = new THREE.BufferGeometry();
         const caveVertices = [];
@@ -133,6 +126,48 @@
         const cave = new THREE.Mesh(caveGeometry, caveMaterial);
         scene.add(cave);
         
+        bodyMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF0000, 
+            transparent: true, 
+            opacity: 0.1,
+            depthWrite: false
+        });
+        const cubeBody = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
+        artifactGroup.add(cubeBody);
+        cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(cubeBody.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
+        artifactGroup.add(cubeWireframe);
+
+        let yPos = 1.6;
+        const yStep = 0.5;
+        createControlRow('scale', 'SCALE', yPos, uiGroup); yPos -= yStep;
+        createControlRow('damping', 'DAMPING', yPos, uiGroup); yPos -= yStep;
+        createControlRow('intensity', 'INTENSITY', yPos, uiGroup); yPos -= yStep;
+        createControlRow('opacity', 'OPACITY', yPos, uiGroup); yPos -= yStep;
+        createControlRow('red', 'RED', yPos, uiGroup); yPos -= yStep;
+        createControlRow('green', 'GREEN', yPos, uiGroup); yPos -= yStep;
+        createControlRow('blue', 'BLUE', yPos, uiGroup);
+
+        yPos = 1.3;
+        createControlRow('fov', 'FOV', yPos, freecamUiGroup); yPos -= yStep;
+        createControlRow('speed', 'SPEED', yPos, freecamUiGroup); yPos -= yStep;
+        createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamUiGroup); yPos -= yStep;
+        createControlRow('roll', 'ROLL', yPos, freecamUiGroup);
+        
+        const touchButtonSize = new THREE.Vector2(0.8, 0.8);
+        const isTouchDevice = 'ontouchstart' in window;
+        if (isTouchDevice) {
+            createButton('touch_fwd', '^', new THREE.Vector3(-2.2, 0, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_back', 'v', new THREE.Vector3(-2.2, -1.0, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_left', '<', new THREE.Vector3(-3.2, -0.5, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_right', '>', new THREE.Vector3(-1.2, -0.5, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_up', 'UP', new THREE.Vector3(2.2, 0, 0), touchButtonSize, touchUiGroup);
+            createButton('touch_down', 'DN', new THREE.Vector3(2.2, -1.0, 0), touchButtonSize, touchUiGroup);
+        }
+
+        uiContainer.visible = false;
+        freecamUiGroup.visible = false;
+        touchUiGroup.visible = false;
+
         const consoleMessageQueue = [];
         let isConsoleLogging = false;
 
@@ -156,8 +191,8 @@
         }
 
         function createButton(name, labelText, position, size, targetGroup) {
-            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.8 }));
-            button.position.set(position.x, position.y, 0);
+            const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 }));
+            button.position.copy(position);
             button.name = name;
             targetGroup.add(button);
 
@@ -210,54 +245,32 @@
             const loadButton = document.getElementById('loadButton');
             loadButton.style.opacity = '0';
             setTimeout(() => loadButton.remove(), 500);
+            
             document.getElementById('consoleContainer').classList.add('visible');
             logToConsole('// CONSOLE BOOT SEQUENCE INITIATED //');
             advancedProtocolsLoaded = true;
+            
+            uiContainer.visible = true;
+
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
-            
-            freecamUiGroup.visible = false;
-            touchUiGroup.visible = false;
-
-            let yPos = 1.6;
-            const yStep = 0.5;
-            createControlRow('scale', 'SCALE', yPos, uiGroup); yPos -= yStep;
-            createControlRow('damping', 'DAMPING', yPos, uiGroup); yPos -= yStep;
-            createControlRow('intensity', 'INTENSITY', yPos, uiGroup); yPos -= yStep;
-            createControlRow('opacity', 'OPACITY', yPos, uiGroup); yPos -= yStep;
-            createControlRow('red', 'RED', yPos, uiGroup); yPos -= yStep;
-            createControlRow('green', 'GREEN', yPos, uiGroup); yPos -= yStep;
-            createControlRow('blue', 'BLUE', yPos, uiGroup);
-
-            yPos = 1.3;
-            createControlRow('fov', 'FOV', yPos, freecamUiGroup); yPos -= yStep;
-            createControlRow('speed', 'SPEED', yPos, freecamUiGroup); yPos -= yStep;
-            createControlRow('sensitivity', 'SENSITIVITY', yPos, freecamUiGroup); yPos -= yStep;
-            createControlRow('roll', 'ROLL', yPos, freecamUiGroup);
-
-            const touchBtnSize = new THREE.Vector2(0.6, 0.6);
-            createButton('touch_fwd', '^', new THREE.Vector3(0, 0.7, 0), touchBtnSize, touchUiGroup);
-            createButton('touch_back', 'v', new THREE.Vector3(0, -0.7, 0), touchBtnSize, touchUiGroup);
-            createButton('touch_left', '<', new THREE.Vector3(-0.7, 0, 0), touchBtnSize, touchUiGroup);
-            createButton('touch_right', '>', new THREE.Vector3(0.7, 0, 0), touchBtnSize, touchUiGroup);
-            createButton('touch_up', 'UP', new THREE.Vector3(0, 0, 0), touchBtnSize, touchUiGroup);
-            createButton('touch_down', 'DN', new THREE.Vector3(0, -1.4, 0), touchBtnSize, touchUiGroup);
-
             setTimeout(() => logToConsole('UI PROTOCOLS: ENGAGED'), 750);
             setTimeout(() => logToConsole("PRESS 'C' TO TOGGLE FREECAM"), 1000);
         }
         document.getElementById('loadButton').addEventListener('click', engageDiagnostic);
 
         const raycaster = new THREE.Raycaster();
-        let pressedButtons = {};
+        const pointer = new THREE.Vector2();
+        let isDragging = false;
+        let pressedButton = null;
         let params = { damping: 0.95 };
+        const previousPointerPosition = { x: 0, y: 0 };
         const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
-
         const freecamState = { forward: 0, right: 0, up: 0 };
         const touchState = { forward: 0, right: 0, up: 0 };
-        const activeTouches = {};
-        
+        let activeTouches = {};
+
         const frameTimes = [];
         const FPS_CHECK_INTERVAL = 120;
         const FPS_TARGET = 30;
@@ -289,136 +302,120 @@
             const step = action === 'inc' ? 1 : -1;
             const label = param.toUpperCase();
             let logMessage = "";
+
             switch(param) {
-                case 'scale': artifactGroup.scale.setScalar(Math.max(0.1, artifactGroup.scale.x + step * 0.1)); logMessage = `// ${label} SET TO ${artifactGroup.scale.x.toFixed(2)} //`; break;
-                case 'damping': params.damping = Math.max(0.8, Math.min(0.995, params.damping + step * 0.01)); logMessage = `// ${label} SET TO ${params.damping.toFixed(3)} //`; break;
-                case 'intensity': pointLight.intensity = Math.max(0, pointLight.intensity + step * 0.2); logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`; break;
-                case 'opacity': bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step * 0.05)); cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1; logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`; break;
-                case 'red': pointLight.color.r = Math.max(0, Math.min(1, pointLight.color.r + step * 0.1)); bodyMaterial.color.r = pointLight.color.r; logMessage = `// ${label} SET TO ${pointLight.color.r.toFixed(2)} //`; break;
-                case 'green': pointLight.color.g = Math.max(0, Math.min(1, pointLight.color.g + step * 0.1)); bodyMaterial.color.g = pointLight.color.g; logMessage = `// ${label} SET TO ${pointLight.color.g.toFixed(2)} //`; break;
-                case 'blue': pointLight.color.b = Math.max(0, Math.min(1, pointLight.color.b + step * 0.1)); bodyMaterial.color.b = pointLight.color.b; logMessage = `// ${label} SET TO ${pointLight.color.b.toFixed(2)} //`; break;
-                case 'fov': camera.fov = Math.max(30, Math.min(120, camera.fov + step * 5)); camera.updateProjectionMatrix(); logMessage = `// ${label} SET TO ${camera.fov.toFixed(1)} //`; break;
-                case 'speed': FREECAM_SPEED = Math.max(1, Math.min(20, FREECAM_SPEED + step * 1)); logMessage = `// ${label} SET TO ${FREECAM_SPEED.toFixed(2)} //`; break;
-                case 'sensitivity': SENSITIVITY_LOOK = Math.max(0.0005, Math.min(0.005, SENSITIVITY_LOOK + step * 0.0002)); logMessage = `// ${label} SET TO ${SENSITIVITY_LOOK.toFixed(4)} //`; break;
-                case 'roll': camera.rotation.z = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, camera.rotation.z + step * 0.1)); logMessage = `// ${label} SET TO ${(camera.rotation.z / (Math.PI / 4) * 100).toFixed(0)}% //`; break;
+                case 'scale':
+                    const s = artifactGroup.scale.x + step * 0.1;
+                    artifactGroup.scale.setScalar(Math.max(0.1, s));
+                    logMessage = `// ${label} SET TO ${artifactGroup.scale.x.toFixed(2)} //`;
+                    break;
+                case 'damping':
+                    params.damping = Math.max(0.8, Math.min(0.995, params.damping + step * 0.01));
+                    logMessage = `// ${label} SET TO ${params.damping.toFixed(3)} //`;
+                    break;
+                case 'intensity':
+                    pointLight.intensity = Math.max(0, pointLight.intensity + step * 0.2);
+                    logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`;
+                    break;
+                case 'opacity':
+                    bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step * 0.05));
+                    cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
+                    logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`;
+                    break;
+                case 'red':
+                    pointLight.color.r = Math.max(0, Math.min(1, pointLight.color.r + step * 0.1));
+                    bodyMaterial.color.r = pointLight.color.r;
+                    logMessage = `// ${label} SET TO ${pointLight.color.r.toFixed(2)} //`;
+                    break;
+                case 'green':
+                    pointLight.color.g = Math.max(0, Math.min(1, pointLight.color.g + step * 0.1));
+                    bodyMaterial.color.g = pointLight.color.g;
+                    logMessage = `// ${label} SET TO ${pointLight.color.g.toFixed(2)} //`;
+                    break;
+                case 'blue':
+                    pointLight.color.b = Math.max(0, Math.min(1, pointLight.color.b + step * 0.1));
+                    bodyMaterial.color.b = pointLight.color.b;
+                    logMessage = `// ${label} SET TO ${pointLight.color.b.toFixed(2)} //`;
+                    break;
+                case 'fov':
+                    camera.fov = Math.max(30, Math.min(120, camera.fov + step * 5));
+                    camera.updateProjectionMatrix();
+                    logMessage = `// ${label} SET TO ${camera.fov.toFixed(1)} //`;
+                    break;
+                case 'speed':
+                    FREECAM_SPEED = Math.max(1, Math.min(20, FREECAM_SPEED + step * 1));
+                    logMessage = `// ${label} SET TO ${FREECAM_SPEED.toFixed(2)} //`;
+                    break;
+                case 'sensitivity':
+                    SENSITIVITY_LOOK = Math.max(0.0005, Math.min(0.005, SENSITIVITY_LOOK + step * 0.0002));
+                    logMessage = `// ${label} SET TO ${SENSITIVITY_LOOK.toFixed(4)} //`;
+                    break;
+                case 'roll':
+                    camera.rotation.z = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, camera.rotation.z + step * 0.1));
+                    logMessage = `// ${label} SET TO ${(camera.rotation.z / (Math.PI / 4) * 100).toFixed(0)}% //`;
+                    break;
             }
             if (logMessage) logToConsole(logMessage);
         }
 
-        function handlePointerDown(event) {
-            if (!advancedProtocolsLoaded) return;
-            const pointer = new THREE.Vector2();
+        function onPointerDown(event) {
+            const clientX = event.clientX;
+            const clientY = event.clientY;
+            pointer.x = (clientX / window.innerWidth) * 2 - 1;
+            pointer.y = - (clientY / window.innerHeight) * 2 + 1;
             
-            const processTouch = (x, y, id) => {
-                pointer.x = (x / window.innerWidth) * 2 - 1;
-                pointer.y = - (y / window.innerHeight) * 2 + 1;
-                raycaster.setFromCamera(pointer, camera);
-                
-                let activeUiGroup = null;
-                if (cameraMode === 'bob') activeUiGroup = uiGroup;
-                else if (cameraMode === 'free') activeUiGroup = touchUiGroup.visible ? touchUiGroup : freecamUiGroup;
-                
-                const intersects = raycaster.intersectObjects(activeUiGroup.children, true);
-                let buttonPressed = false;
+            raycaster.setFromCamera(pointer, camera);
+            
+            let intersects;
+            if (cameraMode === 'bob') {
+                 intersects = raycaster.intersectObjects(uiContainer.children, true);
+            } else {
+                 intersects = raycaster.intersectObjects(freecamUiGroup.children, true);
+            }
 
-                if (intersects.length > 0) {
-                    const button = intersects[0].object.parent;
-                    if (button && button.name) {
-                        const [param, action] = button.name.split('_');
-                        if (param && action) {
-                            if (param.startsWith('touch')) {
-                                updateTouchState(param.substring(5), 1);
-                            } else {
-                                updateAndLogParameter(param, action);
-                            }
-                            button.scale.set(0.9, 0.9, 0.9);
-                            pressedButtons[id] = button;
-                            buttonPressed = true;
-                        }
+            if (advancedProtocolsLoaded && intersects.length > 0 && intersects[0].distance < 100) {
+                const button = intersects[0].object;
+                if (button && button.name) {
+                    const [param, action] = button.name.split('_');
+                    if (param && action) {
+                        updateAndLogParameter(param, action);
+                        pressedButton = button;
+                        button.scale.set(0.9, 0.9, 0.9);
                     }
                 }
-                
-                if (id !== 'mouse') {
-                    activeTouches[id] = { x, y, buttonPressed };
-                } else if (!buttonPressed && cameraMode === 'bob') {
-                    activeTouches.mouse = { x, y, buttonPressed: false };
-                    renderer.domElement.classList.add('grabbing');
-                } else if (!buttonPressed && cameraMode === 'free' && document.pointerLockElement !== renderer.domElement) {
-                     renderer.domElement.requestPointerLock();
-                }
-            };
-            
-            if (event.type === 'mousedown') {
-                 processTouch(event.clientX, event.clientY, 'mouse');
-            } else {
-                for (let i = 0; i < event.changedTouches.length; i++) {
-                    const touch = event.changedTouches[i];
-                    processTouch(touch.clientX, touch.clientY, touch.identifier);
-                }
+                return;
+            }
+
+            if (cameraMode === 'free' && document.pointerLockElement !== renderer.domElement) {
+                renderer.domElement.requestPointerLock();
+            } else if (cameraMode === 'bob') {
+                isDragging = true;
+                renderer.domElement.classList.add('grabbing');
+                previousPointerPosition.x = clientX;
+                previousPointerPosition.y = clientY;
             }
         }
 
-        function handlePointerMove(event) {
-            const processMove = (x, y, id) => {
-                const touch = activeTouches[id];
-                if (!touch || touch.buttonPressed) return;
-
-                const deltaX = x - touch.x;
-                const deltaY = y - touch.y;
-
-                if (cameraMode === 'bob') {
-                    rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
-                    rotationVelocity.x += deltaY * SENSITIVITY_DRAG;
-                }
-                touch.x = x;
-                touch.y = y;
-            };
-
-            if (event.type === 'mousemove' && activeTouches.mouse) {
-                processMove(event.clientX, event.clientY, 'mouse');
-            } else if (event.type === 'touchmove') {
-                event.preventDefault();
-                for (let i = 0; i < event.changedTouches.length; i++) {
-                    const touch = event.changedTouches[i];
-                    processMove(touch.clientX, touch.clientY, touch.identifier);
-                }
-            }
-        }
-        
-        function handlePointerUp(event) {
-             const processEnd = (id) => {
-                if (pressedButtons[id]) {
-                    const button = pressedButtons[id];
-                    button.scale.set(1, 1, 1);
-                    const [param] = button.name.split('_');
-                    if(param.startsWith('touch')) {
-                        updateTouchState(param.substring(5), 0);
-                    }
-                    delete pressedButtons[id];
-                }
-                delete activeTouches[id];
-             };
-
-            if (event.type === 'mouseup' || event.type === 'mouseleave') {
-                processEnd('mouse');
-                renderer.domElement.classList.remove('grabbing');
-            } else {
-                 for (let i = 0; i < event.changedTouches.length; i++) {
-                    const touch = event.changedTouches[i];
-                    processEnd(touch.identifier);
-                }
+        function onPointerMove(event) {
+            if (isDragging && cameraMode === 'bob') {
+                const clientX = event.clientX;
+                const clientY = event.clientY;
+                const deltaX = clientX - previousPointerPosition.x;
+                const deltaY = clientY - previousPointerPosition.y;
+                rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
+                rotationVelocity.x += deltaY * SENSITIVITY_DRAG;
+                previousPointerPosition.x = clientX;
+                previousPointerPosition.y = clientY;
             }
         }
 
-        function updateTouchState(direction, value) {
-            switch(direction) {
-                case 'fwd': touchState.forward = value; break;
-                case 'back': touchState.forward = -value; break;
-                case 'left': touchState.right = -value; break;
-                case 'right': touchState.right = value; break;
-                case 'up': touchState.up = value; break;
-                case 'down': touchState.up = -value; break;
+        function onPointerUp() { 
+            if (pressedButton) {
+                pressedButton.scale.set(1, 1, 1);
+                pressedButton = null;
             }
+            isDragging = false; 
+            renderer.domElement.classList.remove('grabbing');
         }
 
         function onPointerLockChange() {
@@ -432,12 +429,90 @@
 
         function onPointerLockMove(event) {
             if (cameraMode !== 'free') return;
-            const touchId = Object.keys(activeTouches).find(id => !activeTouches[id].buttonPressed);
-            if (touchId) return; 
-
             camera.rotation.y -= event.movementX * SENSITIVITY_LOOK;
             camera.rotation.x -= event.movementY * SENSITIVITY_LOOK;
             camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+        }
+        
+        function onTouchStart(event) {
+            event.preventDefault();
+            const touches = event.changedTouches;
+            for (let i = 0; i < touches.length; i++) {
+                const touch = touches[i];
+                pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                pointer.y = - (touch.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(pointer, camera);
+
+                let intersects;
+                let hitButton = false;
+
+                if (cameraMode === 'free') {
+                    intersects = raycaster.intersectObjects(touchUiGroup.children, true);
+                     if (intersects.length > 0) {
+                        const button = intersects[0].object.parent;
+                        button.scale.set(0.9, 0.9, 0.9);
+                        activeTouches[touch.identifier] = { type: 'button', button: button };
+                        const [type, direction] = button.name.split('_');
+                        switch (direction) {
+                            case 'fwd': touchState.forward = 1; break;
+                            case 'back': touchState.forward = -1; break;
+                            case 'left': touchState.right = -1; break;
+                            case 'right': touchState.right = 1; break;
+                            case 'up': touchState.up = 1; break;
+                            case 'down': touchState.up = -1; break;
+                        }
+                        hitButton = true;
+                    }
+                }
+
+                if (!hitButton) {
+                    activeTouches[touch.identifier] = { type: 'look', lastX: touch.clientX, lastY: touch.clientY };
+                }
+            }
+        }
+
+        function onTouchMove(event) {
+            event.preventDefault();
+            const touches = event.changedTouches;
+            for (let i = 0; i < touches.length; i++) {
+                const touch = touches[i];
+                const activeTouch = activeTouches[touch.identifier];
+                if (activeTouch && activeTouch.type === 'look') {
+                    const deltaX = touch.clientX - activeTouch.lastX;
+                    const deltaY = touch.clientY - activeTouch.lastY;
+                    
+                    if(cameraMode === 'free') {
+                        camera.rotation.y -= deltaX * SENSITIVITY_LOOK * 2;
+                        camera.rotation.x -= deltaY * SENSITIVITY_LOOK * 2;
+                        camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+                    } else if (cameraMode === 'bob') {
+                        rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
+                        rotationVelocity.x += deltaY * SENSITIVITY_DRAG;
+                    }
+                    
+                    activeTouch.lastX = touch.clientX;
+                    activeTouch.lastY = touch.clientY;
+                }
+            }
+        }
+
+        function onTouchEnd(event) {
+            event.preventDefault();
+            const touches = event.changedTouches;
+            for (let i = 0; i < touches.length; i++) {
+                const touch = touches[i];
+                const activeTouch = activeTouches[touch.identifier];
+                if (activeTouch && activeTouch.type === 'button') {
+                    activeTouch.button.scale.set(1, 1, 1);
+                    const [type, direction] = activeTouch.button.name.split('_');
+                    switch (direction) {
+                        case 'fwd': case 'back': touchState.forward = 0; break;
+                        case 'left': case 'right': touchState.right = 0; break;
+                        case 'up': case 'down': touchState.up = 0; break;
+                    }
+                }
+                delete activeTouches[touch.identifier];
+            }
         }
 
         function onKeyPress(event) {
@@ -445,18 +520,18 @@
                 warningOverlay.style.display = 'none';
                 if (cameraMode === 'bob') {
                     cameraMode = 'free';
-                    logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE LOOK, TOUCH)');
-                    uiGroup.visible = false;
+                    logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE/TOUCH)');
+                    uiContainer.visible = false;
                     freecamUiGroup.visible = true;
-                    touchUiGroup.visible = true;
+                    if(isTouchDevice) touchUiGroup.visible = true;
                 } else {
                     cameraMode = 'bob';
                     logToConsole('CAMERA MODE: BOB ENGAGED');
                     document.exitPointerLock();
                     camera.rotation.set(0, 0, 0);
-                    uiGroup.visible = true;
+                    uiContainer.visible = true;
                     freecamUiGroup.visible = false;
-                    touchUiGroup.visible = false;
+                    if(isTouchDevice) touchUiGroup.visible = false;
                 }
             }
         }
@@ -475,27 +550,11 @@
         }
         
         function updateUiPositions() {
-            const zPos = -3.5;
+             const zPos = -3.5;
             const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
             const w = h * camera.aspect;
-            uiGroup.position.set(-w + 2.5, 0, zPos);
             freecamUiGroup.position.set(w - 2.5, 0, zPos);
-
-            const isMobile = window.innerWidth < 768;
-            if (isMobile) {
-                const dPadX = -w + 1.2;
-                const dPadY = -h + 1.2;
-                const actionX = w - 1.2;
-                const actionY = -h + 1.2;
-                
-                touchUiGroup.getObjectByName('touch_fwd').position.set(dPadX, dPadY + 0.7, 0);
-                touchUiGroup.getObjectByName('touch_back').position.set(dPadX, dPadY - 0.7, 0);
-                touchUiGroup.getObjectByName('touch_left').position.set(dPadX - 0.7, dPadY, 0);
-                touchUiGroup.getObjectByName('touch_right').position.set(dPadX + 0.7, dPadY, 0);
-                
-                touchUiGroup.getObjectByName('touch_up').position.set(actionX, actionY + 0.7, 0);
-                touchUiGroup.getObjectByName('touch_down').position.set(actionX, actionY - 0.7, 0);
-            }
+            touchUiGroup.position.set(0, -h + 1.2, zPos);
         }
 
         function onWindowResize() {
@@ -524,8 +583,10 @@
             if (advancedProtocolsLoaded && ++frameCounter >= FPS_CHECK_INTERVAL) checkPerformanceAndAdapt();
 
             if (cameraMode === 'bob') {
+                camera.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
+                camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
                 camera.position.z = 5;
-                camera.lookAt(0, 0, 0);
+                camera.lookAt(0,0,0);
                 
                 artifactGroup.rotation.x += rotationVelocity.x;
                 artifactGroup.rotation.y += rotationVelocity.y;
@@ -547,19 +608,18 @@
         }
 
         onWindowResize();
-        renderer.domElement.addEventListener('mousedown', handlePointerDown);
-        renderer.domElement.addEventListener('mousemove', handlePointerMove);
-        renderer.domElement.addEventListener('mouseup', handlePointerUp);
-        renderer.domElement.addEventListener('mouseleave', handlePointerUp);
-        renderer.domElement.addEventListener('touchstart', handlePointerDown, { passive: false });
-        renderer.domElement.addEventListener('touchmove', handlePointerMove, { passive: false });
-        renderer.domElement.addEventListener('touchend', handlePointerUp);
+        renderer.domElement.addEventListener('mousedown', onPointerDown);
+        renderer.domElement.addEventListener('mousemove', onPointerMove);
+        renderer.domElement.addEventListener('mouseup', onPointerUp);
+        renderer.domElement.addEventListener('mouseleave', onPointerUp);
+        renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+        renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+        renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('keypress', onKeyPress);
         window.addEventListener('keydown', (e) => onKey(e, true));
         window.addEventListener('keyup', (e) => onKey(e, false));
         document.addEventListener('pointerlockchange', onPointerLockChange);
         animate();
-    </script>
-</body>
+    </script></body>
 </html>
