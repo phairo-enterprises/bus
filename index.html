@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.47 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.48 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -97,6 +97,9 @@
         let currentArtifactIndex = 0;
         let swipeBar, swipeHandle;
 
+        const CAROUSEL_RADIUS = 4;
+        const ANGLE_STEP = Math.PI / 5;
+
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
         const pointLight = new THREE.PointLight(0xFF0000, 1.5, 50);
@@ -129,11 +132,11 @@
         
         function createHypercube() {
             const group = new THREE.Group();
-            bodyMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, transparent: true, opacity: 0.1, depthWrite: false });
-            const body = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), bodyMaterial);
+            const material = new THREE.MeshBasicMaterial({ color: 0xFF0000, transparent: true, opacity: 0.1, depthWrite: false });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), material);
             group.add(body);
-            cubeWireframe = new THREE.LineSegments(new THREE.EdgesGeometry(body.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
-            group.add(cubeWireframe);
+            const wireframe = new THREE.LineSegments(new THREE.EdgesGeometry(body.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
+            group.add(wireframe);
             return group;
         }
 
@@ -171,10 +174,21 @@
         ];
 
         function createArtifacts() {
+            const totalAngle = (shapeCatalog.length - 1) * ANGLE_STEP;
+            const startAngle = -totalAngle / 2;
+
             shapeCatalog.forEach((shapeDef, index) => {
                 const artifact = shapeDef.generator();
                 artifact.name = shapeDef.name;
-                artifact.visible = (index === currentArtifactIndex);
+                
+                const angle = startAngle + index * ANGLE_STEP;
+                artifact.position.set(
+                    CAROUSEL_RADIUS * Math.sin(angle),
+                    0,
+                    -CAROUSEL_RADIUS + CAROUSEL_RADIUS * Math.cos(angle)
+                );
+
+                artifact.visible = true;
                 artifactGroup.add(artifact);
                 artifacts.push(artifact);
             });
@@ -208,33 +222,6 @@
             createButton('touch_up', 'UP', new THREE.Vector3(2.2, 0, 0), touchButtonSize, touchUiGroup);
             createButton('touch_down', 'DN', new THREE.Vector3(2.2, -1.0, 0), touchButtonSize, touchUiGroup);
         }
-
-        function createSwipeBar() {
-            swipeBar = new THREE.Group();
-            swipeBar.position.y = -2.5;
-            uiContainer.add(swipeBar);
-
-            const track = new THREE.Mesh(
-                new THREE.BoxGeometry(3, 0.1, 0.1),
-                new THREE.MeshBasicMaterial({ color: 0x333333 })
-            );
-            swipeBar.add(track);
-
-            swipeHandle = new THREE.Mesh(
-                new THREE.BoxGeometry(0.3, 0.3, 0.15),
-                new THREE.MeshBasicMaterial({ color: 0xCCCCCC })
-            );
-            swipeHandle.position.x = -1.35;
-            swipeBar.add(swipeHandle);
-
-            const swipeTarget = new THREE.Mesh(
-                new THREE.PlaneGeometry(3.2, 0.6),
-                new THREE.MeshBasicMaterial({ visible: false })
-            );
-            swipeTarget.name = 'swipeTarget';
-            swipeBar.add(swipeTarget);
-        }
-        createSwipeBar();
 
         uiContainer.visible = false;
         freecamUiGroup.visible = false;
@@ -337,7 +324,6 @@
         let pressedButton = null;
         let params = { damping: 0.95 };
         const previousPointerPosition = { x: 0, y: 0 };
-        const rotationVelocity = { x: 0.001, y: 0.002 };
         const SENSITIVITY_DRAG = 0.004;
         const freecamState = { forward: 0, right: 0, up: 0 };
         const touchState = { forward: 0, right: 0, up: 0 };
@@ -444,13 +430,13 @@
             }
 
             if (advancedProtocolsLoaded && intersects.length > 0) {
-                const object = intersects[0].object;
-                if (object && object.name && object.name.includes('_')) {
-                    const [param, action] = object.name.split('_');
+                const button = intersects[0].object;
+                if (button && button.name) {
+                    const [param, action] = button.name.split('_');
                     if (param && action) {
                         updateAndLogParameter(param, action);
-                        pressedButton = object;
-                        object.scale.set(0.9, 0.9, 0.9);
+                        pressedButton = button;
+                        button.scale.set(0.9, 0.9, 0.9);
                     }
                 }
                 return;
@@ -467,16 +453,6 @@
         }
 
         function onPointerMove(event) {
-            if (isDragging && cameraMode === 'bob') {
-                const clientX = event.clientX;
-                const clientY = event.clientY;
-                const deltaX = clientX - previousPointerPosition.x;
-                const deltaY = clientY - previousPointerPosition.y;
-                rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
-                rotationVelocity.x += deltaY * SENSITIVITY_DRAG;
-                previousPointerPosition.x = clientX;
-                previousPointerPosition.y = clientY;
-            }
         }
 
         function onPointerUp() { 
@@ -555,9 +531,6 @@
                         camera.rotation.y -= deltaX * SENSITIVITY_LOOK * 2;
                         camera.rotation.x -= deltaY * SENSITIVITY_LOOK * 2;
                         camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-                    } else if (cameraMode === 'bob') {
-                        rotationVelocity.y += deltaX * SENSITIVITY_DRAG;
-                        rotationVelocity.x += deltaY * SENSITIVITY_DRAG;
                     }
                     
                     activeTouch.lastX = touch.clientX;
@@ -658,11 +631,6 @@
                 camera.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
                 camera.position.z = 5;
                 camera.lookAt(0,0,0);
-                
-                artifactGroup.rotation.x += rotationVelocity.x;
-                artifactGroup.rotation.y += rotationVelocity.y;
-                rotationVelocity.x *= params.damping;
-                rotationVelocity.y *= params.damping;
             } else if (cameraMode === 'free') {
                 const totalForward = freecamState.forward + touchState.forward;
                 const totalRight = freecamState.right + touchState.right;
@@ -688,7 +656,7 @@
         renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('keypress', onKeyPress);
-        window.addEventListener('keydown', (e) => onKey(e, true);
+        window.addEventListener('keydown', (e) => onKey(e, true));
         window.addEventListener('keyup', (e) => onKey(e, false));
         document.addEventListener('pointerlockchange', onPointerLockChange);
         animate();
