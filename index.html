@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.52 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.53 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -79,10 +79,15 @@
         const artifactGroup = new THREE.Group();
         scene.add(artifactGroup);
 
+        const hudContainer = new THREE.Group();
+        camera.add(hudContainer);
+        hudContainer.position.set(0, 0, -3.5);
+
         const uiContainer = new THREE.Group();
-        scene.add(uiContainer);
+        hudContainer.add(uiContainer);
         const uiGroup = new THREE.Group();
         uiContainer.add(uiGroup);
+
         const freecamUiGroup = new THREE.Group();
         camera.add(freecamUiGroup);
         const touchUiGroup = new THREE.Group();
@@ -473,7 +478,13 @@
             pointer.y = - (clientY / window.innerHeight) * 2 + 1;
             
             raycaster.setFromCamera(pointer, camera);
-            const intersects = raycaster.intersectObjects(uiContainer.children, true);
+            
+            let intersects = [];
+            if (cameraMode === 'bob') {
+                intersects = raycaster.intersectObjects(hudContainer.children, true);
+            } else {
+                intersects = raycaster.intersectObjects(freecamUiGroup.children, true);
+            }
 
             if (!advancedProtocolsLoaded || intersects.length === 0) return;
 
@@ -561,7 +572,7 @@
 
                 let intersects;
                 if (cameraMode === 'bob') {
-                    intersects = raycaster.intersectObjects(uiContainer.children, true);
+                    intersects = raycaster.intersectObjects(hudContainer.children, true);
                     if (intersects.length > 0) {
                         const object = intersects[0].object;
                         if (object.name === 'swipeTarget') {
@@ -660,7 +671,7 @@
                 if (cameraMode === 'bob') {
                     cameraMode = 'free';
                     logToConsole('CAMERA MODE: FREE (WASDQE, MOUSE/TOUCH)');
-                    uiContainer.visible = false;
+                    hudContainer.visible = false;
                     freecamUiGroup.visible = true;
                     if(isTouchDevice) touchUiGroup.visible = true;
                 } else {
@@ -668,7 +679,7 @@
                     logToConsole('CAMERA MODE: BOB ENGAGED');
                     document.exitPointerLock();
                     camera.rotation.set(0, 0, 0);
-                    uiContainer.visible = true;
+                    hudContainer.visible = true;
                     freecamUiGroup.visible = false;
                     if(isTouchDevice) touchUiGroup.visible = false;
                 }
@@ -708,15 +719,6 @@
                 }
             }
         }
-        
-        function updateUiPositions() {
-             const zPos = -3.5;
-            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
-            const w = h * camera.aspect;
-            uiContainer.position.set(-w + 2.5, 0, zPos);
-            freecamUiGroup.position.set(w - 2.5, 0, zPos);
-            touchUiGroup.position.set(0, -h + 1.2, zPos);
-        }
 
         function onWindowResize() {
             const width = window.innerWidth;
@@ -732,7 +734,14 @@
                 camera.fov = BASE_FOV;
             }
             camera.updateProjectionMatrix();
-            updateUiPositions();
+
+            const zPos = -3.5;
+            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
+            const w = h * camera.aspect;
+            
+            uiContainer.position.set(-w * 0.7, 0, 0);
+            freecamUiGroup.position.set(w - 2.5, 0, zPos);
+            touchUiGroup.position.set(0, -h + 1.2, zPos);
         }
         
         function animate() {
@@ -810,7 +819,7 @@
         renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('keypress', onKeyPress);
-        window.addEventListener('keydown', onKey);
+        window.addEventListener('keydown', (e) => onKey(e, true));
         window.addEventListener('keyup', (e) => onKey(e, false));
         document.addEventListener('pointerlockchange', onPointerLockChange);
         animate();
