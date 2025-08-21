@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.46 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.47 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -95,6 +95,7 @@
         let bodyMaterial, cubeWireframe;
         let artifacts = [];
         let currentArtifactIndex = 0;
+        let swipeBar, swipeHandle;
 
         const ambientLight = new THREE.AmbientLight(0x404080, 2);
         scene.add(ambientLight);
@@ -207,6 +208,33 @@
             createButton('touch_up', 'UP', new THREE.Vector3(2.2, 0, 0), touchButtonSize, touchUiGroup);
             createButton('touch_down', 'DN', new THREE.Vector3(2.2, -1.0, 0), touchButtonSize, touchUiGroup);
         }
+
+        function createSwipeBar() {
+            swipeBar = new THREE.Group();
+            swipeBar.position.y = -2.5;
+            uiContainer.add(swipeBar);
+
+            const track = new THREE.Mesh(
+                new THREE.BoxGeometry(3, 0.1, 0.1),
+                new THREE.MeshBasicMaterial({ color: 0x333333 })
+            );
+            swipeBar.add(track);
+
+            swipeHandle = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.3, 0.15),
+                new THREE.MeshBasicMaterial({ color: 0xCCCCCC })
+            );
+            swipeHandle.position.x = -1.35;
+            swipeBar.add(swipeHandle);
+
+            const swipeTarget = new THREE.Mesh(
+                new THREE.PlaneGeometry(3.2, 0.6),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            swipeTarget.name = 'swipeTarget';
+            swipeBar.add(swipeTarget);
+        }
+        createSwipeBar();
 
         uiContainer.visible = false;
         freecamUiGroup.visible = false;
@@ -362,23 +390,21 @@
                     logMessage = `// ${label} SET TO ${pointLight.intensity.toFixed(2)} //`;
                     break;
                 case 'opacity':
-                    if (bodyMaterial) bodyMaterial.opacity = Math.max(0, Math.min(1, bodyMaterial.opacity + step * 0.05));
-                    if (cubeWireframe) cubeWireframe.material.opacity = bodyMaterial.opacity * 0.5 + 0.1;
-                    logMessage = `// ${label} SET TO ${bodyMaterial.opacity.toFixed(2)} //`;
+                    const currentArtifact = artifacts[currentArtifactIndex];
+                    const bodyMesh = currentArtifact.children.find(c => c.type === 'Mesh');
+                    if(bodyMesh) bodyMesh.material.opacity = Math.max(0, Math.min(1, bodyMesh.material.opacity + step * 0.05));
+                    logMessage = `// ${label} SET TO ${bodyMesh.material.opacity.toFixed(2)} //`;
                     break;
                 case 'red':
                     pointLight.color.r = Math.max(0, Math.min(1, pointLight.color.r + step * 0.1));
-                    if (bodyMaterial) bodyMaterial.color.r = pointLight.color.r;
                     logMessage = `// ${label} SET TO ${pointLight.color.r.toFixed(2)} //`;
                     break;
                 case 'green':
                     pointLight.color.g = Math.max(0, Math.min(1, pointLight.color.g + step * 0.1));
-                    if (bodyMaterial) bodyMaterial.color.g = pointLight.color.g;
                     logMessage = `// ${label} SET TO ${pointLight.color.g.toFixed(2)} //`;
                     break;
                 case 'blue':
                     pointLight.color.b = Math.max(0, Math.min(1, pointLight.color.b + step * 0.1));
-                    if (bodyMaterial) bodyMaterial.color.b = pointLight.color.b;
                     logMessage = `// ${label} SET TO ${pointLight.color.b.toFixed(2)} //`;
                     break;
                 case 'fov':
@@ -418,13 +444,13 @@
             }
 
             if (advancedProtocolsLoaded && intersects.length > 0) {
-                const button = intersects[0].object;
-                if (button && button.name) {
-                    const [param, action] = button.name.split('_');
+                const object = intersects[0].object;
+                if (object && object.name && object.name.includes('_')) {
+                    const [param, action] = object.name.split('_');
                     if (param && action) {
                         updateAndLogParameter(param, action);
-                        pressedButton = button;
-                        button.scale.set(0.9, 0.9, 0.9);
+                        pressedButton = object;
+                        object.scale.set(0.9, 0.9, 0.9);
                     }
                 }
                 return;
@@ -662,7 +688,7 @@
         renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('keypress', onKeyPress);
-        window.addEventListener('keydown', (e) => onKey(e, true));
+        window.addEventListener('keydown', (e) => onKey(e, true);
         window.addEventListener('keyup', (e) => onKey(e, false));
         document.addEventListener('pointerlockchange', onPointerLockChange);
         animate();
