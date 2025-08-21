@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.63 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.64 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -84,6 +84,7 @@
 
         const hudGroup = new THREE.Group();
         camera.add(hudGroup);
+        hudGroup.position.set(0, 0, -5);
 
         const bobControls = new THREE.Group();
         hudGroup.add(bobControls);
@@ -483,12 +484,9 @@
             pointer.x = (clientX / window.innerWidth) * 2 - 1;
             pointer.y = - (clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
-            let intersects = [];
-            if (cameraMode === 'bob') {
-                intersects = raycaster.intersectObjects(hudGroup.children, true);
-            } else {
-                intersects = raycaster.intersectObjects(hudGroup.children, true);
-            }
+            
+            const intersects = raycaster.intersectObjects(hudGroup.children, true);
+
             if (!advancedProtocolsLoaded) return;
 
             let hitProcessed = false;
@@ -524,7 +522,7 @@
                         }
                     }
                     hitProcessed = true;
-                    break;
+                    break; 
                 } else if (object.name === 'swipeTarget') {
                     isSwiping = true;
                     swipeStartX = pointer.x;
@@ -732,7 +730,7 @@
                 camera.fov = BASE_FOV;
             }
             camera.updateProjectionMatrix();
-            const zPos = -3.5;
+            const zPos = -5;
             const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
             const w = h * camera.aspect;
             hudGroup.position.set(0, 0, zPos);
@@ -753,7 +751,7 @@
             freecamControls.visible = (cameraMode === 'free');
             
             if (cameraMode === 'bob') {
-                cameraRig.position.set(0, 0, 5);
+                cameraRig.position.set(0,0,5);
                 cameraRig.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
                 cameraRig.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
                 cameraRig.lookAt(0,0,0);
@@ -814,4 +812,4 @@
         document.addEventListener('pointerlockchange', onPointerLockChange);
         animate();
     </script></body>
-</html>
+</html>```
