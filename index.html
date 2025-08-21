@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.44 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.45 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -87,6 +87,10 @@
         camera.add(freecamUiGroup);
         const touchUiGroup = new THREE.Group();
         camera.add(touchUiGroup);
+        
+        uiContainer.position.set(0, 0, 0);
+        freecamUiGroup.position.set(2.5, 0, -3.5);
+        touchUiGroup.position.set(0, -1.5, -3.5);
 
         let advancedProtocolsLoaded = false;
         let cameraMode = 'bob';
@@ -163,7 +167,7 @@
         }
 
         uiContainer.visible = false;
-        freecamUiGroup.visible = false;
+        freecamUiGroup.visible = true;
         touchUiGroup.visible = false;
 
         const consoleMessageQueue = [];
@@ -249,6 +253,7 @@
             advancedProtocolsLoaded = true;
             
             uiContainer.visible = true;
+            freecamUiGroup.visible = false;
 
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
@@ -546,15 +551,6 @@
                 case 'e': freecamState.up = value; break;
             }
         }
-        
-        function updateUiPositions() {
-            const zPos = -3.5;
-            const h = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.abs(zPos);
-            const w = h * camera.aspect;
-            uiContainer.position.set(-w + 2.5, 0, zPos);
-            freecamUiGroup.position.set(w - 2.5, 0, zPos);
-            touchUiGroup.position.set(0, -h + 1.2, zPos);
-        }
 
         function onWindowResize() {
             const width = window.innerWidth;
@@ -570,7 +566,6 @@
                 camera.fov = BASE_FOV;
             }
             camera.updateProjectionMatrix();
-            updateUiPositions();
         }
         
         function animate() {
