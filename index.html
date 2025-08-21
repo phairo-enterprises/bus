@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.51 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.52 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -217,6 +217,7 @@
             new THREE.MeshBasicMaterial({ visible: false })
         );
         mainUiHandle.name = 'mainUiHandle';
+        mainUiHandle.position.z = -0.1;
         uiGroup.add(mainUiHandle);
 
         yPos = 1.3;
@@ -258,6 +259,7 @@
                 new THREE.MeshBasicMaterial({ visible: false })
             );
             swipeTarget.name = 'swipeTarget';
+            swipeTarget.position.z = -0.05;
             swipeBar.add(swipeTarget);
         }
         createSwipeBar();
@@ -688,9 +690,11 @@
                      switch (event.key) {
                         case 'ArrowLeft':
                             targetArtifactIndex = Math.max(0, targetArtifactIndex - 1);
+                            logToConsole(`// ARTIFACT SELECTED: ${shapeCatalog[targetArtifactIndex].name} //`);
                             break;
                         case 'ArrowRight':
                             targetArtifactIndex = Math.min(artifacts.length - 1, targetArtifactIndex + 1);
+                            logToConsole(`// ARTIFACT SELECTED: ${shapeCatalog[targetArtifactIndex].name} //`);
                             break;
                     }
                 }
