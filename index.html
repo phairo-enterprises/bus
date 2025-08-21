@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.61 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.62 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -491,13 +491,17 @@
             }
             if (!advancedProtocolsLoaded) return;
 
-            if (intersects.length > 0) {
-                const object = intersects[0].object;
+            let hitProcessed = false;
+            for (const intersect of intersects) {
+                const object = intersect.object;
                 if (object.name === 'hitbox') {
                     const buttonGroup = object.parent;
                     if (buttonGroup.name === 'mode_switch') {
                         if (cameraMode === 'bob') {
                             cameraMode = 'free';
+                            cameraRig.position.set(0, 0, 5);
+                            cameraRig.rotation.set(0, 0, 0);
+                            camera.rotation.set(0, 0, 0);
                         } else {
                             cameraMode = 'bob';
                             document.exitPointerLock();
@@ -519,16 +523,25 @@
                             buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
                         }
                     }
+                    hitProcessed = true;
+                    break;
                 } else if (object.name === 'swipeTarget') {
                     isSwiping = true;
                     swipeStartX = pointer.x;
-                } else if (object.name === 'mainUiHandle') {
-                    isSpinningArtifact = true;
-                    renderer.domElement.classList.add('grabbing');
-                    previousPointerPosition.x = clientX;
-                    previousPointerPosition.y = clientY;
+                    hitProcessed = true;
+                    break;
                 }
-            } else if (cameraMode === 'free') {
+            }
+
+            if (!hitProcessed && intersects.length > 0 && intersects[0].object.name === 'mainUiHandle') {
+                isSpinningArtifact = true;
+                renderer.domElement.classList.add('grabbing');
+                previousPointerPosition.x = clientX;
+                previousPointerPosition.y = clientY;
+                hitProcessed = true;
+            }
+
+            if (!hitProcessed && cameraMode === 'free') {
                  renderer.domElement.requestPointerLock();
             }
         }
@@ -595,7 +608,6 @@
                 pointer.y = - (touch.clientY / window.innerHeight) * 2 + 1;
                 raycaster.setFromCamera(pointer, camera);
                 let intersects = raycaster.intersectObjects(hudGroup.children, true);
-
                 if (intersects.length > 0) {
                     const object = intersects[0].object;
                     if (object.name === 'hitbox') {
