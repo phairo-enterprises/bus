@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.53 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.55 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -77,11 +77,11 @@
         scene.add(camera);
 
         const artifactGroup = new THREE.Group();
+        artifactGroup.scale.setScalar(0.8);
         scene.add(artifactGroup);
 
         const hudContainer = new THREE.Group();
         camera.add(hudContainer);
-        hudContainer.position.set(0, 0, -3.5);
 
         const uiContainer = new THREE.Group();
         hudContainer.add(uiContainer);
@@ -135,7 +135,7 @@
         const cave = new THREE.Mesh(caveGeometry, caveMaterial);
         scene.add(cave);
         
-        function createHypercube() {
+        function createCube() {
             const group = new THREE.Group();
             const material = new THREE.MeshBasicMaterial({ color: 0xFF0000, transparent: true, opacity: 0.1, depthWrite: false });
             material.userData.baseOpacity = 0.1;
@@ -162,26 +162,66 @@
             material.userData.baseOpacity = 0.1;
             const body = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.5, 4), material);
             group.add(body);
-            return group;
-        }
-
-        function createHyperdodecahedron() {
-            const group = new THREE.Group();
-            const material = new THREE.MeshBasicMaterial({ color: 0xFFFF00, transparent: true, opacity: 0.1, depthWrite: false });
-            material.userData.baseOpacity = 0.1;
-            const body = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5), material);
-            group.add(body);
             const wireframe = new THREE.LineSegments(new THREE.EdgesGeometry(body.geometry), new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 }));
             wireframe.material.userData.baseOpacity = 0.5;
             group.add(wireframe);
             return group;
         }
+
+        function createHypercube() {
+            const group = new THREE.Group();
+            const vertices4D = [];
+            for (let i = 0; i < 16; i++) {
+                vertices4D.push([
+                    (i & 1) ? 1 : -1, (i & 2) ? 1 : -1,
+                    (i & 4) ? 1 : -1, (i & 8) ? 1 : -1,
+                ]);
+            }
+
+            const projectedVertices = [];
+            const distance = 2;
+            const scale = 1.5;
+            vertices4D.forEach(v => {
+                const w = v[3];
+                const perspective = 1 / (distance - w);
+                projectedVertices.push(
+                    new THREE.Vector3(v[0] * perspective, v[1] * perspective, v[2] * perspective).multiplyScalar(scale)
+                );
+            });
+
+            const edges = [];
+            for (let i = 0; i < 16; i++) {
+                for (let j = i + 1; j < 16; j++) {
+                    let diffs = 0;
+                    if (vertices4D[i][0] !== vertices4D[j][0]) diffs++;
+                    if (vertices4D[i][1] !== vertices4D[j][1]) diffs++;
+                    if (vertices4D[i][2] !== vertices4D[j][2]) diffs++;
+                    if (vertices4D[i][3] !== vertices4D[j][3]) diffs++;
+                    if (diffs === 1) { edges.push(i, j); }
+                }
+            }
+
+            const geometry = new THREE.BufferGeometry().setFromPoints(projectedVertices);
+            geometry.setIndex(edges);
+            
+            const material = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 });
+            material.userData.baseOpacity = 0.5;
+            const hypercube = new THREE.LineSegments(geometry, material);
+            
+            const invisibleBodyMaterial = new THREE.MeshBasicMaterial({ visible: false });
+            invisibleBodyMaterial.userData = { baseOpacity: 0.0 };
+            const invisibleBody = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), invisibleBodyMaterial);
+            
+            group.add(invisibleBody);
+            group.add(hypercube);
+            return group;
+        }
         
         const shapeCatalog = [
-            { name: 'Hypercube', generator: createHypercube },
+            { name: 'Cube', generator: createCube },
             { name: 'Sphere', generator: createSphere },
-            { name: 'Hyperdodecahedron', generator: createHyperdodecahedron },
-            { name: 'Pyramid', generator: createPyramid }
+            { name: 'Pyramid', generator: createPyramid },
+            { name: 'Hypercube', generator: createHypercube }
         ];
 
         function createArtifacts() {
@@ -296,10 +336,20 @@
         }
 
         function createButton(name, labelText, position, size, targetGroup) {
+            const buttonGroup = new THREE.Group();
+            buttonGroup.position.copy(position);
+            buttonGroup.name = name;
+            targetGroup.add(buttonGroup);
+
             const button = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, 0.1), new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 }));
-            button.position.copy(position);
-            button.name = name;
-            targetGroup.add(button);
+            buttonGroup.add(button);
+
+            const hitbox = new THREE.Mesh(
+                new THREE.PlaneGeometry(size.x * 1.4, size.y * 1.4),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            hitbox.name = 'hitbox';
+            buttonGroup.add(hitbox);
 
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
@@ -317,8 +367,8 @@
             const labelGeometry = new THREE.PlaneGeometry(size.x * 0.9, size.y * 0.9);
             const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
             labelMesh.position.z = 0.06;
-            button.add(labelMesh);
-            return button;
+            buttonGroup.add(labelMesh);
+            return buttonGroup;
         }
 
         function createControlRow(param, labelText, yPos, targetGroup) {
@@ -356,7 +406,7 @@
             logToConsole('// DRAG SWIPE BAR TO SELECT ARTIFACT //');
             advancedProtocolsLoaded = true;
             
-            uiContainer.visible = true;
+            hudContainer.visible = true;
 
             setTimeout(() => logToConsole('PERFORMANCE MONITOR: ACTIVE'), 250);
             setTimeout(() => logToConsole('SYSTEM MODE: DIAGNOSTIC'), 500);
@@ -440,14 +490,29 @@
                     break;
                 case 'red':
                     pointLight.color.r = Math.max(0, Math.min(1, pointLight.color.r + step * 0.1));
+                    artifacts[targetArtifactIndex].children.forEach(child => {
+                        if (child.isMesh && child.material.color) {
+                            child.material.color.r = pointLight.color.r;
+                        }
+                    });
                     logMessage = `// ${label} SET TO ${pointLight.color.r.toFixed(2)} //`;
                     break;
                 case 'green':
                     pointLight.color.g = Math.max(0, Math.min(1, pointLight.color.g + step * 0.1));
+                     artifacts[targetArtifactIndex].children.forEach(child => {
+                        if (child.isMesh && child.material.color) {
+                            child.material.color.g = pointLight.color.g;
+                        }
+                    });
                     logMessage = `// ${label} SET TO ${pointLight.color.g.toFixed(2)} //`;
                     break;
                 case 'blue':
                     pointLight.color.b = Math.max(0, Math.min(1, pointLight.color.b + step * 0.1));
+                     artifacts[targetArtifactIndex].children.forEach(child => {
+                        if (child.isMesh && child.material.color) {
+                            child.material.color.b = pointLight.color.b;
+                        }
+                    });
                     logMessage = `// ${label} SET TO ${pointLight.color.b.toFixed(2)} //`;
                     break;
                 case 'fov':
@@ -493,12 +558,15 @@
             if (object.name === 'swipeTarget') {
                 isSwiping = true;
                 swipeStartX = pointer.x;
-            } else if (object.name && object.name.includes('_')) {
-                const [param, action] = object.name.split('_');
-                if (param && action) {
-                    updateAndLogParameter(param, action);
-                    pressedButton = object;
-                    object.scale.set(0.9, 0.9, 0.9);
+            } else if (object.name === 'hitbox') {
+                const buttonGroup = object.parent;
+                if (buttonGroup && buttonGroup.name.includes('_')) {
+                    const [param, action] = buttonGroup.name.split('_');
+                    if (param && action) {
+                        updateAndLogParameter(param, action);
+                        pressedButton = buttonGroup;
+                        buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
+                    }
                 }
             } else if (object.name === 'mainUiHandle') {
                 isSpinningArtifact = true;
@@ -537,7 +605,7 @@
 
         function onPointerUp() { 
             if (pressedButton) {
-                pressedButton.scale.set(1, 1, 1);
+                pressedButton.children[0].scale.set(1, 1, 1);
                 pressedButton = null;
             }
             isSwiping = false;
@@ -577,10 +645,13 @@
                         const object = intersects[0].object;
                         if (object.name === 'swipeTarget') {
                            activeTouches[touch.identifier] = { type: 'swipe', startX: pointer.x };
-                        } else if (object.name.includes('_')) {
-                            const [param, action] = object.name.split('_');
-                            updateAndLogParameter(param, action);
-                        } else {
+                        } else if (object.name === 'hitbox') {
+                            const buttonGroup = object.parent;
+                            if (buttonGroup.name.includes('_')) {
+                                const [param, action] = buttonGroup.name.split('_');
+                                updateAndLogParameter(param, action);
+                            }
+                        } else if (object.name === 'mainUiHandle') {
                            activeTouches[touch.identifier] = { type: 'spin', lastX: touch.clientX, lastY: touch.clientY };
                         }
                     }
@@ -654,12 +725,6 @@
                 const activeTouch = activeTouches[touch.identifier];
                 if (activeTouch && activeTouch.type === 'button') {
                     activeTouch.button.scale.set(1, 1, 1);
-                    const [type, direction] = activeTouch.button.name.split('_');
-                    switch (direction) {
-                        case 'fwd': case 'back': touchState.forward = 0; break;
-                        case 'left': case 'right': touchState.right = 0; break;
-                        case 'up': case 'down': touchState.up = 0; break;
-                    }
                 }
                 delete activeTouches[touch.identifier];
             }
