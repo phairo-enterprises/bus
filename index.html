@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.64 //</button>
+    <button id="loadButton">// ENGAGE DIAGNOSTIC v10.65 //</button>
     <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
     <div id="consoleContainer">
         <div id="consoleOutput"></div>
@@ -479,68 +479,50 @@
         }
 
         function onPointerDown(event) {
+            if (!advancedProtocolsLoaded) return;
             const clientX = event.clientX;
             const clientY = event.clientY;
             pointer.x = (clientX / window.innerWidth) * 2 - 1;
             pointer.y = - (clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
-            
-            const intersects = raycaster.intersectObjects(hudGroup.children, true);
 
-            if (!advancedProtocolsLoaded) return;
-
-            let hitProcessed = false;
-            for (const intersect of intersects) {
-                const object = intersect.object;
-                if (object.name === 'hitbox') {
-                    const buttonGroup = object.parent;
-                    if (buttonGroup.name === 'mode_switch') {
-                        if (cameraMode === 'bob') {
+            if (cameraMode === 'bob') {
+                const intersects = raycaster.intersectObjects(hudGroup.children, true);
+                if (intersects.length === 0) return;
+                let hitProcessed = false;
+                for (const intersect of intersects) {
+                    const object = intersect.object;
+                    if (object.name === 'hitbox') {
+                        const buttonGroup = object.parent;
+                        if (buttonGroup.name === 'mode_switch') {
                             cameraMode = 'free';
                             cameraRig.position.set(0, 0, 5);
                             cameraRig.rotation.set(0, 0, 0);
                             camera.rotation.set(0, 0, 0);
-                        } else {
-                            cameraMode = 'bob';
-                            document.exitPointerLock();
-                        }
-                        logToConsole(`// CAMERA MODE: ${cameraMode.toUpperCase()} //`);
-                    } else if (buttonGroup.name === 'touch_up') {
-                        freecamState.up = 1;
-                        pressedButton = buttonGroup;
-                        buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
-                    } else if (buttonGroup.name === 'touch_down') {
-                        freecamState.up = -1;
-                        pressedButton = buttonGroup;
-                        buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
-                    } else if (buttonGroup.name.includes('_')) {
-                        const [param, action] = buttonGroup.name.split('_');
-                        if (param && action) {
+                            logToConsole(`// CAMERA MODE: FREE //`);
+                        } else if (buttonGroup.name.includes('_')) {
+                            const [param, action] = buttonGroup.name.split('_');
                             updateAndLogParameter(param, action);
                             pressedButton = buttonGroup;
                             buttonGroup.children[0].scale.set(0.9, 0.9, 0.9);
                         }
+                        hitProcessed = true;
+                        break;
+                    } else if (object.name === 'swipeTarget') {
+                        isSwiping = true;
+                        swipeStartX = pointer.x;
+                        hitProcessed = true;
+                        break;
                     }
-                    hitProcessed = true;
-                    break; 
-                } else if (object.name === 'swipeTarget') {
-                    isSwiping = true;
-                    swipeStartX = pointer.x;
-                    hitProcessed = true;
-                    break;
                 }
-            }
-
-            if (!hitProcessed && intersects.length > 0 && intersects[0].object.name === 'mainUiHandle') {
-                isSpinningArtifact = true;
-                renderer.domElement.classList.add('grabbing');
-                previousPointerPosition.x = clientX;
-                previousPointerPosition.y = clientY;
-                hitProcessed = true;
-            }
-
-            if (!hitProcessed && cameraMode === 'free') {
-                 renderer.domElement.requestPointerLock();
+                if (!hitProcessed && intersects.length > 0 && intersects[0].object.name === 'mainUiHandle') {
+                    isSpinningArtifact = true;
+                    renderer.domElement.classList.add('grabbing');
+                    previousPointerPosition.x = clientX;
+                    previousPointerPosition.y = clientY;
+                }
+            } else if (cameraMode === 'free') {
+                renderer.domElement.requestPointerLock();
             }
         }
 
@@ -618,7 +600,6 @@
                                 camera.rotation.set(0, 0, 0);
                             } else {
                                 cameraMode = 'bob';
-                                document.exitPointerLock();
                             }
                            logToConsole(`// UI MODE: ${cameraMode.toUpperCase()} //`);
                         } else if (buttonGroup.name.includes('_')) {
@@ -695,6 +676,13 @@
                             targetArtifactIndex = Math.min(artifacts.length - 1, targetArtifactIndex + 1);
                             logToConsole(`// ARTIFACT SELECTED: ${shapeCatalog[targetArtifactIndex].name} //`);
                             break;
+                        case 'c':
+                            cameraMode = 'free';
+                            cameraRig.position.set(0, 0, 5);
+                            cameraRig.rotation.set(0, 0, 0);
+                            camera.rotation.set(0, 0, 0);
+                            logToConsole(`// CAMERA MODE: FREE //`);
+                            break;
                     }
                 } else {
                     switch(event.key.toLowerCase()) {
@@ -704,6 +692,10 @@
                         case 'd': freecamState.right = 1; break;
                         case 'q': freecamState.up = -1; break;
                         case 'e': freecamState.up = 1; break;
+                        case '=': updateAndLogParameter('speed', 'inc'); break;
+                        case '-': updateAndLogParameter('speed', 'dec'); break;
+                        case ']': updateAndLogParameter('fov', 'inc'); break;
+                        case '[': updateAndLogParameter('fov', 'dec'); break;
                     }
                 }
             } else {
@@ -751,9 +743,9 @@
             freecamControls.visible = (cameraMode === 'free');
             
             if (cameraMode === 'bob') {
-                cameraRig.position.set(0,0,5);
                 cameraRig.position.x = Math.sin(elapsedTime * 0.2) * 1.5;
                 cameraRig.position.y = Math.cos(elapsedTime * 0.3) * 1.0;
+                cameraRig.position.z = 5;
                 cameraRig.lookAt(0,0,0);
                 const targetAngle = -targetArtifactIndex * ANGLE_STEP;
                 targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
@@ -812,4 +804,4 @@
         document.addEventListener('pointerlockchange', onPointerLockChange);
         animate();
     </script></body>
-</html>```
+</html>
