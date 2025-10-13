@@ -1,5 +1,5 @@
-/V whatever/
-
+/* style.css - v0.04 */
+/* Foundational rules */
 html, body {
     margin: 0;
     padding: 0;
@@ -21,7 +21,6 @@ html, body {
     z-index: 100;
 }
 
-/* Prompt styles from Micro Step 3 */
 #immersion-prompt {
     position: absolute;
     top: 50%;
@@ -32,10 +31,32 @@ html, body {
     font-size: 24px;
     cursor: pointer;
     animation: pulse 2.5s infinite ease-in-out;
+    transition: opacity 0.5s ease;
 }
 
 @keyframes pulse {
     0% { opacity: 0.5; }
     50% { opacity: 1.0; }
     100% { opacity: 0.5; }
+}
+
+
+/* Defines the pre-launch state and the launch animation trigger. */
+
+/* The shell overlay starts as a collapsed circle. */
+#shell-overlay {
+    clip-path: circle(0% at 50% 50%);
+    /* The transition property defines the fast-slow-fast animation curve. */
+    transition: clip-path 1.2s cubic-bezier(.25, .1, .45, 1.2);
+}
+
+/* When the body has the .launched class, the overlay expands to fill the screen. */
+body.launched #shell-overlay {
+    clip-path: circle(150% at 50% 50%);
+}
+
+/* When the body has the .launched class, the prompt disappears. */
+body.launched #immersion-prompt {
+    opacity: 0;
+    pointer-events: none; /* Disables clicking on the invisible prompt */
 }
