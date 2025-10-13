@@ -1,4 +1,4 @@
-/* style.css - v0.06 */
+/* style.css - v0.07 */
 html, body {
     margin: 0;
     padding: 0;
@@ -6,6 +6,12 @@ html, body {
     width: 100vw;
     height: 100vh;
     background-color: #000000;
+    /* Add a universal box-sizing rule for easier layout management. */
+    box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
 }
 
 #nexus-canvas, #shell-overlay {
@@ -50,20 +56,14 @@ body.launched #immersion-prompt {
     pointer-events: none;
 }
 
-/* Add initial styles for the five core instruments. */
 #handle, #conduit, #keyboard, #recents-bar, #favorites-bar {
     position: absolute;
-    background-color: rgba(0, 255, 255, 0.1); /* Temporary visualizer */
+    background-color: rgba(0, 255, 255, 0.1);
     border: 1px solid rgba(0, 255, 255, 0.2);
-    
-    /* Instruments are invisible by default. */
     opacity: 0;
-    
-    /* Define the fade-in transition after launch. */
-    transition: opacity 0.5s ease 1s; /* 1s delay to wait for launch sequence */
+    transition: opacity 0.5s ease 1s;
 }
 
-/* When the shell is launched, make the instruments visible. */
 body.launched #handle,
 body.launched #conduit,
 body.launched #keyboard,
@@ -72,7 +72,6 @@ body.launched #favorites-bar {
     opacity: 1;
 }
 
-/* Define the default layout and size for the instruments. */
 #keyboard {
     bottom: 15%;
     left: 50%;
@@ -89,6 +88,11 @@ body.launched #favorites-bar {
     width: 100px;
     height: 20px;
     cursor: grab;
+}
+
+/* Add a class to change cursor appearance during drag operations. */
+#handle.dragging {
+    cursor: grabbing;
 }
 
 #conduit {
