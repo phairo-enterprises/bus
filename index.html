@@ -1,29 +1,27 @@
-<!-- index.html - v0.06 -->
+<!-- index.html - v0.09 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BackupStrats TCG - v0.06</title>
+    <title>BackupStrats TCG - v0.09</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- The 3D environment is rendered here. -->
     <canvas id="nexus-canvas"></canvas>
-    
-    <!-- The 2D user interface is layered on top of the canvas. -->
     <div id="shell-overlay">
         <div id="immersion-prompt">// INITIATE IMMERSION //</div>
 
-        <!-- The containers for the five core instruments. -->
-        <div id="handle"></div>
-        <div id="conduit"></div>
-        <div id="keyboard"></div>
-        <div id="recents-bar"></div>
-        <div id="favorites-bar"></div>
+        <!-- Create a new parent container for the entire instrument cluster. -->
+        <div id="instrument-cluster">
+            <div id="handle"></div>
+            <div id="conduit"></div>
+            <div id="keyboard"></div>
+            <div id="recents-bar"></div>
+            <div id="favorites-bar"></div>
+        </div>
     </div>
 
-    <!-- The application logic is loaded last. -->
     <script src="main.js"></script>
 </body>
 </html>
