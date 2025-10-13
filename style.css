@@ -1,6 +1,5 @@
-/* style.css - v0.05 */
+/* style.css - v0.06 */
 
-/* Defines the foundational rules for the entire application window. */
 html, body {
     margin: 0;
     padding: 0;
@@ -18,17 +17,8 @@ html, body {
     height: 100%;
 }
 
-/* The 2D shell is layered on top, and its launch animation is defined here. */
 #shell-overlay {
     z-index: 100;
-    clip-path: circle(150% at 50% 50%); /* Start visible to show the prompt */
-}
-
-/* The launch sequence animation, triggered by the .launched class. */
-body.launched #shell-overlay {
-    clip-path: circle(0% at 50% 50%);
-    /* This is an inverted animation; we will correct the visual effect later. */
-    /* For now, this confirms the trigger mechanism is in place. */
 }
 
 /* Corrects the appearance of the prompt to be a button. */
@@ -38,35 +28,36 @@ body.launched #shell-overlay {
     left: 50%;
     transform: translate(-50%, -50%);
     padding: 15px 30px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 255, 255, 0.7); /* Default to cyan */
     background-color: transparent;
-    color: rgba(0, 255, 255, 0.7);
+    color: rgba(0, 255, 255, 0.7); /* Default to cyan */
     font-family: monospace;
     font-size: 24px;
     cursor: pointer;
     transition: background-color 0.3s ease, opacity 0.5s ease;
+    opacity: 1; /* The prompt is visible by default. */
 }
 
 #immersion-prompt:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* When launched, the prompt fades out. */
+/* When the shell is launched (fullscreen), the prompt fades out. */
 body.launched #immersion-prompt {
     opacity: 0;
     pointer-events: none;
 }
 
-/* Defines the default state for all five core instruments. */
+/* Defines the five core instruments, which start invisible. */
 #handle, #conduit, #keyboard, #recents-bar, #favorites-bar {
     position: absolute;
     background-color: rgba(0, 255, 255, 0.1);
     border: 1px solid rgba(0, 255, 255, 0.2);
-    opacity: 0; /* They start invisible. */
-    transition: opacity 0.5s ease 0.5s; /* Fade in after a 0.5s delay. */
+    opacity: 0;
+    transition: opacity 0.5s ease 0.5s;
 }
 
-/* When launched, the instruments become visible. */
+/* When launched, the instruments fade in. */
 body.launched #handle,
 body.launched #conduit,
 body.launched #keyboard,
@@ -75,45 +66,29 @@ body.launched #favorites-bar {
     opacity: 1;
 }
 
+/* Implements the non-interactive pause state when fullscreen is exited. */
+body.paused #shell-overlay {
+    pointer-events: none; /* Disables all interaction with the shell. */
+}
+
+/* Makes the RESUME prompt visible and applies the color-cycle animation. */
+body.paused #immersion-prompt {
+    opacity: 1;
+    pointer-events: auto; /* Re-enables clicking on the prompt itself. */
+    animation: rainbow-cycle 5s infinite linear;
+}
+
+/* Defines the smooth color cycling for the RESUME button's border and text. */
+@keyframes rainbow-cycle {
+    0%   { border-color: #00FFFF; color: #00FFFF; } /* Cyan */
+    33%  { border-color: #FF00FF; color: #FF00FF; } /* Magenta */
+    66%  { border-color: #00FF00; color: #00FF00; } /* Green */
+    100% { border-color: #00FFFF; color: #00FFFF; } /* Cyan */
+}
+
 /* Defines the default layout and size for the instruments. */
-#keyboard {
-    bottom: 15%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 800px;
-    height: 250px;
-    max-width: 90%;
-}
-
-#handle {
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 20px;
-    cursor: grab;
-}
-
-#conduit {
-    bottom: 7%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 20px;
-}
-
-#recents-bar {
-    bottom: 4%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 400px;
-    height: 20px;
-}
-
-#favorites-bar {
-    bottom: 1%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 400px;
-    height: 20px;
-}
+#keyboard { bottom: 15%; left: 50%; transform: translateX(-50%); width: 800px; height: 250px; max-width: 90%; }
+#handle { bottom: 10%; left: 50%; transform: translateX(-50%); width: 100px; height: 20px; cursor: grab; }
+#conduit { bottom: 7%; left: 50%; transform: translateX(-50%); width: 80px; height: 20px; }
+#recents-bar { bottom: 4%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
+#favorites-bar { bottom: 1%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
