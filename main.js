@@ -1,19 +1,26 @@
-// main.js - v0.04
+// main.js - v0.05
 
-// This function waits for the entire HTML document to be loaded and ready.
+// Waits for the HTML document to be fully loaded.
 window.addEventListener('DOMContentLoaded', () => {
     
-    // Finds the immersion prompt element in the HTML.
     const immersionPrompt = document.getElementById('immersion-prompt');
 
-    // If the prompt exists, attach a click event listener to it.
+    // Attaches the fullscreen request to the prompt's click event.
     if (immersionPrompt) {
         immersionPrompt.addEventListener('click', () => {
-            // When clicked, request to enter fullscreen mode.
             document.documentElement.requestFullscreen().catch(err => {
-                // Logs an error to the console if fullscreen fails.
                 console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
             });
         });
+    }
+});
+
+// Listens for the browser entering or exiting fullscreen mode.
+document.addEventListener('fullscreenchange', () => {
+    // Toggles the .launched class on the body to trigger all CSS animations.
+    if (document.fullscreenElement) {
+        document.body.classList.add('launched');
+    } else {
+        document.body.classList.remove('launched');
     }
 });
