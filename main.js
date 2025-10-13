@@ -1,15 +1,14 @@
-// main.js - v0.08
+// main.js - v0.09
 
-// Waits for the HTML document to be fully loaded.
 window.addEventListener('DOMContentLoaded', () => {
     
     const immersionPrompt = document.getElementById('immersion-prompt');
     const handle = document.getElementById('handle');
+    // Get the new parent cluster element.
+    const instrumentCluster = document.getElementById('instrument-cluster');
 
-    // Attaches the fullscreen request to the prompt's click event.
     if (immersionPrompt) {
         immersionPrompt.addEventListener('click', () => {
-            // Only request fullscreen if not already in fullscreen (e.g. in paused state)
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => {
                     console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
@@ -18,8 +17,8 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Adds draggable functionality to the Handle instrument.
-    if (handle) {
+    // Draggable functionality is now applied to the entire instrument cluster.
+    if (handle && instrumentCluster) {
         let active = false;
         let currentX;
         let currentY;
@@ -67,12 +66,12 @@ window.addEventListener('DOMContentLoaded', () => {
                 xOffset = currentX;
                 yOffset = currentY;
 
-                setTranslate(currentX, yOffset, handle);
+                // The translation is now applied to the parent cluster.
+                setTranslate(currentX, yOffset, instrumentCluster);
             }
         };
 
         const setTranslate = (x, y, el) => {
-            // Applies the drag offset while preserving the initial centering transform.
             el.style.transform = `translateX(-50%) translate3d(${x}px, ${y}px, 0)`;
         };
 
@@ -86,7 +85,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Listens for the browser entering or exiting fullscreen mode to manage shell state.
 document.addEventListener('fullscreenchange', () => {
     const immersionPrompt = document.getElementById('immersion-prompt');
 
