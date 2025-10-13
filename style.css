@@ -75,8 +75,7 @@ body.launched #handle,
 body.launched #conduit,
 body.launched #keyboard,
 body.launched #recents-bar,
-body.launched #favorites-bar,
-body.launched #pointer-temp {
+body.launched #favorites-bar {
     opacity: 1;
 }
 
@@ -126,6 +125,8 @@ body.paused #trackpad-area {
     height: 20px;
     cursor: grab;
     opacity: 0;
+    /* The pointer is layered on top of the trackpad. */
+    z-index: 111;
 }
 
 #trackpad-area {
@@ -137,6 +138,7 @@ body.paused #trackpad-area {
     max-width: 90%;
     opacity: 0;
     pointer-events: none;
+    /* The trackpad is layered on top of the keyboard but below the pointer. */
     z-index: 110;
 }
 
