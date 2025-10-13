@@ -1,120 +1,45 @@
-/* style.css - v0.07 */
+/* style.css - v0.04 */
+
+/* Defines the foundational rules for the entire application window. */
 html, body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    width: 100vw;
-    height: 100vh;
-    background-color: #000000;
-    /* Add a universal box-sizing rule for easier layout management. */
-    box-sizing: border-box;
+margin: 0;
+padding: 0;
+overflow: hidden;
+width: 100vw;
+height: 100vh;
+background-color: #000000;
 }
 
-*, *:before, *:after {
-    box-sizing: inherit;
-}
-
+/* Ensures the core containers for the 3D and 2D universes fill the screen. */
 #nexus-canvas, #shell-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
 }
 
+/* The 2D shell is layered on top of the 3D canvas. */
 #shell-overlay {
-    z-index: 100;
-    clip-path: circle(0% at 50% 50%);
-    transition: clip-path 1.2s cubic-bezier(.25, .1, .45, 1.2);
+z-index: 100;
 }
 
+/* Defines the appearance of the initial entry prompt. */
 #immersion-prompt {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: rgba(0, 255, 255, 0.7);
-    font-family: monospace;
-    font-size: 24px;
-    cursor: pointer;
-    animation: pulse 2.5s infinite ease-in-out;
-    transition: opacity 0.5s ease;
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+color: rgba(0, 255, 255, 0.7);
+font-family: monospace;
+font-size: 24px;
+cursor: pointer;
+animation: pulse 2.5s infinite ease-in-out;
 }
 
+/* Defines the pulsating animation for the prompt to give it life. */
 @keyframes pulse {
-    0% { opacity: 0.5; }
-    50% { opacity: 1.0; }
-    100% { opacity: 0.5; }
-}
-
-body.launched #shell-overlay {
-    clip-path: circle(150% at 50% 50%);
-}
-
-body.launched #immersion-prompt {
-    opacity: 0;
-    pointer-events: none;
-}
-
-#handle, #conduit, #keyboard, #recents-bar, #favorites-bar {
-    position: absolute;
-    background-color: rgba(0, 255, 255, 0.1);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    opacity: 0;
-    transition: opacity 0.5s ease 1s;
-}
-
-body.launched #handle,
-body.launched #conduit,
-body.launched #keyboard,
-body.launched #recents-bar,
-body.launched #favorites-bar {
-    opacity: 1;
-}
-
-#keyboard {
-    bottom: 15%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 800px;
-    height: 250px;
-    max-width: 90%;
-}
-
-#handle {
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 20px;
-    cursor: grab;
-}
-
-/* Add a class to change cursor appearance during drag operations. */
-#handle.dragging {
-    cursor: grabbing;
-}
-
-#conduit {
-    bottom: 7%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 20px;
-}
-
-#recents-bar {
-    bottom: 4%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 400px;
-    height: 20px;
-}
-
-#favorites-bar {
-    bottom: 1%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 400px;
-    height: 20px;
+0% { opacity: 0.5; }
+50% { opacity: 1.0; }
+100% { opacity: 0.5; }
 }
