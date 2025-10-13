@@ -1,4 +1,4 @@
-/* style.css - v0.09 */
+/* style.css - v0.10 */
 html, body {
     margin: 0;
     padding: 0;
@@ -63,7 +63,7 @@ body.paused #immersion-prompt {
     100% { border-color: #00FFFF; color: #00FFFF; }
 }
 
-#handle, #conduit, #keyboard, #recents-bar, #favorites-bar, #pointer-temp {
+#handle, #conduit, #keyboard, #recents-bar, #favorites-bar, #pointer-temp, #trackpad-area {
     position: absolute;
     background-color: rgba(0, 255, 255, 0.1);
     border: 1px solid rgba(0, 255, 255, 0.2);
@@ -85,7 +85,8 @@ body.paused #conduit,
 body.paused #keyboard,
 body.paused #recents-bar,
 body.paused #favorites-bar,
-body.paused #pointer-temp {
+body.paused #pointer-temp,
+body.paused #trackpad-area {
     opacity: 1;
 }
 
@@ -94,31 +95,29 @@ body.paused #pointer-temp {
 #recents-bar { bottom: 4%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
 #favorites-bar { bottom: 1%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
 
-/* The new, static handle is forged in the old one's place. */
 #handle {
     bottom: 10%;
     left: 50%;
     transform: translateX(-50%);
     width: 100px;
     height: 20px;
-    cursor: pointer;
+    /* The unrequested cursor property is now removed. */
 }
 
-/* The "nub" is added to the center of the new handle. */
+/* The nub is enlarged to extend beyond the handle's boundary. */
 #handle::before {
     content: '';
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 8px;
-    height: 8px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background-color: rgba(0, 255, 255, 0.4);
     border: 1px solid rgba(0, 255, 255, 0.6);
 }
 
-/* The old handle is repurposed as the draggable pointer, starting in the same spot. */
 #pointer-temp {
     bottom: 10%;
     left: 50%;
@@ -126,9 +125,9 @@ body.paused #pointer-temp {
     width: 100px;
     height: 20px;
     cursor: grab;
+    opacity: 0;
 }
 
-/* The trackpad area starts hidden and will overlay other elements. */
 #trackpad-area {
     bottom: 15%;
     left: 50%;
@@ -141,7 +140,13 @@ body.paused #pointer-temp {
     z-index: 110;
 }
 
-/* Changes the cursor's appearance while dragging the pointer. */
 #pointer-temp.dragging {
     cursor: grabbing;
+}
+
+/* Defines the visible state for the trackpad and pointer, to be toggled by JavaScript. */
+#trackpad-area.visible,
+#pointer-temp.visible {
+    opacity: 1;
+    pointer-events: auto;
 }
