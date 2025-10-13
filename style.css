@@ -1,5 +1,4 @@
-/* style.css - v0.04 */
-/* Foundational rules */
+/* style.css - v0.06 */
 html, body {
     margin: 0;
     padding: 0;
@@ -19,6 +18,8 @@ html, body {
 
 #shell-overlay {
     z-index: 100;
+    clip-path: circle(0% at 50% 50%);
+    transition: clip-path 1.2s cubic-bezier(.25, .1, .45, 1.2);
 }
 
 #immersion-prompt {
@@ -40,23 +41,76 @@ html, body {
     100% { opacity: 0.5; }
 }
 
-
-/* Defines the pre-launch state and the launch animation trigger. */
-
-/* The shell overlay starts as a collapsed circle. */
-#shell-overlay {
-    clip-path: circle(0% at 50% 50%);
-    /* The transition property defines the fast-slow-fast animation curve. */
-    transition: clip-path 1.2s cubic-bezier(.25, .1, .45, 1.2);
-}
-
-/* When the body has the .launched class, the overlay expands to fill the screen. */
 body.launched #shell-overlay {
     clip-path: circle(150% at 50% 50%);
 }
 
-/* When the body has the .launched class, the prompt disappears. */
 body.launched #immersion-prompt {
     opacity: 0;
-    pointer-events: none; /* Disables clicking on the invisible prompt */
+    pointer-events: none;
+}
+
+/* Add initial styles for the five core instruments. */
+#handle, #conduit, #keyboard, #recents-bar, #favorites-bar {
+    position: absolute;
+    background-color: rgba(0, 255, 255, 0.1); /* Temporary visualizer */
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    
+    /* Instruments are invisible by default. */
+    opacity: 0;
+    
+    /* Define the fade-in transition after launch. */
+    transition: opacity 0.5s ease 1s; /* 1s delay to wait for launch sequence */
+}
+
+/* When the shell is launched, make the instruments visible. */
+body.launched #handle,
+body.launched #conduit,
+body.launched #keyboard,
+body.launched #recents-bar,
+body.launched #favorites-bar {
+    opacity: 1;
+}
+
+/* Define the default layout and size for the instruments. */
+#keyboard {
+    bottom: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 250px;
+    max-width: 90%;
+}
+
+#handle {
+    bottom: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 20px;
+    cursor: grab;
+}
+
+#conduit {
+    bottom: 7%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 20px;
+}
+
+#recents-bar {
+    bottom: 4%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 20px;
+}
+
+#favorites-bar {
+    bottom: 1%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 20px;
 }
