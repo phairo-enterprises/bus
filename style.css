@@ -1,45 +1,119 @@
-/* style.css - v0.04 */
+/* style.css - v0.05 */
 
 /* Defines the foundational rules for the entire application window. */
 html, body {
-margin: 0;
-padding: 0;
-overflow: hidden;
-width: 100vw;
-height: 100vh;
-background-color: #000000;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000;
 }
 
-/* Ensures the core containers for the 3D and 2D universes fill the screen. */
 #nexus-canvas, #shell-overlay {
-position: absolute;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
 
-/* The 2D shell is layered on top of the 3D canvas. */
+/* The 2D shell is layered on top, and its launch animation is defined here. */
 #shell-overlay {
-z-index: 100;
+    z-index: 100;
+    clip-path: circle(150% at 50% 50%); /* Start visible to show the prompt */
 }
 
-/* Defines the appearance of the initial entry prompt. */
+/* The launch sequence animation, triggered by the .launched class. */
+body.launched #shell-overlay {
+    clip-path: circle(0% at 50% 50%);
+    /* This is an inverted animation; we will correct the visual effect later. */
+    /* For now, this confirms the trigger mechanism is in place. */
+}
+
+/* Corrects the appearance of the prompt to be a button. */
 #immersion-prompt {
-position: absolute;
-top: 50%;
-left: 50%;
-transform: translate(-50%, -50%);
-color: rgba(0, 255, 255, 0.7);
-font-family: monospace;
-font-size: 24px;
-cursor: pointer;
-animation: pulse 2.5s infinite ease-in-out;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 15px 30px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background-color: transparent;
+    color: rgba(0, 255, 255, 0.7);
+    font-family: monospace;
+    font-size: 24px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, opacity 0.5s ease;
 }
 
-/* Defines the pulsating animation for the prompt to give it life. */
-@keyframes pulse {
-0% { opacity: 0.5; }
-50% { opacity: 1.0; }
-100% { opacity: 0.5; }
+#immersion-prompt:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* When launched, the prompt fades out. */
+body.launched #immersion-prompt {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Defines the default state for all five core instruments. */
+#handle, #conduit, #keyboard, #recents-bar, #favorites-bar {
+    position: absolute;
+    background-color: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    opacity: 0; /* They start invisible. */
+    transition: opacity 0.5s ease 0.5s; /* Fade in after a 0.5s delay. */
+}
+
+/* When launched, the instruments become visible. */
+body.launched #handle,
+body.launched #conduit,
+body.launched #keyboard,
+body.launched #recents-bar,
+body.launched #favorites-bar {
+    opacity: 1;
+}
+
+/* Defines the default layout and size for the instruments. */
+#keyboard {
+    bottom: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 250px;
+    max-width: 90%;
+}
+
+#handle {
+    bottom: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 20px;
+    cursor: grab;
+}
+
+#conduit {
+    bottom: 7%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 20px;
+}
+
+#recents-bar {
+    bottom: 4%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 20px;
+}
+
+#favorites-bar {
+    bottom: 1%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 20px;
 }
