@@ -41,111 +41,60 @@ html, body {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-body.launched #immersion-prompt {
-    opacity: 0;
-    pointer-events: none;
-}
-
-body.paused #shell-overlay {
-    pointer-events: none;
-}
-
-body.paused #immersion-prompt {
-    opacity: 1;
-    pointer-events: auto;
-    animation: rainbow-cycle 5s infinite linear;
-}
+body.launched #immersion-prompt { opacity: 0; pointer-events: none; }
+body.paused #shell-overlay { pointer-events: none; }
+body.paused #immersion-prompt { opacity: 1; pointer-events: auto; animation: rainbow-cycle 5s infinite linear; }
 
 @keyframes rainbow-cycle {
-    0%   { border-color: #00FFFF; color: #00FFFF; }
-    33%  { border-color: #FF00FF; color: #FF00FF; }
-    66%  { border-color: #00FF00; color: #00FF00; }
-    100% { border-color: #00FFFF; color: #00FFFF; }
+    0%   { border-color: #00FFFF; color: #00FFFF; } 33%  { border-color: #FF00FF; color: #FF00FF; }
+    66%  { border-color: #00FF00; color: #00FF00; } 100% { border-color: #00FFFF; color: #00FFFF; }
 }
 
-#handle, #conduit, #keyboard, #recents-bar, #favorites-bar, #pointer-temp {
+#handle, #conduit, #keyboard, #recents-bar, #favorites-bar, #pointer-temp, #trackpad-area, #close-boundary {
     position: absolute;
-    background-color: rgba(0, 255, 255, 0.1);
-    border: 1px solid rgba(0, 255, 255, 0.2);
     opacity: 0;
-    transition: opacity 0.5s ease 0.5s;
 }
 
-body.launched #handle,
-body.launched #conduit,
-body.launched #keyboard,
-body.launched #recents-bar,
-body.launched #favorites-bar,
-body.launched #pointer-temp {
-    opacity: 1;
-}
+body.launched #handle, body.launched #conduit, body.launched #keyboard, body.launched #recents-bar, body.launched #favorites-bar, body.launched #pointer-temp { opacity: 1; }
+body.paused #handle, body.paused #conduit, body.paused #keyboard, body.paused #recents-bar, body.paused #favorites-bar, body.paused #pointer-temp { opacity: 1; }
 
-body.paused #handle,
-body.paused #conduit,
-body.paused #keyboard,
-body.paused #recents-bar,
-body.paused #favorites-bar,
-body.paused #pointer-temp {
-    opacity: 1;
-}
+#keyboard { bottom: 15%; left: 50%; transform: translateX(-50%); width: 800px; height: 250px; max-width: 90%; background-color: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.2); transition: opacity 0.5s ease 0.5s; }
+#conduit { bottom: 7%; left: 50%; transform: translateX(-50%); width: 80px; height: 20px; background-color: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.2); transition: opacity 0.5s ease 0.5s; }
+#recents-bar { bottom: 4%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; background-color: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.2); transition: opacity 0.5s ease 0.5s; }
+#favorites-bar { bottom: 1%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; background-color: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.2); transition: opacity 0.5s ease 0.5s; }
 
-#keyboard { bottom: 15%; left: 50%; transform: translateX(-50%); width: 800px; height: 250px; max-width: 90%; }
-#conduit { bottom: 7%; left: 50%; transform: translateX(-50%); width: 80px; height: 20px; }
-#recents-bar { bottom: 4%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
-#favorites-bar { bottom: 1%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
+#handle { bottom: 10%; left: 50%; transform: translateX(-50%); width: 100px; height: 20px; background-color: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.2); transition: opacity 0.5s ease 0.5s; }
+#handle::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 28px; height: 28px; border-radius: 50%; background-color: rgba(0, 255, 255, 0.4); border: 1px solid rgba(0, 255, 255, 0.6); }
 
-/* The static handle has its unrequested cursor property removed. */
-#handle {
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 20px;
-}
-
-/* The nub is enlarged to extend beyond the handle's boundary. */
-#handle::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background-color: rgba(0, 255, 255, 0.4);
-    border: 1px solid rgba(0, 255, 255, 0.6);
-}
-
-#pointer-temp {
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 20px;
-    cursor: grab;
-}
+#pointer-temp { bottom: 10%; left: 50%; transform: translateX(-50%); width: 100px; height: 20px; background-color: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.2); cursor: grab; z-index: 120; transition: opacity 0.5s ease 0.5s; }
+#pointer-temp.dragging { cursor: grabbing; }
 
 #trackpad-area {
+    bottom: 9%; /* Sits just below the handle's bottom edge */
+    width: 400px; /* Spawns on the right half of the keyboard */
+    height: 100px; /* Covers the handle and part of the keyboard */
+    background-color: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.4); /* Brighter border */
+    z-index: 110;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.25, .1, .45, 1.2), opacity 0.2s ease-in-out;
+}
+
+#trackpad-area.visible { opacity: 1; pointer-events: auto; }
+#trackpad-area.side-right { left: 50%; transform: translateX(0); }
+#trackpad-area.side-left { left: 50%; transform: translateX(-100%); }
+
+#close-boundary {
     bottom: 15%;
     left: 50%;
     transform: translateX(-50%);
-    width: 800px;
-    height: 250px;
-    max-width: 90%;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 110;
-    /* Defines the fade-in transition for the trackpad. */
-    transition: opacity 0.2s ease-in-out;
+    width: 1600px; /* 2x keyboard width */
+    height: 500px; /* 2x keyboard height */
+    max-width: 95%;
+    z-index: 105; /* Above keyboard, below trackpad */
+    pointer-events: none; /* Invisible, but becomes active when trackpad is visible */
 }
 
-#pointer-temp.dragging {
-    cursor: grabbing;
-}
-
-/* Defines the visible state for the trackpad, to be activated by JavaScript. */
-#trackpad-area.visible {
-    opacity: 1;
+body.launched #trackpad-area.visible + #close-boundary {
     pointer-events: auto;
 }
