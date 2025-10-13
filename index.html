@@ -1,23 +1,29 @@
-<!-- index.html - v0.04 -->
+<!-- index.html - v0.05 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BackupStrats TCG - v0.04</title>
-    <!-- Links to the external Cascading Style Sheet. -->
+    <title>BackupStrats TCG - v0.05</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- The 3D environment will be rendered here. -->
+    <!-- The 3D environment is rendered here. -->
     <canvas id="nexus-canvas"></canvas>
     
     <!-- The 2D user interface is layered on top of the canvas. -->
     <div id="shell-overlay">
         <div id="immersion-prompt">// INITIATE IMMERSION //</div>
+
+        <!-- The empty containers for the five core instruments. -->
+        <div id="handle"></div>
+        <div id="conduit"></div>
+        <div id="keyboard"></div>
+        <div id="recents-bar"></div>
+        <div id="favorites-bar"></div>
     </div>
 
-    <!-- Links to the external JavaScript file for application logic. -->
+    <!-- The application logic is loaded last. -->
     <script src="main.js"></script>
 </body>
 </html>
