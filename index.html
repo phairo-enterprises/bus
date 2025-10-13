@@ -12,14 +12,17 @@
     <div id="shell-overlay">
         <div id="immersion-prompt">// INITIATE IMMERSION //</div>
 
-        <!-- Create a new parent container for the entire instrument cluster. -->
-        <div id="instrument-cluster">
-            <div id="handle"></div>
-            <div id="conduit"></div>
-            <div id="keyboard"></div>
-            <div id="recents-bar"></div>
-            <div id="favorites-bar"></div>
-        </div>
+        <!-- The new static handle and the area for the future trackpad are forged. -->
+        <div id="handle"></div>
+        <div id="trackpad-area"></div>
+
+        <!-- The original handle is repurposed as a temporary, draggable pointer. -->
+        <div id="pointer-temp"></div>
+
+        <div id="conduit"></div>
+        <div id="keyboard"></div>
+        <div id="recents-bar"></div>
+        <div id="favorites-bar"></div>
     </div>
 
     <script src="main.js"></script>
