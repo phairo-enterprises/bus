@@ -1,9 +1,10 @@
-// main.js - v0.09
+// main.js - v0.10
 
 window.addEventListener('DOMContentLoaded', () => {
     
     const immersionPrompt = document.getElementById('immersion-prompt');
-    // The draggable element is now the temporary pointer.
+    const handle = document.getElementById('handle');
+    const trackpadArea = document.getElementById('trackpad-area');
     const pointerTemp = document.getElementById('pointer-temp');
 
     if (immersionPrompt) {
@@ -16,21 +17,25 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // The draggable functionality is now attached to the temporary pointer.
+    // Adds the toggle functionality to the new, static handle.
+    if (handle && trackpadArea && pointerTemp) {
+        handle.addEventListener('click', () => {
+            // Toggles the visibility of the trackpad and the draggable pointer.
+            trackpadArea.classList.toggle('visible');
+            pointerTemp.classList.toggle('visible');
+        });
+    }
+
+    // The draggable functionality remains attached to the pointer.
     if (pointerTemp) {
         let active = false;
-        let currentX;
-        let currentY;
-        let initialX;
-        let initialY;
-        let xOffset = 0;
-        let yOffset = 0;
+        let currentX, currentY, initialX, initialY;
+        let xOffset = 0, yOffset = 0;
 
         const dragStart = (e) => {
             if (e.target === pointerTemp) {
                 active = true;
                 pointerTemp.classList.add('dragging');
-
                 if (e.type === "touchstart") {
                     initialX = e.touches[0].clientX - xOffset;
                     initialY = e.touches[0].clientY - yOffset;
@@ -43,8 +48,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const dragEnd = (e) => {
             if (active) {
-                initialX = currentX;
-                initialY = currentY;
                 active = false;
                 pointerTemp.classList.remove('dragging');
             }
@@ -53,7 +56,6 @@ window.addEventListener('DOMContentLoaded', () => {
         const drag = (e) => {
             if (active) {
                 e.preventDefault();
-              
                 if (e.type === "touchmove") {
                     currentX = e.touches[0].clientX - initialX;
                     currentY = e.touches[0].clientY - initialY;
@@ -61,10 +63,8 @@ window.addEventListener('DOMContentLoaded', () => {
                     currentX = e.clientX - initialX;
                     currentY = e.clientY - initialY;
                 }
-
                 xOffset = currentX;
                 yOffset = currentY;
-
                 setTranslate(currentX, yOffset, pointerTemp);
             }
         };
@@ -76,7 +76,6 @@ window.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('mousedown', dragStart, false);
         window.addEventListener('mouseup', dragEnd, false);
         window.addEventListener('mousemove', drag, false);
-
         window.addEventListener('touchstart', dragStart, false);
         window.addEventListener('touchend', dragEnd, false);
         window.addEventListener('touchmove', drag, false);
