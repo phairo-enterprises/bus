@@ -63,7 +63,7 @@ body.paused #immersion-prompt {
     100% { border-color: #00FFFF; color: #00FFFF; }
 }
 
-#handle, #conduit, #keyboard, #recents-bar, #favorites-bar, #pointer-temp, #trackpad-area {
+#handle, #conduit, #keyboard, #recents-bar, #favorites-bar, #pointer-temp {
     position: absolute;
     background-color: rgba(0, 255, 255, 0.1);
     border: 1px solid rgba(0, 255, 255, 0.2);
@@ -75,7 +75,8 @@ body.launched #handle,
 body.launched #conduit,
 body.launched #keyboard,
 body.launched #recents-bar,
-body.launched #favorites-bar {
+body.launched #favorites-bar,
+body.launched #pointer-temp {
     opacity: 1;
 }
 
@@ -84,8 +85,7 @@ body.paused #conduit,
 body.paused #keyboard,
 body.paused #recents-bar,
 body.paused #favorites-bar,
-body.paused #pointer-temp,
-body.paused #trackpad-area {
+body.paused #pointer-temp {
     opacity: 1;
 }
 
@@ -94,13 +94,13 @@ body.paused #trackpad-area {
 #recents-bar { bottom: 4%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
 #favorites-bar { bottom: 1%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
 
+/* The static handle has its unrequested cursor property removed. */
 #handle {
     bottom: 10%;
     left: 50%;
     transform: translateX(-50%);
     width: 100px;
     height: 20px;
-    /* The unrequested cursor property is now removed. */
 }
 
 /* The nub is enlarged to extend beyond the handle's boundary. */
@@ -124,9 +124,6 @@ body.paused #trackpad-area {
     width: 100px;
     height: 20px;
     cursor: grab;
-    opacity: 0;
-    /* The pointer is layered on top of the trackpad. */
-    z-index: 111;
 }
 
 #trackpad-area {
@@ -138,17 +135,17 @@ body.paused #trackpad-area {
     max-width: 90%;
     opacity: 0;
     pointer-events: none;
-    /* The trackpad is layered on top of the keyboard but below the pointer. */
     z-index: 110;
+    /* Defines the fade-in transition for the trackpad. */
+    transition: opacity 0.2s ease-in-out;
 }
 
 #pointer-temp.dragging {
     cursor: grabbing;
 }
 
-/* Defines the visible state for the trackpad and pointer, to be toggled by JavaScript. */
-#trackpad-area.visible,
-#pointer-temp.visible {
+/* Defines the visible state for the trackpad, to be activated by JavaScript. */
+#trackpad-area.visible {
     opacity: 1;
     pointer-events: auto;
 }
