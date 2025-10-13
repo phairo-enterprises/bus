@@ -1,94 +1,90 @@
-/* style.css - v0.06 */
-
+/* style.css - v0.07 */
 html, body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    width: 100vw;
-    height: 100vh;
-    background-color: #000000;
+margin: 0;
+padding: 0;
+overflow: hidden;
+width: 100vw;
+height: 100vh;
+background-color: #000000;
 }
 
 #nexus-canvas, #shell-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
 }
 
 #shell-overlay {
-    z-index: 100;
+z-index: 100;
 }
 
-/* Corrects the appearance of the prompt to be a button. */
 #immersion-prompt {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 15px 30px;
-    border: 1px solid rgba(0, 255, 255, 0.7); /* Default to cyan */
-    background-color: transparent;
-    color: rgba(0, 255, 255, 0.7); /* Default to cyan */
-    font-family: monospace;
-    font-size: 24px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, opacity 0.5s ease;
-    opacity: 1; /* The prompt is visible by default. */
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+padding: 15px 30px;
+border: 1px solid rgba(0, 255, 255, 0.7);
+background-color: transparent;
+color: rgba(0, 255, 255, 0.7);
+font-family: monospace;
+font-size: 24px;
+cursor: pointer;
+transition: background-color 0.3s ease, opacity 0.5s ease;
+opacity: 1;
 }
 
 #immersion-prompt:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* When the shell is launched (fullscreen), the prompt fades out. */
 body.launched #immersion-prompt {
-    opacity: 0;
-    pointer-events: none;
+opacity: 0;
+pointer-events: none;
 }
 
-/* Defines the five core instruments, which start invisible. */
+body.paused #shell-overlay {
+pointer-events: none;
+}
+
+body.paused #immersion-prompt {
+opacity: 1;
+pointer-events: auto;
+animation: rainbow-cycle 5s infinite linear;
+}
+
+@keyframes rainbow-cycle {
+0% { border-color: #00FFFF; color: #00FFFF; }
+33% { border-color: #FF00FF; color: #FF00FF; }
+66% { border-color: #00FF00; color: #00FF00; }
+100% { border-color: #00FFFF; color: #00FFFF; }
+}
+
 #handle, #conduit, #keyboard, #recents-bar, #favorites-bar {
-    position: absolute;
-    background-color: rgba(0, 255, 255, 0.1);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    opacity: 0;
-    transition: opacity 0.5s ease 0.5s;
+position: absolute;
+background-color: rgba(0, 255, 255, 0.1);
+border: 1px solid rgba(0, 255, 255, 0.2);
+opacity: 0;
+transition: opacity 0.5s ease 0.5s;
 }
 
-/* When launched, the instruments fade in. */
 body.launched #handle,
 body.launched #conduit,
 body.launched #keyboard,
 body.launched #recents-bar,
 body.launched #favorites-bar {
-    opacity: 1;
+opacity: 1;
 }
 
-/* Implements the non-interactive pause state when fullscreen is exited. */
-body.paused #shell-overlay {
-    pointer-events: none; /* Disables all interaction with the shell. */
-}
-
-/* Makes the RESUME prompt visible and applies the color-cycle animation. */
-body.paused #immersion-prompt {
-    opacity: 1;
-    pointer-events: auto; /* Re-enables clicking on the prompt itself. */
-    animation: rainbow-cycle 5s infinite linear;
-}
-
-/* Defines the smooth color cycling for the RESUME button's border and text. */
-@keyframes rainbow-cycle {
-    0%   { border-color: #00FFFF; color: #00FFFF; } /* Cyan */
-    33%  { border-color: #FF00FF; color: #FF00FF; } /* Magenta */
-    66%  { border-color: #00FF00; color: #00FF00; } /* Green */
-    100% { border-color: #00FFFF; color: #00FFFF; } /* Cyan */
-}
-
-/* Defines the default layout and size for the instruments. */
 #keyboard { bottom: 15%; left: 50%; transform: translateX(-50%); width: 800px; height: 250px; max-width: 90%; }
 #handle { bottom: 10%; left: 50%; transform: translateX(-50%); width: 100px; height: 20px; cursor: grab; }
 #conduit { bottom: 7%; left: 50%; transform: translateX(-50%); width: 80px; height: 20px; }
 #recents-bar { bottom: 4%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
 #favorites-bar { bottom: 1%; left: 50%; transform: translateX(-50%); width: 400px; height: 20px; }
+
+/* Changes the cursor's appearance while dragging the handle. */
+#handle.dragging {
+cursor: grabbing;
+}
