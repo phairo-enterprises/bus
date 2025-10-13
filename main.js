@@ -3,9 +3,8 @@
 window.addEventListener('DOMContentLoaded', () => {
     
     const immersionPrompt = document.getElementById('immersion-prompt');
-    const handle = document.getElementById('handle');
-    // Get the new parent cluster element.
-    const instrumentCluster = document.getElementById('instrument-cluster');
+    // The draggable element is now the temporary pointer.
+    const pointerTemp = document.getElementById('pointer-temp');
 
     if (immersionPrompt) {
         immersionPrompt.addEventListener('click', () => {
@@ -17,8 +16,8 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Draggable functionality is now applied to the entire instrument cluster.
-    if (handle && instrumentCluster) {
+    // The draggable functionality is now attached to the temporary pointer.
+    if (pointerTemp) {
         let active = false;
         let currentX;
         let currentY;
@@ -28,9 +27,9 @@ window.addEventListener('DOMContentLoaded', () => {
         let yOffset = 0;
 
         const dragStart = (e) => {
-            if (e.target === handle) {
+            if (e.target === pointerTemp) {
                 active = true;
-                handle.classList.add('dragging');
+                pointerTemp.classList.add('dragging');
 
                 if (e.type === "touchstart") {
                     initialX = e.touches[0].clientX - xOffset;
@@ -47,7 +46,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 initialX = currentX;
                 initialY = currentY;
                 active = false;
-                handle.classList.remove('dragging');
+                pointerTemp.classList.remove('dragging');
             }
         };
 
@@ -66,8 +65,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 xOffset = currentX;
                 yOffset = currentY;
 
-                // The translation is now applied to the parent cluster.
-                setTranslate(currentX, yOffset, instrumentCluster);
+                setTranslate(currentX, yOffset, pointerTemp);
             }
         };
 
