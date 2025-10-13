@@ -3,9 +3,8 @@
 window.addEventListener('DOMContentLoaded', () => {
     
     const immersionPrompt = document.getElementById('immersion-prompt');
-    const handle = document.getElementById('handle');
-    const trackpadArea = document.getElementById('trackpad-area');
     const pointerTemp = document.getElementById('pointer-temp');
+    const trackpadArea = document.getElementById('trackpad-area');
 
     if (immersionPrompt) {
         immersionPrompt.addEventListener('click', () => {
@@ -17,17 +16,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Adds the toggle functionality to the new, static handle.
-    if (handle && trackpadArea && pointerTemp) {
-        handle.addEventListener('click', () => {
-            // Toggles the visibility of the trackpad and the draggable pointer.
-            trackpadArea.classList.toggle('visible');
-            pointerTemp.classList.toggle('visible');
-        });
-    }
-
-    // The draggable functionality remains attached to the pointer.
-    if (pointerTemp) {
+    if (pointerTemp && trackpadArea) {
         let active = false;
         let currentX, currentY, initialX, initialY;
         let xOffset = 0, yOffset = 0;
@@ -36,6 +25,10 @@ window.addEventListener('DOMContentLoaded', () => {
             if (e.target === pointerTemp) {
                 active = true;
                 pointerTemp.classList.add('dragging');
+
+                // This is the "drag-to-spawn" trigger. The trackpad becomes visible on mousedown.
+                trackpadArea.classList.add('visible');
+
                 if (e.type === "touchstart") {
                     initialX = e.touches[0].clientX - xOffset;
                     initialY = e.touches[0].clientY - yOffset;
@@ -56,6 +49,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const drag = (e) => {
             if (active) {
                 e.preventDefault();
+              
                 if (e.type === "touchmove") {
                     currentX = e.touches[0].clientX - initialX;
                     currentY = e.touches[0].clientY - initialY;
@@ -63,8 +57,10 @@ window.addEventListener('DOMContentLoaded', () => {
                     currentX = e.clientX - initialX;
                     currentY = e.clientY - initialY;
                 }
+
                 xOffset = currentX;
                 yOffset = currentY;
+
                 setTranslate(currentX, yOffset, pointerTemp);
             }
         };
@@ -76,6 +72,7 @@ window.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('mousedown', dragStart, false);
         window.addEventListener('mouseup', dragEnd, false);
         window.addEventListener('mousemove', drag, false);
+
         window.addEventListener('touchstart', dragStart, false);
         window.addEventListener('touchend', dragEnd, false);
         window.addEventListener('touchmove', drag, false);
