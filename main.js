@@ -1,7 +1,4 @@
----
-### **main.js (v0.07)**
-```javascript
-// main.js - v0.07
+// main.js - v0.08
 
 // Waits for the HTML document to be fully loaded.
 window.addEventListener('DOMContentLoaded', () => {
@@ -12,9 +9,12 @@ window.addEventListener('DOMContentLoaded', () => {
     // Attaches the fullscreen request to the prompt's click event.
     if (immersionPrompt) {
         immersionPrompt.addEventListener('click', () => {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
-            });
+            // Only request fullscreen if not already in fullscreen (e.g. in paused state)
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
+                });
+            }
         });
     }
 
@@ -29,12 +29,10 @@ window.addEventListener('DOMContentLoaded', () => {
         let yOffset = 0;
 
         const dragStart = (e) => {
-            // Begins the drag operation only if the target is the handle.
             if (e.target === handle) {
                 active = true;
                 handle.classList.add('dragging');
 
-                // Sets the initial pointer position, accounting for previous drag offsets.
                 if (e.type === "touchstart") {
                     initialX = e.touches[0].clientX - xOffset;
                     initialY = e.touches[0].clientY - yOffset;
@@ -46,7 +44,6 @@ window.addEventListener('DOMContentLoaded', () => {
         };
 
         const dragEnd = (e) => {
-            // Terminates the drag operation.
             if (active) {
                 initialX = currentX;
                 initialY = currentY;
@@ -59,7 +56,6 @@ window.addEventListener('DOMContentLoaded', () => {
             if (active) {
                 e.preventDefault();
               
-                // Calculates the new pointer position.
                 if (e.type === "touchmove") {
                     currentX = e.touches[0].clientX - initialX;
                     currentY = e.touches[0].clientY - initialY;
@@ -68,21 +64,18 @@ window.addEventListener('DOMContentLoaded', () => {
                     currentY = e.clientY - initialY;
                 }
 
-                // Stores the latest offset.
                 xOffset = currentX;
                 yOffset = currentY;
 
-                // Applies the new position to the handle.
                 setTranslate(currentX, yOffset, handle);
             }
         };
 
         const setTranslate = (x, y, el) => {
-            // Applies the drag offset while preserving the initial centering transform from the CSS.
+            // Applies the drag offset while preserving the initial centering transform.
             el.style.transform = `translateX(-50%) translate3d(${x}px, ${y}px, 0)`;
         };
 
-        // Attaches listeners to the window to allow dragging across the entire screen.
         window.addEventListener('mousedown', dragStart, false);
         window.addEventListener('mouseup', dragEnd, false);
         window.addEventListener('mousemove', drag, false);
