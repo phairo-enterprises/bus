@@ -102,6 +102,7 @@ body.launched #trackpad-area.visible + #close-boundary {
 
 /* Recovered historical diagnostics; existing shell retains visual identity. */
         #warningOverlay {
+            pointer-events: none; /* Noninteractive performance warning, never an input surface. */
             display: none; position: absolute; top: 0; left: 0;
             width: 100%; height: 100%; background-color: rgba(255, 0, 0, 0.1);
             color: rgba(255, 100, 100, 0.5); font-family: monospace; font-size: 6vw;
@@ -131,7 +132,9 @@ body.launched #trackpad-area.visible + #close-boundary {
         #consoleOutput {
             padding: 10px;
             max-height: 45vh; min-height: 0;
-            pointer-events: auto;
+            /* Read-only diagnostics must not intercept the controls below.
+               Programmatic log auto-scroll remains; touch scroll passes through. */
+            pointer-events: none;
             overflow-y: auto;
         }
         #consoleOutput > div {

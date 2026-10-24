@@ -341,7 +341,7 @@ const scene = new THREE.Scene();
         const raycaster = new THREE.Raycaster();
         function resolveControlHit(hit) {
             const control = hit.object.parent;
-            const target = control && control.children.find(child => child.name === 'hitbox');
+            const target = control && control.children.find(child => child.name === 'hitbox' || child.name === 'swipeTarget');
             return target ? { ...hit, object: target } : hit;
         }
         const pointer = new THREE.Vector2();
