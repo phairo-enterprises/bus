@@ -72,6 +72,7 @@ body.paused #handle, body.paused #conduit, body.paused #keyboard, body.paused #r
 #trackpad-area {
     bottom: 9%; /* Sits just below the handle's bottom edge */
     width: 400px; /* Spawns on the right half of the keyboard */
+    max-width: calc(50vw - 2px);
     height: 100px; /* Covers the handle and part of the keyboard */
     background-color: rgba(0, 255, 255, 0.1);
     border: 1px solid rgba(0, 255, 255, 0.4); /* Brighter border */
@@ -98,3 +99,60 @@ body.paused #handle, body.paused #conduit, body.paused #keyboard, body.paused #r
 body.launched #trackpad-area.visible + #close-boundary {
     pointer-events: auto;
 }
+
+/* Recovered historical diagnostics; existing shell retains visual identity. */
+        #warningOverlay {
+            display: none; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background-color: rgba(255, 0, 0, 0.1);
+            color: rgba(255, 100, 100, 0.5); font-family: monospace; font-size: 6vw;
+            text-align: center; padding-top: 40vh; box-sizing: border-box;
+            transform: rotate(-15deg) scale(1.5); text-shadow: 0 0 5px #FF0000;
+            z-index: 10;
+        }
+        #consoleContainer {
+            position: absolute; bottom: 10px; right: 10px;
+            width: 450px; max-width: calc(50% - 20px);
+            display: flex; flex-direction: column; max-height: 55vh;
+            background-color: rgba(0, 20, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            font-family: monospace; font-size: 14px;
+            color: lime;
+            z-index: 200;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            pointer-events: none;
+        }
+        #consoleContainer.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #consoleOutput {
+            padding: 10px;
+            max-height: 45vh; min-height: 0;
+            pointer-events: auto;
+            overflow-y: auto;
+        }
+        #consoleOutput > div {
+            margin-bottom: 5px;
+            white-space: pre-wrap;
+        }
+        #tutorialStatus { flex-shrink: 0; }
+        @media (orientation: portrait) {
+            #consoleContainer { width: calc(100% - 20px); max-width: calc(100% - 20px); max-height: 30vh; box-sizing: border-box; }
+            #consoleOutput { font-size: 12px; }
+        }
+    
+#nexus-canvas { touch-action: none; }
+#shell-overlay { pointer-events: none; }
+#immersion-prompt { pointer-events: auto; }
+body.launched #pointer-temp { pointer-events: auto; touch-action: none; }
+#trackpad-area.visible { pointer-events: none; }
+body:not(.launched) #consoleContainer { visibility: hidden; }
+#recents-bar, #favorites-bar { max-width: calc(100vw - 24px); }
+#immersion-prompt { box-sizing: border-box; max-width: calc(100vw - 24px); text-align: center; }
+
+/* The existing keyboard field owns its temporary view; close it to return to historical controls. */
+body.qwerty-visible #consoleContainer { visibility: hidden; }
+body.qwerty-visible #keyboard { background: transparent; border-color: transparent; }

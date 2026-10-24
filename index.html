@@ -10,7 +10,7 @@
 <body>
     <canvas id="nexus-canvas"></canvas>
     <div id="shell-overlay">
-        <div id="immersion-prompt">// INITIATE IMMERSION //</div>
+        <div id="immersion-prompt" role="button" tabindex="0">// INITIATE IMMERSION //</div>
 
         <!-- The new static handle and the area for the future trackpad are forged. -->
         <div id="handle"></div>
@@ -25,6 +25,15 @@
         <div id="favorites-bar"></div>
     </div>
 
+    <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
+    <div id="consoleContainer">
+        <div id="tutorialStatus" role="status" aria-live="polite" style="padding:10px;display:none;border-bottom:1px solid rgba(0,255,0,.3)"></div>
+        <div id="consoleOutput"></div>
+    </div>
     <script src="main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="reportSceneFailure()"></script>
+    <script src="tutorial-progress.js"></script>
+    <script src="qwerty-presentation.js"></script>
+    <script src="cave-controls.js"></script>
 </body>
 </html>
