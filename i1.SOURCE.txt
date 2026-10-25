@@ -1,0 +1,141 @@
+Experimental phairo i1: data-derived installer variant
+Installer SHA-256: 6bc6a67f33b6fac6eec2c8c406f7aabf9737718cb5956cb5107238f800d0d663
+Installer size: 2,040,200 bytes
+Target repository: https://github.com/phairo-enterprises/ph.git
+Target branch: comma4-accord26-fingerprint-v1
+Head observed 2026-10-25 16:50 UTC: 543c084cdfe8025c90cd39c18e1fab21e936a7f5
+The installer follows this branch; it does NOT pin that commit at installation.
+
+Derived from exact accepted c4 binary SHA-256 be68dbe6fd0f42559f9d667b51c0e45e2d7fdf0c1f1547da6e85c05b6473f5b5.
+Only the 87-byte padded branch constant at file offset 0xc14dc is replaced.
+The target ASCII branch plus '?' is right-padded with spaces to exactly 87 bytes.
+The existing following NUL, repository URL, code, assets and every other byte are
+unchanged. The constructor constructs an 87-byte string from an 80-byte slot
+load plus immediate spaces at positions 79..86; get_str finds '?' and takes
+the preceding substring. The original ELF build ID remains unchanged and is NOT
+a variant identifier: use the SHA-256 above. This is not a new compilation.
+
+Reproduction (Python 3; no installer execution):
+Download exact c4 and INSTALLER-VARIANTS.py from https://backupstrats.com/ .
+Run: python3 INSTALLER-VARIANTS.py /path/to/c4 /new/output/directory
+The script rejects any other input hash and any existing output directory.
+Full source/build reproduction of the base is documented below. The deterministic
+post-build data transformation is necessary to reproduce this exact variant.
+A fresh branch-specific compilation may be behaviorally equivalent but is not
+claimed byte-identical.
+
+Tests: exact base identity, unique slot, fixed-width parsing, NUL, full-file
+outside-slot identity and variant hashes. No ARM installer execution or device
+validation was performed. This changes installer branch selection only; it does
+not establish vehicle compatibility or safety. Full notices: i1.NOTICES.txt.
+
+=== ORIGINAL BASE PROVENANCE (c4/i3; historical record, not this variant) ===
+Source references for the experimental source-built phairo i3 installer.
+Artifact: installer_phairo_i3.EXPERIMENTAL
+Installer SHA-256: be68dbe6fd0f42559f9d667b51c0e45e2d7fdf0c1f1547da6e85c05b6473f5b5
+Installer size: 2,040,200 bytes
+Successful build run: https://github.com/phairo-enterprises/ph/actions/runs/40129958609
+Build run ID: 40129958609
+Build job ID: 120979362413
+Builder source commit: a0ec3fe3a6159742e45d569d96dd59c768d15fac
+Build image: AGNOS 19.7 (Ubuntu 24.04, glibc 2.39, clang 18.1.3, ARM64)
+The installer has not been executed or validated on a device. The device OS and
+ABI compatibility remain unverified. This source/notice record is not a claim of
+device readiness or a blanket licensing-compliance determination.
+Build-repair commit: 8b5ce72d6a5804f2282120da2c2963524305f244
+Base source commit: f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66
+Base source: https://github.com/phairo-enterprises/ph/tree/f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66
+Changes applied to the base:
+https://github.com/phairo-enterprises/ph/blob/8b5ce72d6a5804f2282120da2c2963524305f244/installer-repair/source-built-i3.patch
+Patch SHA-256: b98233bfc57dbcafb76a49d01e627121998808a49d651a0b91f26971090c6524
+
+This build changes the installer build target, installation repository URL,
+branch selection and embedded-asset symbol prefix. It is not an unmodified
+upstream openpilot installer. The patch and exact source remain available above.
+
+Installer source and four embedded assets
+
+openpilot/selfdrive/ui/installer/installer.cc
+https://github.com/phairo-enterprises/ph/blob/f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66/openpilot/selfdrive/ui/installer/installer.cc
+Base file SHA-256: c8ad57e0a72eedbb8153d3666e2edac153c38c487344bdfd8c39d783ef584d2c
+
+openpilot/selfdrive/ui/installer/continue_openpilot.sh
+https://github.com/phairo-enterprises/ph/blob/f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66/openpilot/selfdrive/ui/installer/continue_openpilot.sh
+Base file SHA-256: 1258c4deaabf815a30a5763f977a74a76513c03702d3b591a78a7deff8b3507d
+
+openpilot/selfdrive/ui/installer/inter-ascii.ttf
+https://github.com/phairo-enterprises/ph/blob/f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66/openpilot/selfdrive/ui/installer/inter-ascii.ttf
+Base file SHA-256: 1ef26a4099ef867f3493389379d882381a2491cdbfa41a086be8899a2154dcb3
+
+openpilot/selfdrive/assets/fonts/Inter-Bold.ttf
+https://github.com/phairo-enterprises/ph/blob/f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66/openpilot/selfdrive/assets/fonts/Inter-Bold.ttf
+Base file SHA-256: d597e753e78d8bf9db34c13343146545fb3be5a1c99a175bc381fe3f6f787f31
+
+openpilot/selfdrive/assets/fonts/Inter-Light.ttf
+https://github.com/phairo-enterprises/ph/blob/f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66/openpilot/selfdrive/assets/fonts/Inter-Light.ttf
+Base file SHA-256: d1c68fe19e331437dfcae5cbf37fd30db294ba80959f6bd824c239eee761e9ba
+
+The continue_openpilot.sh asset and the three fonts are unchanged by the build
+patch. The fonts identify themselves as Inter 3.012; git-06b166889.
+Inter source reference: https://github.com/rsms/inter/tree/06b166889e335a2454c0767734a05b27f6403098
+Font license: https://github.com/rsms/inter/blob/06b166889e335a2454c0767734a05b27f6403098/LICENSE.txt
+
+Verified source and link inputs
+Build declaration: https://github.com/phairo-enterprises/ph/blob/f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66/openpilot/selfdrive/ui/SConscript
+Common library declaration: https://github.com/phairo-enterprises/ph/blob/f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66/openpilot/common/SConscript
+Link list: common, json11, zmq, raylib_comma, GLESv2, EGL, gbm, drm.
+Lock file: https://github.com/phairo-enterprises/ph/blob/f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66/uv.lock
+
+json11
+Package: comma-deps-json11 20170411.0.post98
+Source: https://github.com/dropbox/json11/tree/db00e9369a92aa74bf630a2ffb092a4b0b132c01
+Build recipe: https://github.com/commaai/dependencies/blob/b70cece6f5bdaf53813cfaea84c686297dbca879/json11/build.sh
+License: MIT, retained in c4.NOTICES.txt.
+
+ZeroMQ
+Package: comma-deps-zeromq 4.3.5.post98
+Source: https://github.com/zeromq/libzmq/tree/622fc6dde99ee172ebaa9c8628d85a7a1995a21d
+Build recipe: https://github.com/commaai/dependencies/blob/b70cece6f5bdaf53813cfaea84c686297dbca879/zeromq/build.sh
+The recipe checks out upstream v4.3.5 and does not apply a source patch.
+The corresponding ZeroMQ Source Code Form is governed by the Mozilla Public
+License 2.0, whose text is retained in c4.NOTICES.txt and available at:
+https://github.com/zeromq/libzmq/blob/622fc6dde99ee172ebaa9c8628d85a7a1995a21d/LICENSE
+The source tree link above makes the Source Code Form for the pinned ZeroMQ
+package available. Defined ZeroMQ symbols are present in the installer; this is
+not merely an unlinked build dependency. The source retains its MPL 2.0 terms.
+
+raylib
+Package: comma-deps-raylib 6.0.0.1.post101
+ARM64 wheel SHA-256: c93ff9b45df414620b3011280da77151764c027e2f95d384fe255615d78872cc
+Source: https://github.com/commaai/raylib/tree/caa64e15ac20a47804a8048029c921ac091fef12
+Build recipe: https://github.com/commaai/dependencies/blob/264ed9c346f58ce4264fbca5b8cf3d74825b3191/raylib/build.sh
+The comma backend static archive is libraylib_comma.a. The final ELF contains
+rcore, rshapes, rtextures and rtext code. Its defined symbols confirm the included
+stb font/image/resize/perlin, QOI, sinfl/sdefl and rprand helpers. Their source-
+supported notices are retained in c4.NOTICES.txt. The ELF source-file symbols do
+not list raudio or rmodels, and those archive members are not claimed as included.
+
+Runtime system-library dependencies
+The final ELF DT_NEEDED entries are:
+- libGLESv2_adreno.so
+- libEGL_adreno.so
+- libgbm.so
+- libdrm.so.2
+- libstdc++.so.6
+- libm.so.6
+- libgcc_s.so.1
+- libc.so.6
+No shared-library binary accompanies the installer in this build artifact.
+These entries identify required external runtime libraries, not redistributed
+copies of those libraries. Exact target-device library availability and provenance
+remain unverified. No Mesa, LLVM or other shared-library wheel contents were added
+to the installer distribution.
+
+Notice scope
+Both original repository notices and the README disclaimer are retained in
+c4.NOTICES.txt, along with the font and known incorporated-library notices.
+The custom SUNNYPILOT notice's commercial/for-profit/closed-source permission
+statement is not resolved by adding attribution. Individual components retain
+their own license terms. Preserve and present these notices with redistributed
+copies and download instructions; a source link is not a universal substitute
+for the notices themselves.

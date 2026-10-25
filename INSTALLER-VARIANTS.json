@@ -1,0 +1,34 @@
+{
+  "base_sha256": "be68dbe6fd0f42559f9d667b51c0e45e2d7fdf0c1f1547da6e85c05b6473f5b5",
+  "branch_slot_offset": "0xc14dc",
+  "branch_slot_length": 87,
+  "method": "fixed-width branch-data substitution; no ARM execution or compilation",
+  "heads_observed_utc": "2026-10-25T16:50Z",
+  "branch_heads_are_not_pinned_at_install": true,
+  "variants": {
+    "i1": {
+      "branch": "comma4-accord26-fingerprint-v1",
+      "observed_head": "543c084cdfe8025c90cd39c18e1fab21e936a7f5",
+      "size": 2040200,
+      "sha256": "6bc6a67f33b6fac6eec2c8c406f7aabf9737718cb5956cb5107238f800d0d663",
+      "git_blob_sha1": "29216fae6b9cda775c68fb1440e3b5369f4cdf9d",
+      "changed_bytes": 15
+    },
+    "i2": {
+      "branch": "comma4-accord26-ui-v2",
+      "observed_head": "32d013e10aeb0310d250adcd04408a97c8b95786",
+      "size": 2040200,
+      "sha256": "1c084218ebcba3130989257321a0b1c079993108143ae2bde9fc27463220e057",
+      "git_blob_sha1": "3031a37006222c908c8c9e6667816e387633f4c3",
+      "changed_bytes": 7
+    },
+    "i3": {
+      "branch": "comma4-accord26-all-v2",
+      "observed_head": "f66e80a4c58380aaa0252c9dd1c1f8cdaea5bb66",
+      "size": 2040200,
+      "sha256": "be68dbe6fd0f42559f9d667b51c0e45e2d7fdf0c1f1547da6e85c05b6473f5b5",
+      "git_blob_sha1": "5a5930cb8ad21f90f65a94c61ca304529c6784a4",
+      "changed_bytes": 0
+    }
+  }
+}
