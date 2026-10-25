@@ -24,3 +24,13 @@ Manifest: https://backupstrats.com/INSTALLER-VARIANTS.json
 Reproduction script: https://backupstrats.com/INSTALLER-VARIANTS.py
 The i1/i2 binaries derive from c4 by fixed-width branch-data substitution only.
 The i3 companion files preserve the original c4 provenance and notice record.
+
+Diagnostic installer (separate native build)
+https://backupstrats.com/c4d
+  Same target branch as c4/i3, with last reported Git phase, last output text and
+  time since output. Output silence is not proof of progress or a diagnosed failure.
+  No automatic timeout, cancellation or retry; pclose can still wait after EOF.
+  Built and statically checked; not yet device/GPU tested or a proven stall fix.
+  Source: https://backupstrats.com/c4d.SOURCE.txt
+  Notices: https://backupstrats.com/c4d.NOTICES.txt
+  c4 remains unchanged. The i1/i2/i3 reproduction script does not produce c4d.
