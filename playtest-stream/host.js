@@ -1,3 +1,4 @@
+// Hollow Soul stream transport v1
 import {api,delay,gather} from './rtc.js';
 const keys={w:'KeyW',a:'KeyA',s:'KeyS',d:'KeyD',e:'KeyE',j:'KeyJ',k:'KeyK','.':'Period',Enter:'Enter',Escape:'Escape'};
 let peer,track,channel,timer;
@@ -85,23 +86,52 @@ async function answer(incoming){
   const reply=await gather(peer,await peer.createAnswer());
   await api('answer',{id:incoming.id,answer:reply});
 }
-let answered;
-for(;;){
+// The game owner and its canvas stay mounted across stream releases. Select
+// the currently served transport when a viewer joins, before answering it.
+export const transport = {answer, cleanup};
+async function publishedTransport() {
+  const url = new URL(import.meta.url);
+  url.search = '';
+  const response = await fetch(url, {cache:'no-store', signal:AbortSignal.timeout(2500)});
+  if (!response.ok) throw Error('Host module unavailable');
+  const bytes = await response.arrayBuffer();
+  if (!new TextDecoder().decode(bytes.slice(0,64)).startsWith('// Hollow Soul stream transport v1')) {
+    throw Error('Incompatible host transport');
+  }
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+  url.searchParams.set('hs-transport', Array.from(digest, b=>b.toString(16).padStart(2,'0')).join(''));
+  const release = await import(url.href);
+  if (typeof release.transport?.answer !== 'function' || typeof release.transport?.cleanup !== 'function') {
+    throw Error('Host transport missing');
+  }
+  return release.transport;
+}
+async function listen() {
+ let active = transport;
+ let answered;
+ for(;;){
   try {
     const pending = await api('pending');
     if ((pending && pending.id !== answered) || Date.now() >= nextMetaCheck) {
       nextMetaCheck = Date.now() + 5000;
       if (await hostNeedsReload().catch(()=>false)) {
         // A replacement engine owns the save. Bind a fresh page without resending the last input.
-        cleanup();
+        active.cleanup();
         location.reload();
         break;
       }
     }
     if (pending && pending.id !== answered) {
-      await answer(pending);
+      const next = await publishedTransport().catch(()=>active);
+      if (next !== active) {
+        active.cleanup();
+        active = next;
+      }
+      await active.answer(pending);
       answered = pending.id;
     }
   } catch {}
   await delay(900);
+ }
 }
+if (!new URL(import.meta.url).searchParams.has('hs-transport')) await listen();
