@@ -45,7 +45,7 @@ start.onclick=async()=>{
   }
   clearControls();
   start.disabled=true;
-  status.textContent='Connecting to the Alienware.';
+  status.textContent='Connecting to the Alienware…';
   try{
     const config=await api('config');
     if(!config.hostReady)throw Error('The Alienware game window is offline.');
@@ -76,7 +76,7 @@ start.onclick=async()=>{
       objective.textContent=q.objective;
       guidance.textContent=q.guidance||'';
       guidance.hidden=!q.guidance;
-      status.textContent=q.notice||(q.revision?'Connected to the Alienware � Action '+q.revision:'Connected to the Alienware');
+      status.textContent=q.notice||(q.revision?'Connected to the Alienware · Action '+q.revision:'Connected to the Alienware');
       status.title=q.renderer||'';
       actions.replaceChildren(...q.actions.map(action=>{
         const button=document.createElement('button');
