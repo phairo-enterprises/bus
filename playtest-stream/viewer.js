@@ -3,6 +3,24 @@ const status=document.querySelector('#status'), video=document.querySelector('vi
 const guidance=document.createElement('p');
 guidance.hidden=true;
 document.querySelector('#objective').after(guidance);
+const story=document.createElement('div');
+story.setAttribute('aria-live','polite');
+story.setAttribute('aria-atomic','true');
+story.hidden=true;
+guidance.after(story);
+let previousStory='';
+function showStory(lines){
+  const next=Array.isArray(lines) ? lines.filter(line=>typeof line==='string' && line.trim()) : [];
+  const key=JSON.stringify(next);
+  if(key===previousStory)return;
+  previousStory=key;
+  story.hidden=next.length===0;
+  story.replaceChildren(...next.map(line=>{
+    const p=document.createElement('p');
+    p.textContent=line;
+    return p;
+  }));
+}
 let pc,channel;
 const keys=new Set(['w','a','s','d','e','j','k','.','Enter','Escape']);
 function send(x){if(channel?.readyState==='open')channel.send(JSON.stringify(x))}
@@ -30,6 +48,7 @@ start.onclick=async()=>{
     objective.textContent='';
     guidance.textContent='';
     guidance.hidden=true;
+    showStory([]);
     controls.hidden=true;
     video.srcObject=null;
   }
@@ -76,6 +95,7 @@ start.onclick=async()=>{
       objective.textContent=q.objective;
       guidance.textContent=q.guidance||'';
       guidance.hidden=!q.guidance;
+      showStory(q.storyLines);
       status.textContent=q.notice||(q.revision?'Connected to the Alienware · Action '+q.revision:'Connected to the Alienware');
       status.title=q.renderer||'';
       actions.replaceChildren(...q.actions.map(action=>{

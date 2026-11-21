@@ -44,8 +44,16 @@ function panel(){
     /^(?:Resumed |Display or request error:)/.test(status)?status:'';
   const selected = region?.querySelector('#holosoul-room-targets button[aria-pressed="true"]');
   const guidance = choices.includes(selected) ? selected.nextElementSibling?.textContent?.trim() || '' : '';
+  // NPC speech is in the host HUD, outside the streamed canvas. Only mirror
+  // the active actor's visible consequence, never the expandable save history.
+  const consequence = region?.querySelector('#holosoul-latest-consequence');
+  const paragraphs = consequence?.getClientRects().length
+    ? Array.from(consequence.querySelectorAll(':scope > p'), el => el.textContent.trim())
+    : [];
+  // The HUD uses a single paragraph when no dialogue record is available.
+  const storyLines = paragraphs.length > 1 ? paragraphs.filter(Boolean) : [];
   const revision = /\brevision (\d+)\b/i.exec(status)?.[1] || '';
-  return {choices,actions,notice,guidance,revision,heading:region?.querySelector('h2')?.textContent||'Arcade',objective:region?.querySelector('#hollow-next-objective')?.textContent||''};
+  return {choices,actions,notice,guidance,storyLines,revision,heading:region?.querySelector('h2')?.textContent||'Arcade',objective:region?.querySelector('#hollow-next-objective')?.textContent||''};
 }
 async function answer(incoming){
   cleanup();
@@ -60,8 +68,8 @@ async function answer(incoming){
     const ch=e.channel;channel=ch;let previous='';
     function update(){
       if(ch.readyState!=='open')return;
-      const {actions,heading,objective,notice,guidance,revision}=panel();
-      const next=JSON.stringify({actions,heading,objective,notice,guidance,revision,renderer});
+      const {actions,heading,objective,notice,guidance,storyLines,revision}=panel();
+      const next=JSON.stringify({actions,heading,objective,notice,guidance,storyLines,revision,renderer});
       if(next!==previous){ch.send(next);previous=next}
     }
     ch.onopen=()=>{update();timer=setInterval(update,250)};
