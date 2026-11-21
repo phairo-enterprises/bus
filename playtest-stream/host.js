@@ -42,7 +42,10 @@ function panel(){
   const status=region?.querySelector('#holosoul-status')?.textContent || '';
   const notice=status.startsWith('Hollow game-only close confirmed.')?'Game saved and closed.':
     /^(?:Resumed |Display or request error:)/.test(status)?status:'';
-  return {choices,actions,notice,heading:region?.querySelector('h2')?.textContent||'Arcade',objective:region?.querySelector('#hollow-next-objective')?.textContent||''};
+  const selected = region?.querySelector('#holosoul-room-targets button[aria-pressed="true"]');
+  const guidance = choices.includes(selected) ? selected.nextElementSibling?.textContent?.trim() || '' : '';
+  const revision = /\brevision (\d+)\b/i.exec(status)?.[1] || '';
+  return {choices,actions,notice,guidance,revision,heading:region?.querySelector('h2')?.textContent||'Arcade',objective:region?.querySelector('#hollow-next-objective')?.textContent||''};
 }
 async function answer(incoming){
   cleanup();
@@ -55,7 +58,12 @@ async function answer(incoming){
   peer.addTrack(track,new MediaStream([track]));
   peer.ondatachannel=e=>{
     const ch=e.channel;channel=ch;let previous='';
-    function update(){if(ch.readyState!=='open')return;const {actions,heading,objective,notice}=panel();const next=JSON.stringify({actions,heading,objective,notice,renderer});if(next!==previous){ch.send(next);previous=next}}
+    function update(){
+      if(ch.readyState!=='open')return;
+      const {actions,heading,objective,notice,guidance,revision}=panel();
+      const next=JSON.stringify({actions,heading,objective,notice,guidance,revision,renderer});
+      if(next!==previous){ch.send(next);previous=next}
+    }
     ch.onopen=()=>{update();timer=setInterval(update,250)};
     ch.onclose=()=>{for(const k of [...held])press(k,false);clearInterval(timer)};
     ch.onmessage=({data})=>{try{

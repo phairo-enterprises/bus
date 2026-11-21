@@ -1,5 +1,8 @@
 import {api,delay,gather} from './rtc.js';
 const status=document.querySelector('#status'), video=document.querySelector('video'), start=document.querySelector('#start'), actions=document.querySelector('#actions');
+const guidance=document.createElement('p');
+guidance.hidden=true;
+document.querySelector('#objective').after(guidance);
 let pc,channel;
 const keys=new Set(['w','a','s','d','e','j','k','.','Enter','Escape']);
 function send(x){if(channel?.readyState==='open')channel.send(JSON.stringify(x))}
@@ -25,6 +28,8 @@ start.onclick=async()=>{
     held.clear();
     actions.replaceChildren();
     objective.textContent='';
+    guidance.textContent='';
+    guidance.hidden=true;
     controls.hidden=true;
     video.srcObject=null;
   }
@@ -40,7 +45,7 @@ start.onclick=async()=>{
   }
   clearControls();
   start.disabled=true;
-  status.textContent='Connecting to the Alienware…';
+  status.textContent='Connecting to the Alienware.';
   try{
     const config=await api('config');
     if(!config.hostReady)throw Error('The Alienware game window is offline.');
@@ -69,7 +74,9 @@ start.onclick=async()=>{
       const q=JSON.parse(e.data);
       document.querySelector('h1').textContent=q.heading;
       objective.textContent=q.objective;
-      status.textContent=q.notice||'Connected to the Alienware';
+      guidance.textContent=q.guidance||'';
+      guidance.hidden=!q.guidance;
+      status.textContent=q.notice||(q.revision?'Connected to the Alienware � Action '+q.revision:'Connected to the Alienware');
       status.title=q.renderer||'';
       actions.replaceChildren(...q.actions.map(action=>{
         const button=document.createElement('button');
