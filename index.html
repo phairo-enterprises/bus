@@ -6,6 +6,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>BackupStrats TCG - v0.09</title>
     <link rel="stylesheet" href="style.css?v=c3dc2eab10836e06">
+    <script>
+    // Open the live guest game when its origin is serving this exact entry.
+    // An unavailable origin or an arcade session already underway keeps the arcade open.
+    (async function openGuestGame() {
+        if (window.top !== window || location.hash || location.search) return;
+        const pending = new AbortController();
+        const cancel = () => pending.abort();
+        const events = ['pointerdown', 'keydown', 'pagehide'];
+        for (const event of events) window.addEventListener(event, cancel, {capture: true, once: true});
+        const timeout = setTimeout(cancel, 2500);
+        try {
+            const entry = await fetch('/guest/', {
+                method: 'HEAD', mode: 'same-origin', credentials: 'omit',
+                redirect: 'error', cache: 'no-store', signal: pending.signal
+            });
+            if (!pending.signal.aborted && entry.status === 200 &&
+                entry.headers.get('X-Hollow-Soul-Entry') === 'isolated-guest-v1') {
+                location.replace('/guest/');
+            }
+        } catch {
+            // The public arcade is already loading.
+        } finally {
+            clearTimeout(timeout);
+            for (const event of events) window.removeEventListener(event, cancel, true);
+        }
+    })();
+    </script>
 </head>
 <body>
     <canvas id="nexus-canvas"></canvas>
