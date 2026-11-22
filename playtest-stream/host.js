@@ -1,21 +1,35 @@
 // Hollow Soul stream transport v1
 import {api,delay,gather} from './rtc.js';
 const keys={w:'KeyW',a:'KeyA',s:'KeyS',d:'KeyD',e:'KeyE',j:'KeyJ',k:'KeyK','.':'Period',Enter:'Enter',Escape:'Escape'};
-let peer,track,channel,timer;
-const held=new Set();
-function press(key,down){
+const members=new Set();
+const heldByKey=new Map();
+// Each viewer owns its own key holds. Releasing one viewer never releases
+// another viewer's key, and every viewer observes the same game canvas.
+function press(key,down,member){
   if(!Object.hasOwn(keys,key))return;
+  const own=member.held;
+  if(down && own.has(key) || !down && !own.has(key))return;
+  if(down)own.add(key); else own.delete(key);
+  const previous=heldByKey.get(key)||0;
+  const next=previous+(down?1:-1);
+  if(next>0)heldByKey.set(key,next);else heldByKey.delete(key);
+  if(down && previous>0 || !down && next>0)return;
   const canvas=document.querySelector('#nexus-canvas');
   canvas.focus();
   canvas.dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{key,code:keys[key],bubbles:true,cancelable:true}));
-  if(down)held.add(key);else held.delete(key);
 }
-function cleanup(){
-  clearInterval(timer);
-  for(const key of [...held])press(key,false);
-  if(channel){channel.onclose=null;channel.close();channel=null}
-  peer?.close();track?.stop();
+function cleanupMember(member){
+  if(!members.delete(member))return;
+  clearInterval(member.timer);
+  for(const key of [...member.held])press(key,false,member);
+  if(member.channel){
+    member.channel.onclose=null;
+    try{member.channel.close()}catch{}
+  }
+  try{member.peer?.close()}catch{}
+  try{member.track?.stop()}catch{}
 }
+function cleanup(){for(const member of [...members])cleanupMember(member)}
 const buttons=new WeakMap();
 let serial=0;
 let previousMeta, nextMetaCheck=0;
@@ -57,34 +71,42 @@ function panel(){
   return {choices,actions,notice,guidance,storyLines,revision,heading:region?.querySelector('h2')?.textContent||'Arcade',objective:region?.querySelector('#hollow-next-objective')?.textContent||''};
 }
 async function answer(incoming){
-  cleanup();
-  peer=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'}]});
-  const canvas=document.querySelector('#nexus-canvas');
-  const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');
-  const info=gl?.getExtension('WEBGL_debug_renderer_info');
-  const renderer=info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):gl?'WebGL':'Canvas 2D';
-  track=canvas.captureStream(30).getVideoTracks()[0];
-  peer.addTrack(track,new MediaStream([track]));
-  peer.ondatachannel=e=>{
-    const ch=e.channel;channel=ch;let previous='';
-    function update(){
-      if(ch.readyState!=='open')return;
-      const {actions,heading,objective,notice,guidance,storyLines,revision}=panel();
-      const next=JSON.stringify({actions,heading,objective,notice,guidance,storyLines,revision,renderer});
-      if(next!==previous){ch.send(next);previous=next}
-    }
-    ch.onopen=()=>{update();timer=setInterval(update,250)};
-    ch.onclose=()=>{for(const k of [...held])press(k,false);clearInterval(timer)};
-    ch.onmessage=({data})=>{try{
-      if(typeof data!=='string'||data.length>256)return;
-      const q=JSON.parse(data);
-      if(typeof q.down==='boolean')press(q.key,q.down);
-      if(Number.isSafeInteger(q.action))panel().choices.find(el=>buttons.get(el)===q.action)?.click();
-    }catch{}};
-  };
-  await peer.setRemoteDescription(incoming.offer);
-  const reply=await gather(peer,await peer.createAnswer());
-  await api('answer',{id:incoming.id,answer:reply});
+  if(members.size>=8)throw Error('Hollow Soul stream is full');
+  const member={peer:null,track:null,channel:null,timer:null,held:new Set()};
+  members.add(member);
+  try{
+    const peer=member.peer=new RTCPeerConnection({iceServers:[{urls:'stun:stun.cloudflare.com:3478'}]});
+    const canvas=document.querySelector('#nexus-canvas');
+    const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');
+    const info=gl?.getExtension('WEBGL_debug_renderer_info');
+    const renderer=info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):gl?'WebGL':'Canvas 2D';
+    member.track=canvas.captureStream(30).getVideoTracks()[0];
+    peer.addTrack(member.track,new MediaStream([member.track]));
+    peer.onconnectionstatechange=()=>{
+      if(['closed','failed'].includes(peer.connectionState))cleanupMember(member);
+    };
+    peer.ondatachannel=e=>{
+      const ch=member.channel=e.channel;
+      let previous='';
+      function update(){
+        if(ch.readyState!=='open')return;
+        const {actions,heading,objective,notice,guidance,storyLines,revision}=panel();
+        const next=JSON.stringify({actions,heading,objective,notice,guidance,storyLines,revision,renderer});
+        if(next!==previous){ch.send(next);previous=next}
+      }
+      ch.onopen=()=>{update();member.timer=setInterval(update,250)};
+      ch.onclose=()=>cleanupMember(member);
+      ch.onmessage=({data})=>{try{
+        if(typeof data!=='string'||data.length>256)return;
+        const q=JSON.parse(data);
+        if(typeof q.down==='boolean')press(q.key,q.down,member);
+        if(Number.isSafeInteger(q.action))panel().choices.find(el=>buttons.get(el)===q.action)?.click();
+      }catch{}};
+    };
+    await peer.setRemoteDescription(incoming.offer);
+    const reply=await gather(peer,await peer.createAnswer());
+    await api('answer',{id:incoming.id,answer:reply});
+  }catch(error){cleanupMember(member);throw error}
 }
 // The game owner and its canvas stay mounted across stream releases. Select
 // the currently served transport when a viewer joins, before answering it.
