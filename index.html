@@ -1,66 +1,989 @@
-<!-- index.html - v0.09 retry -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BackupStrats TCG - v0.09</title>
-    <link rel="stylesheet" href="style.css?v=c3dc2eab10836e06">
-    <script>
-    // Open the live guest game when its origin is serving this exact entry.
-    // An unavailable origin or an arcade session already underway keeps the arcade open.
-    (async function openGuestGame() {
-        if (window.top !== window || location.hash || location.search) return;
-        const pending = new AbortController();
-        const cancel = () => pending.abort();
-        const events = ['pointerdown', 'keydown', 'pagehide'];
-        for (const event of events) window.addEventListener(event, cancel, {capture: true, once: true});
-        const timeout = setTimeout(cancel, 2500);
-        try {
-            const entry = await fetch('/guest/', {
-                method: 'HEAD', mode: 'same-origin', credentials: 'omit',
-                redirect: 'error', cache: 'no-store', signal: pending.signal
-            });
-            if (!pending.signal.aborted && entry.status === 200 &&
-                entry.headers.get('X-Hollow-Soul-Entry') === 'isolated-guest-v1') {
-                location.replace('/guest/');
-            }
-        } catch {
-            // The public arcade is already loading.
-        } finally {
-            clearTimeout(timeout);
-            for (const event of events) window.removeEventListener(event, cancel, true);
-        }
-    })();
-    </script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World’s Fastest — Dev Spiral</title>
+<style>
+:root{color-scheme:dark;--ink:#eaf5ed;--quiet:#acbdb8;--line:#2e4543;--teal:#9df4d0;--black:#061216;--gold:#f7c977}
+*{box-sizing:border-box}body{margin:0;background:#071318;color:var(--ink);font:15px/1.5 system-ui,Arial,sans-serif}button,select,input{font:inherit}button,select,.file{border:1px solid #3c5856;background:#132727;color:var(--ink);border-radius:5px;padding:8px 12px;cursor:pointer}button:hover,.file:hover{border-color:var(--teal);background:#233c38}button:focus-visible,select:focus-visible,input:focus-visible,.file:focus-within{outline:2px solid var(--teal);outline-offset:2px}button.primary{background:var(--teal);color:#082421;border-color:var(--teal);font-weight:750}.primary:hover{background:#c9ffea}button:disabled{opacity:.45;cursor:default}.quiet{color:var(--quiet)}#shell{position:relative;min-height:630px;height:100vh;height:100dvh;overflow:hidden;isolation:isolate}canvas{display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;outline:none;background:#071318}.top,.bottom{display:flex;align-items:center;justify-content:space-between;position:absolute;left:0;right:0;z-index:2;padding:15px 3.5vw;gap:10px}.top{top:0;background:linear-gradient(#071318 12%,#071318d9 72%,transparent);min-height:76px}.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.07em;font-size:14px}.mark{display:inline-grid;gap:3px;transform:skewX(-23deg);width:26px}.mark i{height:3px;background:var(--teal)}.mark i:nth-child(2){width:75%}.mark i:nth-child(3){width:48%}.nav{display:flex;gap:6px}.nav button+button{margin-left:3px}.nav button{background:#0a191bcf;padding:7px 13px}.top .build{font-size:11px;font-family:monospace;color:var(--quiet);letter-spacing:.05em;border-left:1px solid var(--line);padding-left:10px}.bottom{align-items:flex-end;bottom:0;pointer-events:none;padding-bottom:20px;background:linear-gradient(transparent,#071318 90%)}.bottom button{pointer-events:auto}.status,.kbdline,.chip,.overline{font:12px/1.5 ui-monospace,'Courier New',monospace}.status{color:var(--teal)}.kbdline{color:#c3cec7}.hero{position:absolute;z-index:2;top:23%;left:6.8%;max-width:48%;pointer-events:none;text-shadow:0 3px 18px #051016}.hero h1{font:800 clamp(64px,9vw,144px)/.82 system-ui,sans-serif;letter-spacing:-.08em;margin:.28em 0 .22em}.hero .overline,.heading .overline{color:var(--teal);letter-spacing:.14em;text-transform:uppercase}.hero p{font-size:clamp(15px,1.5vw,21px);color:#d3dfd6;max-width:335px}.hero button{pointer-events:auto;margin-top:8px;padding:12px 24px;font-size:16px}.heading{position:absolute;top:95px;left:3.5vw;pointer-events:none;text-shadow:0 2px 5px #021012}.heading h1{font-size:clamp(28px,4vw,53px);letter-spacing:-.06em;line-height:1.05;margin:6px 0}.heading p{font-size:14px;max-width:360px;margin:4px 0;color:#c1d2c9}.chip{margin-top:10px;color:#b6c8bd}.actions{position:absolute;right:3.5vw;bottom:85px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:60%}.actions button{background:#112823ed}.toast{position:absolute;bottom:122px;left:3.5vw;padding:6px 12px;border-left:2px solid var(--teal);background:#081a1de8;max-width:min(520px,87vw);color:#edf6ee;font-size:14px;pointer-events:none}.drawer{position:absolute;z-index:5;right:2.6vw;top:76px;bottom:75px;width:min(405px,94vw);overflow:auto;background:#0a1a1ef7;border:1px solid #40615c;border-radius:9px;box-shadow:0 15px 70px #0008;padding:17px 20px}.drawer-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.drawer h2{margin:0;letter-spacing:-.045em;font-size:25px}.drawer h3{font-size:15px;letter-spacing:.01em;margin:0 0 6px;color:#b2edd7}.drawer section{border-top:1px solid var(--line);margin-top:14px;padding-top:13px}.drawer p{margin:3px 0 8px;font-size:13px;color:#bfcec5}.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:7px 0}.row select{min-width:0;max-width:100%}.file{position:relative;display:inline-flex;align-items:center;font-size:13px}.file input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}.small{font:12px/1.5 ui-monospace,monospace;color:#b6c8be;overflow-wrap:anywhere}.log{padding:8px 10px;background:#061214;border-radius:4px;white-space:pre-wrap}.drawer label:not(.file){display:block;color:#d3e1d9;font-size:12px}.drawer select,.drawer button{font-size:13px}.drawer input[type=text],.drawer input[type=url]{font:inherit;color:var(--ink);padding:7px 9px;width:100%;margin:3px 0;background:#081619;border:1px solid #3c5856;border-radius:4px}.touch{display:none}.touch button{padding:10px 13px}.drawer [hidden],[hidden]{display:none!important}
+@media(max-width:760px){#shell{min-height:510px}.top{padding:10px 13px;min-height:62px}.brand{font-size:11px;gap:6px}.top .build{display:none}.nav button{padding:5px 8px;font-size:12px}.hero{top:19%;left:5%;max-width:72%}.hero h1{font-size:clamp(57px,12vw,87px)}.hero p{font-size:14px;max-width:230px}.heading{top:72px}.heading p{max-width:85vw}.bottom{padding:12px}.kbdline{display:none}.actions{bottom:66px;right:12px}.drawer{right:3vw;top:66px;bottom:53px}.toast{bottom:112px}.touch{display:flex;gap:3px;position:absolute;left:3vw;bottom:57px;z-index:2}.touch button{background:#15332dbb;font-weight:700}.touch .jump{margin-left:3px}.actions button{padding:6px;font-size:12px}}
+.title-links{display:flex;gap:1.25rem;flex-wrap:wrap;align-items:baseline;margin-top:.8rem;pointer-events:auto}
+.title-links a,.title-links button{display:inline-block;margin:0;padding:.25rem 0;background:transparent;border:0;color:#cce3d9;font:inherit;font-size:.9rem;line-height:1.5;text-decoration:underline;text-decoration-color:#6c8c81;text-underline-offset:.25em;cursor:pointer}
+.title-links a:hover,.title-links button:hover{color:var(--teal);text-decoration-color:currentColor}
+.title-links :focus-visible{outline:2px solid var(--teal);outline-offset:4px}
+.hero .entry-status{max-width:25rem;margin:.45rem 0 0;color:var(--quiet);font-size:.875rem}
+</style>
 </head>
-<body>
-    <canvas id="nexus-canvas"></canvas>
-    <div id="shell-overlay">
-        <div id="immersion-prompt" role="button" tabindex="0">// INITIATE IMMERSION //</div>
+<body><main id="shell"><canvas id="view" tabindex="0" aria-label="World’s Fastest playable 3D scene"></canvas>
+<header class="top"><div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>WORLD’S FASTEST <span class="build">LOCAL SESSION PREVIEW</span></div><nav class="nav" aria-label="Game panels"><button data-panel="world">World</button><button data-panel="session">Session</button><button data-panel="snapshot">Snapshot</button></nav></header>
+<div class="hero" id="hero">
+  <div class="overline">MAX! Level Madness</div>
+  <h1>World’s<br>Fastest<span style="color:#9df4d0">.</span></h1>
+  <p>A bot holds the avatar in a pocket dimension. Take over and enter the Dev Spiral.</p>
+  <button class="primary" id="start">Start session</button>
+  <nav class="title-links" aria-label="Other games">
+    <a href="/arcade.html">BackupStrats arcade</a>
+    <button type="button" id="guestEntrance">Hollow Soul</button>
+  </nav>
+  <p class="entry-status" id="entryStatus" role="status"></p>
+</div>
+<div class="heading" id="heading" hidden><div class="overline" id="realm"></div><h1 id="place"></h1><p id="objective"></p><div class="chip" id="meter"></div></div>
+<div class="actions" id="actions" hidden><button id="houseUse" hidden>Use house display</button><button id="houseActivity" hidden>View guest register</button><button id="interact">Enter nearby</button><select id="moveChoice" aria-label="Cloud action" hidden><option>Step</option><option>Grab</option><option>Punch</option></select><button id="witness" hidden>Watch outside</button><button id="cloudAction" hidden>Take turn</button><button id="burst" hidden>Limit Break</button><button id="leave" hidden>Return to body</button></div>
+<div class="touch" id="touch" hidden><button data-key="KeyA">◀</button><button data-key="KeyW">▲</button><button data-key="KeyS">▼</button><button data-key="KeyD">▶</button><button class="jump" data-key="Space">Jump</button></div>
+<div id="toast" class="toast" role="status" hidden></div><footer class="bottom"><div><div class="status" id="readout">○ AUTOPILOT · POCKET DIMENSION</div><div class="kbdline">WASD move &nbsp;·&nbsp; Space jump &nbsp;·&nbsp; Drag orbit &nbsp;·&nbsp; E interact</div></div><span class="small" id="coord"></span></footer>
+<aside class="drawer" id="drawer" hidden aria-label="Game settings"><div class="drawer-head"><h2 id="panelTitle"></h2><button id="close">Close</button></div>
+<div id="worldPanel"><section><h3>Destinations</h3><p>Teleport the outer avatar to a plate, or enter Rat Race from its menu and leave the body here.</p><div class="row"><select id="destination" aria-label="Plate destination"></select><button id="teleport">Teleport</button></div><div class="row"><button id="ratMenu">Open Rat Race</button><button id="enterHouse">Visit race house</button></div></section>
+<section><h3>Distance fields</h3><div class="row"><button id="scope">Scope the far orb</button></div><div id="fieldInfo" class="small"></div></section>
+<section><h3>Plate support</h3><p>The Dev Spiral has a contracted position. Supporting a community moves its plate toward the center and shifts its neighbor outward.</p><div class="row"><select id="community" aria-label="Community plate"></select><button id="support">Add local support</button></div><div class="small" id="plateInfo"></div></section><section><h3>Add a link plate</h3><p>Register a game or web page as a place in this world. The URL is a reference; the local preview does not copy the linked software.</p><label>Place name<input type="text" id="plateName" maxlength="54"></label><label>Web address<input type="url" id="plateUrl" maxlength="2048" placeholder="https://"></label><button id="addPlate">Create plate</button><div class="small" id="plateRef"></div></section>
+<section><h3>Reputation & housing</h3><pre class="small log" id="profileInfo"></pre><div class="row"><button id="mission">Send steward on a secret mission</button><button id="startDefense">Challenge the titleholder</button><button id="tradeHouse">Request a voluntary title trade</button></div><p id="housingOffer"></p><p>Training title only. The first seat is reserved for the titleholder unless the holder is already in another match. A return challenge or defense runs against a local 14-second pace target.</p><h3>Recent conduct</h3><div class="small log" id="conduct"></div></section></div>
+<div id="sessionPanel"><section><h3>Connection & crowd</h3><p>Local transport model. Approaching the nearby peer can change the connection. Load changes the shared update rate independently of the display.</p><div class="row"><select id="link" aria-label="Connection policy"><option value="auto">Automatic handoff</option><option value="internet">Internet</option><option value="wifi-peer">Wi-Fi peer</option><option value="local">Local authority</option></select><select id="load" aria-label="Destination load"><option value="open">Open area</option><option value="crowded">Crowded · 5 Hz</option><option value="turn">Turn cloud · 0.5 Hz</option><option value="closed">At capacity</option></select></div><label>Requested shared rate <select id="rate"><option value="auto">Automatic</option><option>120</option><option>60</option><option>30</option><option>20</option><option>10</option><option>5</option><option>1</option><option>0.5</option></select></label><div class="small log" id="receipts"></div></section>
+<section><h3>Character component</h3><p>Load a movement profile with integer speed, jump and gravity. Export the current component as a starting file.</p><div class="row"><label class="file">Load JSON<input id="loadProfile" type="file" accept=".json,application/json"></label><button id="exportProfile">Export component</button></div><div class="small" id="componentInfo"></div></section>
+<section><h3>Private recorder & Rationalizer</h3><label>Detailed input retention <select id="retention"><option value="30">30 seconds</option><option value="5">5 seconds</option><option value="0">Checkpoints only</option></select></label><div class="row"><button id="audit">Audit session</button><button id="claims">Compare claims</button></div><div id="claimPanel" hidden><p>File claims for one recorded interval, then resolve accepted checkpoints and priority.</p><div class="row"><button id="beginClaim">Choose interval</button><select id="author" aria-label="Claimant"><option value="proxy-a">Proxy A</option><option value="proxy-b">Proxy B</option><option value="self">Owner</option></select><select id="proposal" aria-label="Proposed account"><option value="witness">Compatible path</option><option value="contradiction">Conflicting path</option></select><button id="submitClaim">Submit</button><button id="deadline">Close owner window</button><button id="resolve">Resolve</button></div><div class="small log" id="claimInfo">Choose an interval to begin.</div></div><div class="small log" id="auditInfo">No audit requested.</div></section></div>
+<div id="snapshotPanel"><section><h3>Disconnect this view</h3><p>Freeze the scene, inspect the retained session, and export a local copy. A saved snapshot opens as an independent offline branch.</p><div class="row"><button class="primary" id="freeze">Freeze & inspect</button><button id="saveDevice">Save on this device</button><button id="loadDevice">Resume device save</button><button id="returnLive">Return to live session</button><button id="exportSave">Save snapshot</button><label class="file">Open snapshot<input id="loadSave" type="file" accept=".json,application/json"></label></div><pre class="small log" id="debug"></pre><label>Inspect a past avatar tick <input id="pastTick" type="number" min="0" step="1" value="0"></label><button id="inspectTick">Inspect pose</button><div id="pastPose" class="small log">Select a tick from this session.</div></section></div></aside></main>
+<script>
+// The guest runtime publishes this header when its public game is ready.
+document.getElementById('guestEntrance').addEventListener('click', async function () {
+  const status = document.getElementById('entryStatus');
+  const pending = new AbortController();
+  const timeout = setTimeout(() => pending.abort(), 2500);
+  const title = document.getElementById('hero');
+  const start = document.getElementById('start');
+  const cancel = () => pending.abort();
+  start.addEventListener('click', cancel, {once: true});
+  this.disabled = true;
+  status.textContent = 'Checking the guest entrance…';
+  try {
+    const result = await fetch('/guest/', {
+      method: 'HEAD', mode: 'same-origin', credentials: 'omit',
+      redirect: 'error', cache: 'no-store', signal: pending.signal
+    });
+    if (!pending.signal.aborted && !title.hidden && result.status === 200 &&
+        result.headers.get('X-Hollow-Soul-Entry') === 'isolated-guest-v1') {
+      location.assign('/guest/');
+      return;
+    }
+  } catch {
+    // A missing or gated guest origin leaves the other games available.
+  } finally {
+    clearTimeout(timeout);
+    start.removeEventListener('click', cancel);
+    this.disabled = false;
+  }
+  if (!title.hidden) status.textContent = 'The Hollow Soul guest entrance is currently unavailable.';
+});
+/* World’s Fastest local protocol preview. Game positions are signed integer millimetres.
+ * The 120 Hz observation clock, shared update cadence, actor admission and display are separate.
+ * This profile uses a flat floor, eight horizontal directions and an integer ballistic jump.
+ * World content, gates and camera are owned by the host. No network request is made here.
+ */
+(function (global) {
+  'use strict';
 
-        <!-- The new static handle and the area for the future trackpad are forged. -->
-        <div id="handle"></div>
-        <div id="trackpad-area"></div>
+  const HZ = 120;
+  const PHASE = 240;
+  const RATES = [0.5, 1, 5, 10, 20, 30, 60, 120];
+  const TRANSPORTS = {internet: 30, 'wifi-peer': 120, local: 120};
+  const DEFAULT_COMPONENT = {name: 'Runner', speed: 30, jump: 78, gravity: 3, color: '#73ecdb'};
+  const clone = value => JSON.parse(JSON.stringify(value));
+  function integer(value, min, max, label) {
+    if (!Number.isSafeInteger(value) || value < min || value > max) throw new RangeError(label);
+    return value;
+  }
 
-        <!-- The original handle is repurposed as a temporary, draggable pointer. -->
-        <div id="pointer-temp"></div>
+  function component(source) {
+    if (!source || typeof source !== 'object' || Array.isArray(source)) throw new TypeError('Expected a character component object.');
+    const name = String(source.name || '').trim().slice(0, 64);
+    if (!name) throw new TypeError('Character component needs a name.');
+    const result = {name};
+    for (const [key, max] of [['speed', 300], ['jump', 450], ['gravity', 100]]) {
+      result[key] = integer(source[key] === undefined ? DEFAULT_COMPONENT[key] : source[key], 1, max, key);
+    }
+    result.color = /^#[a-fA-F0-9]{6}$/.test(source.color || '') ? source.color : DEFAULT_COMPONENT.color;
+    return result;
+  }
 
-        <div id="conduit"></div>
-        <div id="keyboard"></div>
-        <div id="recents-bar"></div>
-        <div id="favorites-bar"></div>
-    </div>
+  function input(raw) {
+    return {x: Math.sign(Number(raw && raw.x) || 0), z: Math.sign(Number(raw && raw.z) || 0), jump: Boolean(raw && raw.jump)};
+  }
 
-    <div id="warningOverlay">// PROTOCOL UNSTABLE // ADAPTING //</div>
-    <div id="consoleContainer">
-        <div id="tutorialStatus" role="status" aria-live="polite" style="padding:10px;display:none;border-bottom:1px solid rgba(0,255,0,.3)"></div>
-        <div id="consoleOutput"></div>
-    </div>
-    <script src="main.js?v=c21f0c014d12eae9"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="reportSceneFailure()"></script>
-    <script src="tutorial-progress.js?v=a6f1203becddc5d8"></script>
-    <script src="qwerty-presentation.js?v=53d9707a8d928df8"></script>
-    <script src="cave-controls.js?v=9caa59da95878d21"></script>
-</body>
-</html>
+  function vertical(y, vy, jump, model) {
+    if (y === 0 && vy === 0 && jump) vy = model.jump;
+    vy -= model.gravity;
+    y += vy;
+    return y <= 0 ? [0, 0] : [y, vy];
+  }
+
+  function move(actor, cmd, model) {
+    actor.x += cmd.x * model.speed;
+    actor.z += cmd.z * model.speed;
+    [actor.y, actor.vy] = vertical(actor.y, actor.vy, cmd.jump, model);
+    actor.steps++;
+  }
+
+  function equalPose(a, b) {
+    return ['x', 'y', 'z', 'vy', 'steps'].every(k => a[k] === b[k]);
+  }
+
+  class ClaimLedger {
+    constructor() { this.entries = []; }
+    submit(entity, windowId, author, value, confirmedTick) {
+      integer(confirmedTick, 0, Number.MAX_SAFE_INTEGER, 'Confirmation tick');
+      const last = this.entries[this.entries.length - 1];
+      if (last && confirmedTick < last.confirmedTick) throw new Error('Network confirmation time must advance monotonically.');
+      const entry = {order: this.entries.length + 1, confirmedTick, entity, windowId, author, value: clone(value)};
+      this.entries.push(entry);
+      return clone(entry);
+    }
+    resolve(entity, windowId, deadline, compatible = () => true) {
+      const eligible = this.entries.filter(e => e.entity === entity && e.windowId === windowId && compatible(e));
+      const self = eligible.find(e => e.author === entity && e.confirmedTick <= deadline);
+      const winner = self || eligible[0];
+      if (!winner) return null;
+      return {winner: clone(winner), basis: self ? 'timely self-report' : 'earliest network confirmation'};
+    }
+  }
+
+  // A coarse checkpoint is evidence about state. Conditions are explicitly part of the
+  // local preview profile so an auditor can reconstruct the admissible action slots.
+  function slots(a, b) {
+    const active = [];
+    let phase = a.phase;
+    for (let tick = a.tick + 1; tick <= b.tick; tick++) {
+      phase += a.hz * 2;
+      const shared = phase >= PHASE;
+      if (shared) phase -= PHASE;
+      if (shared || tick <= a.boostUntil) active.push(tick);
+    }
+    return {active, phase};
+  }
+
+  function inspectSpan(a, b, known, reverse = false) {
+    // Every ordinary interval ends within two seconds even at this profile’s lowest cadence.
+    if (b.tick - a.tick > 2 * HZ + 1) return {from:a.tick, to:b.tick, ok:false, mode:'unsupported', reason:'Checkpoint interval exceeds this profile.'};
+    const {active, phase} = slots(a, b);
+    const report = {from: a.tick, to: b.tick, steps: active.length};
+    function fail(reason) { return Object.assign(report, {ok: false, mode: 'unsupported', reason}); }
+    if (b.phase !== phase || b.actor.steps - a.actor.steps !== active.length) return fail('Update schedule contradicts the checkpoint.');
+    const missing = active.filter(t => !known.has(t));
+    const model = a.component;
+    const witness = active.map(t => known.has(t) ? Object.assign({}, known.get(t)) : {x: 0, z: 0, jump: false});
+    if (missing.length) {
+      // Horizontal actions are independent per axis in this particular movement profile.
+      for (const axis of ['x', 'z']) {
+        let remainder = (b.actor[axis] - a.actor[axis]) / model.speed;
+        for (const tick of active) if (known.has(tick)) remainder -= known.get(tick)[axis];
+        if (!Number.isInteger(remainder) || Math.abs(remainder) > missing.length)
+          return fail('Horizontal displacement is unreachable with the retained inputs.');
+        for (let offset = 0; remainder && offset < active.length; offset++) {
+          const i = reverse ? active.length - 1 - offset : offset;
+          if (known.has(active[i])) continue;
+          witness[i][axis] = Math.sign(remainder);
+          remainder -= witness[i][axis];
+        }
+      }
+      // Keep one witness per vertical state. Known input edges remain constraints even
+      // when another part of the same checkpoint interval has already rolled out.
+      let frontier = new Map([[a.actor.y + ',' + a.actor.vy, {y: a.actor.y, vy: a.actor.vy, back: null}]]);
+      for (const tick of active) {
+        const next = new Map();
+        const retained = known.get(tick);
+        for (const prev of frontier.values()) {
+          const options = retained ? [retained.jump] : (prev.y === 0 && prev.vy === 0 ? [false, true] : [false]);
+          for (const jump of options) {
+            const [y, vy] = vertical(prev.y, prev.vy, jump, model);
+            const key = y + ',' + vy;
+            if (!next.has(key)) next.set(key, {y, vy, jump, back: prev});
+          }
+        }
+        frontier = next;
+      }
+      let node = frontier.get(b.actor.y + ',' + b.actor.vy);
+      if (!node) return fail('Vertical state cannot be reached under the recorded component.');
+      for (let i = active.length - 1; i >= 0; i--) {
+        witness[i].jump = node.jump;
+        node = node.back;
+      }
+    }
+    const replay = Object.assign({}, a.actor);
+    for (const cmd of witness) move(replay, cmd, model);
+    if (!equalPose(replay, b.actor)) return fail('Replay disagrees with a reported state.');
+    return Object.assign(report, {ok: true, mode: missing.length ? 'rationalized' : 'exact', retained: active.length - missing.length,
+      witness: active.map((tick, i) => Object.assign({tick}, witness[i]))});
+  }
+
+  class Session {
+    constructor() {
+      this.claimRound = null;
+      this.claimClock = 0;
+      this.claimCounter = 0;
+      this.tick = 0;
+      this.carry = 0;
+      this.phase = 0;
+      this.started = false;
+      this.rate = TRANSPORTS.internet;
+      this.transport = 'internet';
+      this.component = Object.assign({}, DEFAULT_COMPONENT);
+      this.actor = {x: 0, z: 0, y: 0, vy: 0, steps: 0, tick: 0};
+      this.bot = {x: 2300, z: 800, y: 0, vy: 0, steps: 0, tick: 0};
+      this.boostUntil = 0;
+      this.pendingJump = false;
+      this.retention = 8;
+      this.raw = new Map();
+      this.events = [];
+      this.checkpoints = [];
+      this.receipts = [];
+      this.claims = new ClaimLedger();
+      this._mark('origin');
+      this._receipt('Pocket dimension opened');
+    }
+
+    get band() { return this.rate; }
+    get league() { return this.transport + ' · ' + this.rate + ' Hz'; }
+    get remainingBreak() { return Math.max(0, this.boostUntil - this.tick) / HZ; }
+    get rawInputCount() { return this.raw.size; }
+
+    _event(type, detail) {
+      this.events.push({tick: this.tick, type, detail: clone(detail)});
+    }
+    _receipt(reason) {
+      this.receipts.push({tick: this.tick, hz: this.rate, transport: this.transport, league: this.league,
+        source: 'local link model', reason});
+    }
+    _point(kind) {
+      return {kind, tick: this.tick, actor: Object.assign({}, this.actor), phase: this.phase,
+        component: Object.assign({}, this.component), hz: this.rate, boostUntil: this.boostUntil, source: this.started ? 'player' : 'title bot'};
+    }
+    _mark(kind) {
+      this.checkpoints.push(this._point(kind));
+    }
+    _beforeChange() {
+      const last = this.checkpoints[this.checkpoints.length - 1];
+      if (last.tick !== this.tick) this._mark('checkpoint');
+    }
+
+    start() {
+      if (!this.started) {
+        this._beforeChange();
+        this.started = true;
+        this.pendingJump = false;
+        this._mark('takeover');
+        this._event('control', 'Player assumed control of the title avatar');
+      }
+      return this.actor;
+    }
+    setRate(hz) {
+      hz = Number(hz);
+      if (!RATES.includes(hz)) throw new RangeError('Unsupported preview rate.');
+      if (hz === this.rate) return;
+      this._beforeChange();
+      this.rate = hz;
+      this._mark('cadence');
+      this._receipt('Shared cadence changed');
+    }
+    setTransport(name) {
+      if (!Object.prototype.hasOwnProperty.call(TRANSPORTS, name)) throw new RangeError('Unknown local transport profile.');
+      if (this.transport === name) return;
+      this._beforeChange();
+      this.transport = name;
+      this.rate = TRANSPORTS[name];
+      this._mark('handoff');
+      this._receipt('Modeled handoff; avatar and session continue');
+    }
+    setRetention(seconds) {
+      if (!Number.isFinite(seconds) || seconds < 0 || seconds > 600) throw new RangeError('Retention must be 0–600 seconds.');
+      this.retention = seconds;
+      this._trim();
+    }
+    _trim() {
+      const oldest = this.tick - Math.floor(this.retention * HZ);
+      for (const key of this.raw.keys()) {
+        if (key > oldest) break;
+        this.raw.delete(key);
+      }
+    }
+    setComponent(value) {
+      const next = component(value);
+      this._beforeChange();
+      this.component = next;
+      this._mark('component');
+      this._event('component', next);
+      return this.component;
+    }
+    limitBreak(seconds = 4) {
+      if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 30) throw new RangeError('Break duration');
+      this._beforeChange();
+      this.boostUntil = this.tick + Math.ceil(seconds * HZ);
+      this._mark('limit-break');
+      this._event('limit-break', {ends: this.boostUntil, appliesTo: 'player'});
+    }
+    teleport(x, z, pose = {}) {
+      const y = integer(pose.y === undefined ? 0 : pose.y, 0, 1000000000, 'Teleport y');
+      const vy = integer(pose.vy === undefined ? 0 : pose.vy, -1000000000, 1000000000, 'Teleport vertical velocity');
+      integer(x, -1000000000, 1000000000, 'Teleport x');
+      integer(z, -1000000000, 1000000000, 'Teleport z');
+      this._beforeChange();
+      const from = Object.assign({}, this.actor);
+      Object.assign(this.actor, {x, z, y, vy});
+      this.pendingJump = false;
+      this._event('teleport', {from, to: Object.assign({}, this.actor)});
+      this._mark('teleport');
+    }
+    frame(ms, raw = {}) {
+      if (!Number.isFinite(ms) || ms < 0) throw new RangeError('Frame duration');
+      const cmd = input(raw);
+      // A press that falls between admitted actions survives until the next action slot.
+      if (this.started && cmd.jump) this.pendingJump = true;
+      this.carry += ms * HZ;
+      const n = Math.floor((this.carry + 1e-7) / 1000);
+      this.carry -= n * 1000;
+      for (let i = 0; i < n; i++) this._tick(cmd);
+      return this.actor;
+    }
+    _tick(raw) {
+      this.tick++;
+      this.phase += this.rate * 2;
+      const shared = this.phase >= PHASE;
+      if (shared) this.phase -= PHASE;
+      const admitted = shared || this.tick <= this.boostUntil;
+      const steps = this.actor.steps;
+      const cmd = this.started ? {x: raw.x, z: raw.z, jump: this.pendingJump}
+        : {x: Math.floor(steps / 16) % 2 ? -1 : 1, z: 0, jump: steps % 80 === 0};
+      if (this.retention > 0) this.raw.set(this.tick, {x: cmd.x, z: cmd.z, jump: cmd.jump});
+      if (admitted) {
+        move(this.actor, cmd, this.component);
+        this.pendingJump = false;
+      }
+      this.actor.tick = this.tick;
+      if (shared) {
+        const p = this.bot.steps;
+        // A sparse scripted Strawman producer has no render loop or private physics step between its updates.
+        this.bot.x = 2300 + (p % 80 < 40 ? p % 40 : 40 - p % 40) * 20;
+        this.bot.z = 800;
+        this.bot.y = 0;
+        this.bot.steps++;
+        this.bot.tick = this.tick;
+      }
+      this._trim();
+      const last = this.checkpoints[this.checkpoints.length - 1];
+      if (admitted && this.tick - last.tick >= HZ) this._mark('checkpoint');
+    }
+    audit(checkpoints) {
+      const current = this._point('current');
+      const points = checkpoints || this.checkpoints.concat([current]);
+      const segments = [];
+      let exactSegments = 0, rationalizedSegments = 0, steps = 0;
+      let failure = '';
+      for (let i = 1; i < points.length; i++) {
+        const [a, b] = [points[i - 1], points[i]];
+        if (b.tick === a.tick) {
+          if (equalPose(a.actor, b.actor)) continue;
+          const supported = b.kind === 'teleport' && this.events.some(e => e.type === 'teleport' && e.tick === b.tick
+            && equalPose(e.detail.from, a.actor) && equalPose(e.detail.to, b.actor));
+          if (!supported) { failure = 'A same-tick state change has no matching teleport receipt.'; break; }
+          continue;
+        }
+        if (b.tick < a.tick) { failure = 'Checkpoint time moved backward.'; break; }
+        const result = inspectSpan(a, b, this.raw);
+        segments.push(result);
+        if (!result.ok) { failure = result.reason; break; }
+        steps += result.steps;
+        if (result.mode === 'rationalized') rationalizedSegments++; else exactSegments++;
+      }
+      const mode = failure ? 'unsupported' : rationalizedSegments ? (exactSegments ? 'mixed' : 'rationalized') : 'exact';
+      const summary = failure || (rationalizedSegments
+        ? rationalizedSegments + ' interval(s) have a legal reconstructed path. All checked endpoints agree. Original keys remain unknown there.'
+        : 'Retained controls replayed through every admitted step. All checked endpoints agree.');
+      return {ok: !failure, mode, summary, exactSegments, rationalizedSegments, steps, segments};
+    }
+    inspectTick(tick) {
+      if (!Number.isSafeInteger(tick) || tick < 0 || tick > this.tick)
+        return {ok:false,summary:'Choose a whole session tick between 0 and ' + this.tick + '.'};
+      const points = this.checkpoints.concat([this._point('current')]);
+      let anchor = null, next = null;
+      for (const p of points) {
+        if (p.tick > tick) { next = p; break; }
+        anchor = p;
+      }
+      if (!anchor) return {ok:false,summary:'No earlier checkpoint is available.'};
+      let mode = 'checkpoint';
+      const actor = Object.assign({},anchor.actor);
+      if (anchor.tick < tick) {
+        if (!next) return {ok:false,summary:'No later checkpoint is available.'};
+        const span = inspectSpan(anchor,next,this.raw);
+        if (!span.ok) return {ok:false,summary:span.reason};
+        mode = 'exact';
+        for (const cmd of span.witness) {
+          if (cmd.tick > tick) break;
+          move(actor,cmd,anchor.component);
+          if (!this.raw.has(cmd.tick)) mode = 'rationalized';
+        }
+      }
+      actor.tick = tick;
+      const basis = mode === 'checkpoint' ? 'stored pose'
+        : mode === 'exact' ? 'exact from known state and admitted steps'
+        : 'one checkpoint-compatible path; original intermediate pose unknown';
+      return {ok:true,tick,actor,mode,source:anchor.source,summary:'Tick ' + tick + ' · ' + basis +
+        ' · ' + anchor.source + ' · x ' + actor.x + ', y ' + actor.y + ', z ' + actor.z + ' mm'};
+    }
+    beginClaims() {
+      const points = this.checkpoints.concat([this._point('current')]);
+      for (let i = points.length - 1; i > 0; i--) {
+        const a = points[i - 1], b = points[i];
+        if (b.tick <= a.tick || b.actor.steps <= a.actor.steps) continue;
+        const opened = Math.max(this.tick, this.claimClock);
+        this.claimRound = {id: 'window-' + (++this.claimCounter), entity: 'self', a: clone(a), b: clone(b),
+          opened, deadline: opened + 5 * HZ};
+        return {ok:true, summary:'Selected session ticks ' + a.tick + '–' + b.tick + '. Owner window: five seconds on this local confirmation clock.'};
+      }
+      return {ok:false, summary:'Move the avatar for an admitted step before opening an interval.'};
+    }
+    proposeClaim(author, variant = 'witness') {
+      if (!['self','proxy-a','proxy-b'].includes(author) || !['witness','contradiction'].includes(variant))
+        return {ok:false, summary:'Unknown claimant or path type.'};
+      if (!this.claimRound) { const begun = this.beginClaims(); if (!begun.ok) return begun; }
+      const r = this.claimRound;
+      // Proposed paths are derived solely from the selected public checkpoints. A self
+      // claimant also uses this estimator; authentic private controls are never attached.
+      const proposed = inspectSpan(r.a, r.b, new Map(), author !== 'self');
+      if (!proposed.ok) return {ok:false, summary:proposed.reason};
+      const candidate = proposed.witness;
+      if (variant === 'contradiction' && candidate.length) {
+        const first = candidate[0];
+        first.x = first.x === 0 ? 1 : -first.x;
+      }
+      const when = Math.max(this.tick, this.claimClock + 1);
+      this.claimClock = when;
+      const entry = this.claims.submit(r.entity, r.id, author, {candidate}, when);
+      return {ok:true, order:entry.order, summary:'#' + entry.order + ' ' + author + ' confirmed at ' + when +
+        ' (' + (when <= r.deadline ? 'inside' : 'after') + ' owner window). Accepted pending audit.'};
+    }
+    closeClaims() {
+      if (!this.claimRound) return {ok:false, summary:'Choose an interval first.'};
+      this.claimClock = Math.max(this.tick, this.claimClock, this.claimRound.deadline) + 1;
+      return {ok:true, summary:'Owner window closed on the local confirmation clock. New self-reports now use ordinary confirmation order.'};
+    }
+    resolveClaims() {
+      const r = this.claimRound;
+      if (!r) return {ok:false, results:[], summary:'Choose an interval and submit a path.'};
+      const claims = this.claims.entries.filter(e => e.entity === r.entity && e.windowId === r.id);
+      if (!claims.length) return {ok:false, results:[], summary:'No claims received for ticks ' + r.a.tick + '–' + r.b.tick + '.'};
+      const {active} = slots(r.a,r.b);
+      const accepted = new Set();
+      const results = claims.map(e => {
+        const witness = e.value.candidate;
+        const pose = Object.assign({},r.a.actor);
+        const legal = Array.isArray(witness) && witness.length === active.length && witness.every((cmd,i) => {
+          if (!cmd || cmd.tick !== active[i] || ![-1,0,1].includes(cmd.x) || ![-1,0,1].includes(cmd.z)
+              || typeof cmd.jump !== 'boolean') return false;
+          move(pose,cmd,r.a.component);
+          return true;
+        });
+        const compatible = legal && equalPose(pose,r.b.actor);
+        if (compatible) accepted.add(e.order);
+        return {order:e.order, author:e.author, confirmedTick:e.confirmedTick, compatible};
+      });
+      const selected = this.claims.resolve(r.entity,r.id,r.deadline,e=>accepted.has(e.order));
+      const statuses = results.map(e=>'#'+e.order+' '+e.author+' '+(e.compatible?'fits':'contradicts')).join(' · ');
+      const summary = 'Ticks '+r.a.tick+'–'+r.b.tick+': '+statuses+'. '+(selected
+        ? 'Winner: '+selected.winner.author+' ('+selected.basis+').' : 'No checkpoint-compatible claimant.');
+      return {ok:Boolean(selected),winner:selected ? selected.winner.author : null,basis:selected ? selected.basis : null,results,summary};
+    }
+    claimDemo() {
+      const l = new ClaimLedger();
+      const resolve = (id, cutoff) => {
+        const result = l.resolve('Runner', id, cutoff);
+        return result.winner.author + ' · ' + result.basis;
+      };
+      l.submit('Runner', 'A', 'Observer A', 'left', 1);
+      l.submit('Runner', 'A', 'Runner', 'right', 2);
+      l.submit('Runner', 'B', 'Observer B', 'left', 3);
+      l.submit('Runner', 'B', 'Observer A', 'right', 4);
+      l.submit('Runner', 'C', 'Observer A', 'left', 5);
+      l.submit('Runner', 'C', 'Runner', 'right', 8);
+      return ['Proxy first, timely self → ' + resolve('A', 3),
+        'Two proxies, owner silent → ' + resolve('B', 6),
+        'Self arrives after deadline → ' + resolve('C', 7)];
+    }
+    snapshot() {
+      return clone({format: 'worlds-fastest-session-v1', tick: this.tick, carry: this.carry, phase: this.phase,
+        started: this.started, rate: this.rate, transport: this.transport, component: this.component, actor: this.actor,
+        bot: this.bot, boostUntil: this.boostUntil, pendingJump: this.pendingJump, retention: this.retention,
+        claimRound:this.claimRound, claimClock:this.claimClock, claimCounter:this.claimCounter,
+        rawInputs: Array.from(this.raw.entries()), events: this.events, checkpoints: this.checkpoints, receipts: this.receipts, claims: this.claims.entries});
+    }
+    static restore(data) {
+      if (!data || data.format !== 'worlds-fastest-session-v1') throw new Error('Unknown session format.');
+      const copy = clone(data);
+      const s = new Session();
+      for (const key of ['tick', 'carry', 'phase', 'started', 'rate', 'transport', 'actor', 'bot', 'boostUntil',
+        'pendingJump', 'retention', 'events', 'checkpoints', 'receipts']) s[key] = copy[key];
+      s.claimRound = copy.claimRound || null;
+      s.claimClock = copy.claimClock || 0;
+      s.claimCounter = copy.claimCounter || 0;
+      s.component = component(copy.component);
+      s.raw = new Map(copy.rawInputs);
+      s.claims.entries = copy.claims;
+      return s;
+    }
+  }
+
+  const api = {Session, ClaimLedger, RATES: RATES.slice(), HZ};
+  global.WFCore = api;
+  if (typeof module === 'object' && module.exports) module.exports = api;
+})(typeof window === 'object' ? window : globalThis);
+
+</script>
+<script>
+/* Three views of the same public world. Distances and refresh intervals are local demonstration settings. */
+(function (root) {
+  'use strict';
+
+  const nearRadius = 16, orbRadius = 29, midPeriod = 1 / 8, orbPeriod = 2, scopePeriod = 1 / 4;
+  const turn = 2 * Math.PI;
+  let mid = new Map(), far = new Map();
+  let midTime = -Infinity, farTime = -Infinity, scopeTime = -Infinity;
+  let stats = {near: 0, mid: 0, far: 0, midHz: 8, farHz: .5};
+  const finite = Number.isFinite;
+
+  function isNear(viewer, x, z) {
+    return (x - viewer.x) ** 2 + (z - viewer.z) ** 2 < nearRadius ** 2;
+  }
+
+  function bearing(p, viewer, yaw) {
+    const angle = Math.atan2(p.x - viewer.x, p.z - viewer.z) - yaw;
+    return Math.atan2(Math.sin(angle), Math.cos(angle));
+  }
+
+  function observations(o) {
+    const result = [];
+    const ratTurns = [];
+    for (const peer of o.peers || []) {
+      const cp = peer.checkpoint, act = peer.action || (cp && cp.action);
+      if (cp && peer.visible !== false && cp.visible !== false && act && act.site === 'rat' &&
+          finite(cp.tick) && finite(act.tick) && cp.tick >= act.tick && cp.tick - act.tick <= 360)
+        ratTurns.push(peer.id + '/' + act.seq + '/' + act.kind);
+    }
+    for (const p of o.places || []) {
+      if (finite(p.x) && finite(p.z)) result.push({id: 'place:' + p.id, name: p.name, type: p.type,
+        x: p.x, y: 0, z: p.z, color: p.c, support: o.support && finite(o.support[p.id]) ? o.support[p.id] : p.support || 0,
+        activity: p.id === 'rat' ? ratTurns.sort().join('|') : ''});
+    }
+    function addActor(id, name, pos, color) {
+      if (pos && finite(pos.x) && finite(pos.z))
+        result.push({id, name, type: 'actor', x: pos.x / 1000, y: (pos.y || 0) / 1000, z: pos.z / 1000, color});
+    }
+    addActor('bot:strawman', 'Strawman', o.bot, '#b4a4e4');
+    for (const p of o.peers || []) {
+      const cp = p.checkpoint;
+      if (!cp || p.visible === false || cp.visible === false) continue;
+      const pos = cp.zone === 'world' ? cp : cp.outer && cp.outer.zone === 'world' ? cp.outer : null;
+      addActor('peer:' + p.id, p.name || 'Peer', pos, '#f7bb88');
+    }
+    return result;
+  }
+
+  function observe(cache, p, time) {
+    const last = cache.get(p.id);
+    const changed = last && (last.x !== p.x || last.y !== p.y || last.z !== p.z || last.support !== p.support ||
+      (p.activity && p.activity !== last.activity));
+    const stamp = changed ? time : last ? last.changed : null;
+    cache.set(p.id, Object.assign({}, p, {
+      sampled: time, changed: stamp,
+      oldX: changed ? last.x : last ? last.oldX : p.x,
+      oldZ: changed ? last.z : last ? last.oldZ : p.z
+    }));
+  }
+
+  function update(o) {
+    const time = o.clock, zoom = !!o.scope;
+    if (time < midTime || time < farTime || time < scopeTime) restore();
+    const tickMid = time - midTime >= midPeriod, tickFar = time - farTime >= orbPeriod;
+    const tickScope = zoom && time - scopeTime >= scopePeriod;
+    const seenMid = new Set(), seenFar = new Set();
+    let near = 0;
+    for (const p of observations(o)) {
+      const distance = Math.hypot(p.x - o.viewer.x, p.z - o.viewer.z);
+      if (distance < nearRadius) { near++; continue; }
+      if (distance < orbRadius) {
+        seenMid.add(p.id);
+        if (tickMid || !mid.has(p.id)) observe(mid, p, time);
+      } else {
+        seenFar.add(p.id);
+        if (tickFar || !far.has(p.id) || (tickScope && Math.abs(bearing(p, o.viewer, o.yaw)) < .34)) observe(far, p, time);
+      }
+    }
+    for (const key of mid.keys()) if (!seenMid.has(key)) mid.delete(key);
+    for (const key of far.keys()) if (!seenFar.has(key)) far.delete(key);
+    if (tickMid) midTime = time;
+    if (tickFar) farTime = time;
+    if (tickScope) scopeTime = time;
+    stats = {near, mid: mid.size, far: far.size, midHz: 8, farHz: .5, scopeHz: zoom ? 4 : 0,
+      midTime, farTime, scopeTime: finite(scopeTime) ? scopeTime : null};
+  }
+
+  function project(p, c) {
+    const dx = p.x - c.x, dz = p.z - c.z, dy = p.y - c.y;
+    const forward = dx * c.sin + dz * c.cos, depth = forward * c.tiltC - dy * c.tiltS;
+    if (depth <= .3) return null;
+    return [c.cx + (dx * c.cos - dz * c.sin) * c.f / depth,
+      c.cy - (dy * c.tiltC + forward * c.tiltS) * c.f / depth, depth];
+  }
+
+  function poly(ctx, points, fill) {
+    ctx.beginPath();
+    for (let i = 0; i < points.length; i++) {
+      if (i === 0) ctx.moveTo(points[i][0], points[i][1]);
+      else ctx.lineTo(points[i][0], points[i][1]);
+    }
+    if (fill) { ctx.closePath(); ctx.fill(); }
+    ctx.stroke();
+  }
+
+  // In the middle field draw one camera-facing silhouette, keeping its world-space foot and identity.
+  const glyph = {
+    city: [[-1,0],[-1,-.31],[-.74,-.31],[-.74,-.61],[-.49,-.61],[-.49,-.36],[-.22,-.36],[-.22,-.78],[0,-1.15],[.22,-.78],[.22,-.29],[.42,-.29],[.42,-.73],[.65,-.73],[.65,-.38],[.89,-.38],[.89,0],[-1,0]],
+    house: [[-.82,0],[-.82,-.55],[-1,-.55],[0,-1.05],[1,-.55],[.82,-.55],[.82,0],[-.82,0]],
+    gate: [[-.75,0],[-.75,-.64],[-.40,-.96],[.40,-.96],[.75,-.64],[.75,0]],
+    peer: [[-.45,0],[0,-1],[.45,0],[-.45,0]],
+    spiral: [[-1,0],[-.38,-.17],[.75,-.12],[1,0],[.32,.14],[-.68,.10],[-1,0]],
+    actor: [[-.36,0],[-.11,-.48],[-.34,-.71],[-.14,-.73],[0,-1],[.14,-.73],[.34,-.71],[.1,-.48],[.36,0]]
+  };
+  function silhouette(ctx, p, x, y, w, h) {
+    const vertices = glyph[p.type] || glyph.peer;
+    ctx.strokeStyle = p.color || '#9ccbbd'; ctx.fillStyle = '#172a36';
+    poly(ctx, vertices.map(q => [x + q[0] * w, y + q[1] * h]), p.type !== 'gate' && p.type !== 'actor');
+  }
+
+  function name(ctx, p, x, y, scale) {
+    ctx.font = '600 ' + scale + 'px monospace'; ctx.textAlign = 'center';
+    ctx.lineWidth = 3; ctx.strokeStyle = '#102127'; ctx.strokeText(p.name, x, y);
+    ctx.fillStyle = p.color || '#b8d8d0'; ctx.fillText(p.name, x, y); ctx.lineWidth = 1;
+  }
+
+  function orb(ctx, o) {
+    const w = o.width, h = o.height, c = o.camera;
+    const rim = u => h * (.165 + .18 * (1 - Math.sqrt(Math.max(0, 1 - .86 * u * u))));
+    ctx.save();
+    const rows = [0, .021 * h, .047 * h];
+    for (let i = 0; i < rows.length; i++) {
+      const vertices = [];
+      for (let n = 0; n <= 40; n++) {
+        const u = n / 20 - 1;
+        vertices.push([(u + 1) * w / 2, rim(u) + rows[i]]);
+      }
+      ctx.strokeStyle = ['#517b78','rgba(105,158,149,.30)','rgba(105,158,149,.19)'][i];
+      ctx.lineWidth = i ? .7 : 1.2; poly(ctx, vertices);
+    }
+    // Meridians turn with the observer. Only the snapshots below carry object or activity information.
+    const halfAngle = Math.atan(w / (2 * c.f)), step = Math.PI / 16;
+    const start = Math.floor((o.yaw - halfAngle) / step);
+    for (let n = start; n <= Math.ceil((o.yaw + halfAngle) / step); n++) {
+      const u = (n * step - o.yaw) / halfAngle;
+      if (Math.abs(u) > 1) continue;
+      const x = (u + 1) * w / 2;
+      ctx.strokeStyle = 'rgba(118,174,162,.28)';
+      poly(ctx, [[x,rim(u)],[x + u*9,rim(u)+rows[2]]]);
+    }
+    function orbPoint(p) {
+      const angle = bearing(p, o.viewer, o.yaw), u = angle / halfAngle;
+      if (Math.abs(u) > 1.02) return null;
+      const distance = Math.hypot(p.x-o.viewer.x,p.z-o.viewer.z);
+      return [(u + 1) * w / 2, rim(Math.min(1, Math.abs(u))) + rows[1] * orbRadius / Math.max(distance, orbRadius)];
+    }
+    for (const p of far.values()) {
+      const xy = orbPoint(p);
+      if (!xy) continue;
+      const [x, y] = xy, dist = Math.hypot(p.x-o.viewer.x,p.z-o.viewer.z);
+      const size = Math.min(14, Math.max(1, 12 * orbRadius / dist)), height = p.type === 'actor' ? size*.65 : size;
+      if (p.changed !== null && o.clock - p.changed < orbPeriod * 2) {
+        const prior = orbPoint({x:p.oldX,z:p.oldZ});
+        ctx.strokeStyle = p.color || '#b8d8d0'; ctx.globalAlpha = .45;
+        if (prior) poly(ctx, [prior, xy]);
+        ctx.beginPath(); ctx.arc(x, y-height*.42, size*.83, 0, turn); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      ctx.globalAlpha = Math.max(.2,Math.min(.86, size/9));
+      silhouette(ctx,p,x,y,size,height);
+      if (size > 6 && x > 48 && x < w-48) name(ctx,p,x,y-height-5,9);
+    }
+    ctx.restore();
+  }
+
+  function draw(ctx, o) {
+    update(o);
+    orb(ctx,o);
+    const projected = [];
+    for (const p of mid.values()) {
+      const pos = project(p, o.camera);
+      if (pos && pos[0] > -35 && pos[0] < o.width + 35) projected.push([p,pos]);
+    }
+    projected.sort((a,b) => b[1][2] - a[1][2]);
+    ctx.save();
+    for (const entry of projected) {
+      const p = entry[0], [x,y,depth] = entry[1], size = o.camera.f/depth;
+      const w = size*(p.type==='city'?2.75:p.type==='actor'?.85:1.25);
+      const h = size*(p.type==='city'?4.1:p.type==='actor'?1.65:2.4);
+      ctx.lineWidth = 1; ctx.globalAlpha = .88;
+      silhouette(ctx,p,x,y,w,h);
+      if (p.type === 'gate' && p.activity && p.changed !== null && o.clock-p.changed < 2) {
+        ctx.strokeStyle=p.color; ctx.beginPath(); ctx.arc(x,y-h*.5,h*.6,0,turn); ctx.stroke();
+      }
+      if (x>35 && x<o.width-35 && y-h>45 && y<o.height) name(ctx,p,x,y-h*1.17-6,10);
+    }
+    ctx.restore();
+    return stats;
+  }
+
+  function snapshot() {
+    return {mid: Array.from(mid.values(), p => Object.assign({},p)), far: Array.from(far.values(), p => Object.assign({},p)),
+      midTime: finite(midTime)?midTime:null, farTime: finite(farTime)?farTime:null, scopeTime: finite(scopeTime)?scopeTime:null};
+  }
+
+  function restore(s) {
+    function read(list) {
+      return new Map((Array.isArray(list)?list:[]).filter(p=>p && typeof p.id==='string' && finite(p.x) && finite(p.z))
+        .map(p=>[p.id,Object.assign({},p)]));
+    }
+    s = s || {};
+    mid = read(s.mid); far = read(s.far);
+    midTime = finite(s.midTime)?s.midTime:-Infinity; farTime = finite(s.farTime)?s.farTime:-Infinity;
+    scopeTime = finite(s.scopeTime)?s.scopeTime:-Infinity;
+  }
+
+  const api = {draw, isNear, snapshot, restore, inspect: () => Object.assign({},stats)};
+  root.WFFields = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* The local observation clock advances independently of canvas presentation.
+ * A publisher may flush the same clock before sampling the current state.
+ */
+(function (global) {
+  'use strict';
+
+  const observers = new Set();
+  function subscribe(observer) {
+    observers.add(observer);
+    return () => observers.delete(observer);
+  }
+
+  function start(advance, isPaused) {
+    const stepMs = 1000 / global.WFCore.HZ;
+    const maxCatchupSteps = 24;
+    const now = () => global.performance.now();
+    let origin = now();
+    let nextStep = 1;
+    let pumping = false;
+    let running = true;
+    let completedSteps = 0;
+    let timer;
+
+    function reset() {
+      origin = now();
+      nextStep = 1;
+    }
+
+    function flush() {
+      if (!running || pumping) return;
+      const elapsedSteps = Math.floor((now() - origin) / stepMs + 1e-9);
+      if (elapsedSteps < nextStep) return;
+      const due = Math.min(maxCatchupSteps, elapsedSteps - nextStep + 1);
+      // Advance the deadline before callbacks. Timer and publisher can only
+      // consume a wall-clock interval once, even if a callback reads a checkpoint.
+      nextStep = elapsedSteps + 1;
+      if (isPaused()) return;
+      pumping = true;
+      try {
+        for (let i = 0; i < due && !isPaused(); i++) {
+          advance(stepMs);
+          completedSteps++;
+        }
+        // Observers get the newest state once, including after a multi-step wake.
+        for (const observer of observers) observer(completedSteps, global.WFCore.HZ);
+      } finally {
+        pumping = false;
+      }
+    }
+
+    function wake() {
+      if (!running) return;
+      flush();
+      const delay = Math.max(1, Math.ceil(origin + nextStep * stepMs - now()));
+      timer = global.setTimeout(wake, delay);
+    }
+
+    function stop() {
+      running = false;
+      global.clearTimeout(timer);
+    }
+
+    wake();
+    return {flush, reset, stop};
+  }
+
+  global.WFClock = {start,subscribe};
+})(typeof window === 'object' ? window : globalThis);
+
+</script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),canvas=$('view'),ctx=canvas.getContext('2d');
+let session=new WFCore.Session(), simulationClock;
+const places=[
+ {id:'spiral',name:'Dev Spiral',x:0,z:0,c:'#91f3d1',type:'spiral'},
+ {id:'rat',name:'Rat Race',x:0,z:10,c:'#f3c680',type:'gate'},
+ {id:'house',name:'Jungle Skybox',x:-9,z:11,c:'#afcced',type:'house'},
+ {id:'peer',name:'Peer station',x:7,z:5,c:'#99ded0',type:'peer'},
+ {id:'halo',name:'Halo city',c:'#aca4ee',type:'city',support:3},
+ {id:'gears',name:'Gears of War city',c:'#efaa8e',type:'city',support:2}
+];
+const raceGates=[{x:-2,z:4},{x:2,z:8},{x:0,z:12}], cloudSpot={x:0,z:10};
+const cloudNames=['Mica','Oriel','Kite'], keys=new Set();
+let app={started:false,room:'world',outer:null,outerName:'Dev Spiral',load:'open',link:'auto',rate:'auto',gate:0,racing:false,elapsed:0,won:false,rep:0,houseOwner:'Course steward',visits:0,turn:0,lastMove:'',breakUntil:0,clock:0,frozen:false,receipts:[],results:[],support:{halo:3,gears:2},slide:0,actionAt:-8,cloudFocus:false};
+let yawUnits=0,cameraYaw=0,activePanel='', toastUntil=0, width=0,height=0,dpr=1,last=performance.now(),elapsed=0,lastHud=0,drag=null,camX=0,camZ=0,snapshotCopy=null;
+const TAU=Math.PI*2;
+function planarDistanceSq(place){const dx=session.actor.x-place.x*1000,dz=session.actor.z-place.z*1000;return dx*dx+dz*dz;}
+function inRange(place,radiusMm){return planarDistanceSq(place)<=radiusMm*radiusMm;}
+function actor(){return {x:session.actor.x/1000,y:session.actor.y/1000,z:session.actor.z/1000};}
+function layoutPlates(){const a=places.filter(p=>p.type==='city').sort((a,b)=>app.support[b.id]-app.support[a.id]||a.id.localeCompare(b.id));a.forEach((p,i)=>{p.x=i<2?[-12,14][i]:Math.round(Math.cos(i*2.4)*(13+i*1.4));p.z=i<2?[20,29][i]:Math.round(26+Math.sin(i*2.4)*(11+i*1.2));});}
+function notice(s){$('toast').textContent=s;$('toast').hidden=false;toastUntil=performance.now()+3100;}
+function panel(id){if(!app.started&&id!=='snapshot'){notice('Start the session to enter the world.');return;} const same=activePanel===id;activePanel=same?'':id;$('drawer').hidden=!activePanel;['world','session','snapshot'].forEach(p=>$(p+'Panel').hidden=p!==activePanel);$('panelTitle').textContent=({world:'World',session:'Session',snapshot:'Snapshot'})[id];keys.clear();details();if(!activePanel)canvas.focus();}
+function closePanel(){activePanel='';$('drawer').hidden=true;canvas.focus();}
+function recentReceipt(){const a=session.receipts||[];return a.slice(-3).map(e=>e.tick+' · '+e.transport+' · '+e.hz+' Hz'+(e.league?' · '+e.league:'')).join('\n');}
+function details(){if(window.WFFields){const f=WFFields.inspect();$('fieldInfo').textContent='Near '+f.near+' · donut '+f.mid+' at '+f.midHz+' Hz · orb '+f.far+' at '+f.farHz+' Hz'+(f.scopeHz?' · scoped '+f.scopeHz+' Hz':'');$('scope').textContent=app.scope?'Release scope':'Scope the far orb';}$('pastTick').max=String(session.tick);$('plateInfo').textContent=places.filter(p=>p.type==='city').map(p=>p.name+' '+app.support[p.id]+' · ('+p.x+', '+p.z+')').join('  /  ');housingDetails();$('receipts').textContent=recentReceipt()||'Waiting for first segment';$('componentInfo').textContent=session.component.name+' · '+session.component.speed+' speed / '+session.component.jump+' jump / '+session.component.gravity+' gravity';$('debug').textContent=JSON.stringify({branch:app.frozen?'disconnected':'live local',room:app.room,avatar:session.actor,outerBody:app.outer,checkpoints:session.checkpoints.length,sharedHz:session.rate,transport:session.transport,rep:app.rep,owner:app.houseOwner,lastEvent:(app.journal||[]).slice(-1)[0]||null},null,2);$('freeze').textContent=app.frozen?'Resume branch':'Freeze & inspect';}
+function requireLive(){if(app.frozen){notice('Resume the branch before changing the world.');return false;}return true;}
+function teleport(p){if(!requireLive())return;if(app.room!=='world'){notice('Return to the outer body first.');return;}if(p.id==='rat'&&app.load==='closed'){notice('Destination at capacity. Rat Race remains available from its menu.');return;}session.teleport(Math.round(p.x*1000),Math.round((p.z-1.4)*1000));app.outerName=p.name;journal('visit plate',{id:p.id,name:p.name});yawUnits=0;cameraYaw=0;camX=p.x;camZ=p.z-1.4;closePanel();notice('Arrived at '+p.name);updateHud();}
+function enter(room,via,kind='regular'){if(!requireLive())return;if(app.room!=='world'){notice('Return to the outer body first.');return;}const p=actor();app.outer={x:session.actor.x,y:session.actor.y,vy:session.actor.vy,z:session.actor.z,component:session.component.name,place:app.outerName,via};journal('world entry',{room,via,outer:app.outer});app.receiptStart=session.receipts.length-1;app.raceStartTick=session.tick;app.witness=false;app.pendingTurn='';app.room=room;app.matchKind=kind;app.matchOutcome='';app.racing=room==='rat';app.gate=0;app.elapsed=0;app.won=false;app.cloudFocus=false;app.lastMove='';app.actionAt=-9;session.teleport(0,room==='rat'&&kind==='challenge'?-700:0);camX=0;camZ=0;yawUnits=0;cameraYaw=0;if(room==='house'){app.visits++;conduct(house().residents.includes(housePlayer)?'Resident visit':'Guest visit','Entered Jungle Skybox.');}if(room==='rat')journal('training lineup',{kind,firstSeat:seat()});closePanel();notice(via+' entry · outer body remains at '+p.x.toFixed(1)+', '+p.z.toFixed(1));updateNetwork();updateHud();}
+function leave(){if(!requireLive()||!app.outer)return;const p=app.outer;journal('return to body',{from:app.room,to:p});app.pendingTurn='';app.room='world';app.racing=false;app.cloudFocus=false;app.outerName=p.place;session.teleport(p.x,p.z,p);app.outer=null;camX=p.x/1000;camZ=p.z/1000;yawUnits=0;cameraYaw=0;closePanel();notice('Control returned to the outer avatar.');updateNetwork();updateHud();}
+function closest(){const a=actor();return places.reduce((b,p)=>planarDistanceSq(p)<planarDistanceSq(b)?p:b,places[0]);}
+function interact(){if(!requireLive()||!app.started)return;if(app.room!=='world'){if(app.room==='cloud'){turn();return;}if(app.room==='house')leave();return;}const n=closest();if(!inRange(n,3000)){notice('Move within 3 m of a landmark to interact.');return;}if(n.id==='rat'){if(app.load==='turn'&&!app.cloudFocus){enter('cloud','Physical');}else if(app.load==='closed'){notice('Site at capacity. Choose Open Rat Race from World.');}else enter('rat','Physical');}else if(n.id==='house')enter('house','Physical');else if(n.id==='peer'){updateNetwork();notice('Peer station · '+session.transport+' transport recorded.');}else notice(n.name+' · '+(n.id==='spiral'?'contracted central position':'support '+app.support[n.id]));}
+function turn(){if(!requireLive()||app.room!=='cloud')return;if(app.pendingTurn){notice('One action is waiting for the next admitted turn.');return;}app.pendingTurn=app.choice||'Step';notice(app.pendingTurn+' queued for the next admitted turn.');}
+function updateNetwork(){if(!app.started||app.frozen)return;const peer=app.room==='world'&&inRange(places[3],3100);const transport=app.link==='auto'?(peer?'wifi-peer':'internet'):app.link;let load=app.room==='cloud'?'turn':app.load;if(app.room==='world'&&!inRange(cloudSpot,6000))load='open';if(app.room==='rat'||app.room==='house')load='open';const requested=app.rate==='auto'?(transport==='wifi-peer'||transport==='local'?120:30):+app.rate;const regionCap=load==='turn'||load==='closed'?0.5:load==='crowded'?5:120;const hz=Math.min(requested,regionCap);if(session.transport!==transport)session.setTransport(transport);if(session.rate!==hz)session.setRate(hz);}
+function race(dt){if(app.room!=='rat'||!app.racing)return;app.elapsed=(session.tick-app.raceStartTick)*1000/120;const g=raceGates[app.gate];if(!inRange(g,1500))return;app.gate++;if(app.gate<3){notice('Gate '+app.gate+' / 3 · next gate ahead');return;}app.racing=false;app.won=true;app.rep++;app.matchOutcome=houseRaceFinish();app.results.push({kind:app.matchKind,outcome:app.matchOutcome,holder:app.houseOwner,observedTransports:(app.networkLog||[]).filter(v=>v.tick>=app.raceStartTick),networkEvidence:window.WFRelay&&window.WFRelay.exportRecord?window.WFRelay.exportRecord():null,segments:session.receipts.slice(Math.max(0,app.receiptStart)),elapsedMs:Math.round(app.elapsed),tick:session.tick,transport:session.transport,modelHz:session.rate,component:session.component.name});journal('local training finish',app.results[app.results.length-1]);notice(app.matchOutcome);updateHud();}
+function updateHud(){const a=actor(),n=app.room==='world'?closest():null,near=n&&inRange(n,3000),v=({world:'WORLD’S FASTEST',rat:'RAT RACE / LOCAL TRAINING',house:'RAT RACE / HOUSING',cloud:'WORLD’S FASTEST / TURN CLOUD'})[app.room];$('hero').hidden=app.started;$('heading').hidden=!app.started;$('actions').hidden=!app.started;$('touch').hidden=!app.started;$('realm').textContent=v;$('place').textContent=app.room==='world'?(near?n.name:'Dev Spiral'):app.room==='rat'?(app.won?'Finish recorded':'Jungle trial'):app.room==='cloud'?'Inside the cloud':'Jungle Skybox';
+$('objective').textContent=app.room==='world'?'Follow the amber route to Rat Race, or open a destination from World.':app.room==='rat'?(app.won?app.matchOutcome||'Training result saved.':'Cross the lit gates in order.'):app.room==='cloud'?'Take a scripted turn, or trigger a temporary Limit Break.':'Visit the race house and inspect its titleholder in World.';
+$('meter').textContent=app.room==='rat'?'Gates '+app.gate+' / 3  ·  '+(app.elapsed/1000).toFixed(1)+' s · '+(app.matchKind==='challenge'?'challenger · seat 2':app.matchKind==='defense'?'defender · seat 1':seat()):app.room==='cloud'?'Turn '+app.turn+' · '+(app.pendingTurn?'queued '+app.pendingTurn:app.lastMove||'ready'):app.room==='house'?'Titleholder: '+app.houseOwner:'';
+$('interact').hidden=app.room!=='world';$('interact').textContent=near?'Interact · '+n.name:'Enter nearby';$('leave').hidden=app.room==='world';$('cloudAction').hidden=app.room!=='cloud';$('moveChoice').hidden=app.room!=='cloud';$('witness').hidden=app.room!=='cloud';$('witness').textContent=app.witness?'View inside':'Watch outside';$('burst').hidden=!(session.rate<=5&&app.started);
+$('readout').textContent=app.started?(app.frozen?'◼ FROZEN':app.detached?'◇ OFFLINE BRANCH':'● LIVE LOCAL')+'  ·  '+session.rate+' Hz shared  ·  model: '+session.transport+(app.actualTransport&&!app.detached?'  ·  link: '+app.actualTransport:'')+((app.breakUntil>app.clock)?'  ·  LIMIT BREAK':''):'○ AUTOPILOT · POCKET DIMENSION';$('coord').textContent=a.x.toFixed(1)+' / '+a.z.toFixed(1)+' m';if(app.outer)$('meter').textContent+=' · outer body '+(app.outer.x/1000).toFixed(1)+' / '+(app.outer.z/1000).toFixed(1)+' m';if(app.room==='house'){const resident=house().residents.includes(housePlayer);$('houseUse').hidden=!resident;$('houseActivity').hidden=resident;}else{$('houseUse').hidden=true;$('houseActivity').hidden=true;}if(activePanel)details();}
+function color(hex,a){const h=hex.replace('#','');return 'rgba('+parseInt(h.slice(0,2),16)+','+parseInt(h.slice(2,4),16)+','+parseInt(h.slice(4,6),16)+','+a+')';}
+let camera={};let backdrop=null;
+function project(x,y,z){const dx=x-camera.x,dz=z-camera.z,localX=dx*camera.cos-dz*camera.sin,forward=dx*camera.sin+dz*camera.cos,dy=y-camera.y,ry=dy*camera.tiltC+forward*camera.tiltS,dep=forward*camera.tiltC-dy*camera.tiltS;if(dep<.3)return null;return [camera.cx+localX*camera.f/dep,camera.cy-ry*camera.f/dep,dep];}
+function path(points,stroke,fill,lw=1){const p=points.map(q=>project(q[0],q[1],q[2]));if(p.some(q=>!q))return;ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length;i++)ctx.lineTo(p[i][0],p[i][1]);if(fill){ctx.closePath();ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function line(a,b,c,w=1){path([a,b],c,null,w);}
+function ring(x,y,z,rx,rz,col,n=42){const points=[];for(let i=0;i<=n;i++){const t=i/n*TAU;points.push([x+Math.cos(t)*rx,y,z+Math.sin(t)*rz]);}path(points,col,null);}
+function solid(x,y,z,r,h,n,c,rot=0,taper=.76){const base=[],top=[];for(let j=0;j<n;j++){let a=TAU*j/n+rot;base.push([x+r*Math.cos(a),y,z+r*Math.sin(a)]);top.push([x+r*taper*Math.cos(a+.15),y+h,z+r*taper*Math.sin(a+.15)]);}for(let j=0;j<n;j++){const k=(j+1)%n;path([base[j],base[k],top[k],top[j]],color(c,.41),color(c,j%2?.055:.095));}path(top,color(c,.82),color(c,.08));}
+function terrain(){let horizon=height*.38;ctx.fillStyle=backdrop;ctx.fillRect(0,0,width,height);const offset=Math.round(cameraYaw*width*.24);
+for(let i=0;i<58;i++){const sx=(((i*127+37-offset*.24)%width)+width)%width,sy=(i*139+21)%Math.max(5,Math.floor(horizon*.86));ctx.fillStyle=i%4?'#577275':'#b3c9bd';ctx.fillRect(sx,sy,i%5===0?1.6:1,1);}
+for(let band=0;band<3;band++){const verts=[];for(let i=-2;i<=34;i++){const xx=i*width/30-((offset*(.2+band*.2))%(width/30)),peak=(Math.sin((i+band)*1.9)+Math.cos(i*.67+band)*.7);verts.push([xx,horizon+(band*13)+peak*(12+band*3)]);}ctx.beginPath();ctx.moveTo(verts[0][0],height);verts.forEach(v=>ctx.lineTo(...v));ctx.lineTo(width+100,height);ctx.fillStyle=['#11252d','#11282d','#0d2227'][band];ctx.fill();ctx.beginPath();verts.forEach((v,i)=>i?ctx.lineTo(...v):ctx.moveTo(...v));ctx.strokeStyle=['#29474d','#284448','#365250'][band];ctx.lineWidth=.8;ctx.stroke();}
+for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(width*.50,horizon+height*.37,width*(.70+i*.13),height*(.39+i*.095),0,Math.PI,TAU);ctx.strokeStyle='rgba(145,191,185,'+(.105-i*.017)+')';ctx.stroke();}}
+function floor(pocket){const cx=Math.floor(camX/2)*2,cz=Math.floor(camZ/2)*2;if(pocket){const pts=[];for(let i=0;i<8;i++){let t=i*TAU/8;pts.push([camX+4.6*Math.cos(t),-.03,camZ+3*Math.sin(t)]);}path(pts,'#5aaba0','#132e30',1.3);for(let i=1;i<=4;i++)ring(camX,.005,camZ,i*.98,i*.62,color('#7ae2c6',.2+i*.065),8);for(let i=0;i<8;i++){const t=TAU*i/8;line([camX+Math.cos(t)*2.3,-.85,camZ+Math.sin(t)*1.5],pts[i],color('#77baa9',.28));}return;}
+for(let i=-20;i<=26;i+=2){const x=cx+i,z=cz+i;for(let j=-14;j<32;j+=4){line([x,0,cz+j],[x,0,cz+j+4],color('#65a6a0',i%6===0?.22:.10));line([cx+j,0,z],[cx+j+4,0,z],color('#65a6a0',i%6===0?.22:.10));}}}
+function label(x,y,z,t,c){const p=project(x,y,z);if(!p||p[2]>56||p[0]<25||p[0]>width-25||p[1]<75||p[1]>height-75)return;ctx.save();ctx.font='600 '+Math.max(9,Math.min(12,160/p[2]))+'px monospace';ctx.textAlign='center';const w=ctx.measureText(t).width+12;ctx.fillStyle='#0a1a1de0';ctx.fillRect(p[0]-w/2,p[1]-11,w,16);ctx.fillStyle=c;ctx.fillText(t,p[0],p[1]);ctx.restore();}
+function gate(x,z,c,open=true){const a=[[x-1.15,0,z],[x-1.15,2.1,z],[x-.62,2.65,z],[x+.62,2.65,z],[x+1.15,2.1,z],[x+1.15,0,z]];path(a,color(c,open?.96:.39),null,2.4);path(a.map(p=>[p[0],p[1],p[2]+.28]),color(c,.30),null);for(let j=0;j<a.length;j++)line(a[j],[a[j][0],a[j][1],z+.28],color(c,.3));ring(x,.035,z,1.4,.60,color(c,.5),10);}
+function body(x,y,z,s,c,t,walk){const shift=walk?Math.sin(t*7)*.20:Math.sin(t*2)*.035;const q=(a,b,d)=>[x+a*s,y+b*s,z+d*s];const flat=(a,b,d)=>path([q(...a),q(...b),q(...d)],color(c,.94),color(c,.18),1.25);const limb=(a,b,r)=>{flat([a[0]-r,a[1],a[2]],[a[0]+r,a[1]+.025,a[2]],[b[0],b[1],b[2]]);};limb([-.16,.81,0],[-.22,.43,shift],.11);limb([-.22,.45,shift],[-.26,.06,shift+.04],.072);limb([.16,.81,0],[.22,.43,-shift],.11);limb([.22,.45,-shift],[.26,.06,-shift+.04],.072);flat([-.25,1.45,0],[.25,1.45,0],[0,.79,.10]);flat([-.25,1.45,0],[0,.79,.10],[-.16,.83,-.09]);flat([.25,1.45,0],[.16,.83,-.09],[0,.79,.10]);limb([-.28,1.4,0],[-.46,1.15,-shift],.085);limb([-.46,1.15,-shift],[-.51,.93,-shift-.07],.055);limb([.28,1.4,0],[.46,1.15,shift],.085);limb([.46,1.15,shift],[.51,.93,shift-.07],.055);solid(x,y+1.49*s,z,.205*s,.34*s,5,c,.25,.81);line(q(-.12,1.67,-.16),q(.12,1.67,-.16),'#f1fff4',1.5);}
+function house(x,z,c){solid(x,0,z,2.0,1.8,4,c,Math.PI/4,.99);solid(x,1.8,z,2.1,.91,4,c,Math.PI/4,.04);path([[x-.34,0,z-1.42],[x-.34,.98,z-1.42],[x+.34,.98,z-1.42],[x+.34,0,z-1.42]],color(c,.85),null);}
+function drawCloud(x,z,t,outside){const b=project(x,1.45,z);if(!b)return;const r=Math.min(150,camera.f/b[2]*1.25);ctx.save();for(let i=0;i<10;i++){const a=TAU*i/10+t*.20,xx=b[0]+r*Math.cos(a)*.86,yy=b[1]+r*Math.sin(a)*.44;ctx.beginPath();ctx.arc(xx,yy,r*(.42+Math.sin(i*3.7)*.08),0,TAU);ctx.fillStyle='#405153';ctx.fill();ctx.strokeStyle='#96b4ae';ctx.stroke();}ctx.beginPath();ctx.ellipse(b[0],b[1],r*.95,r*.46,0,0,TAU);ctx.fillStyle='#405153';ctx.fill();ctx.restore();const observed=app.remoteAction&&t-app.remoteAction.at<1?app.remoteAction:app.resolvedAction;const phase=outside?(observed?(app.remoteAction===observed?t-observed.at:t-app.actionAt):20):t-app.actionAt;if(phase<.9&&phase>=0){const h=Math.sin(phase/.9*Math.PI);body(x+1.55*h,1+h*1.4,z, .72,'#f4c57d',t,true);label(x+1.7*h,2+h*1.6,z,outside?(observed.kind||'Step').toUpperCase():(app.lastMove||'STEP'),'#f4c57d');}}
+function scene(t){const p=actor(),pocket=!app.started;const dt=Math.min(.20,Math.max(0,(t-elapsed)/1000));elapsed=t;
+const chase=app.frozen?0:1-Math.exp(-Math.max(dt,.001)*9);camX+=(p.x-camX)*chase;camZ+=(p.z-camZ)*chase;
+const cs=Math.cos(cameraYaw),sn=Math.sin(cameraYaw),small=width<680;camera={x:camX-sn*(pocket?6.3:8.7),y:pocket?2.95:3.95,z:camZ-cs*(pocket?6.3:8.7),cos:cs,sin:sn,tiltC:.936,tiltS:.352,cx:width*(pocket?(small?.72:.70):.5),cy:height*(pocket?.50:.52),f:Math.min(width*(small?1.21:.78),height*(pocket?1.5:1.08))};
+terrain();floor(pocket);if(!pocket&&app.room==='world'&&window.WFFields){WFFields.draw(ctx,{width,height,camera,yaw:cameraYaw,viewer:p,clock:app.clock,places,support:app.support,peers:visibleRemotes(),bot:session.bot,scope:!!app.scope});}
+const seconds=app.clock;
+if(pocket){for(let j=0;j<3;j++)ring(camX,1.15+j*.25,camZ,3+j*.17,2.1+j*.13,color('#76c4ba',.09+j*.016),60);ring(p.x,.03,p.z,.55,.39,'#81b8a3',22);body(p.x,p.y,p.z,1.33,'#9bf5d8',seconds,true);label(p.x,p.y+2.95,p.z,'POCKET / AUTOPILOT','#a3d2be');return;}
+if(app.room==='world'){for(let j=0;j<9;j++){const z=j*1.06+.45;line([-.09,.026,z],[0,.026,z+.34],color('#f2c67f',.72),2);}const order=places.slice().sort((a,b)=>{const A=project(a.x,0,a.z),B=project(b.x,0,b.z);return (B?B[2]:0)-(A?A[2]:0);});for(const l of order){if(window.WFFields&&!WFFields.isNear(p,l.x,l.z))continue;if(l.type==='gate'){gate(l.x,l.z,l.c);if(app.load==='turn'||app.load==='closed'||(app.remoteAction&&app.clock-app.remoteAction.at<2))drawCloud(l.x,l.z+.56,seconds,true);}else if(l.type==='house')house(l.x,l.z,l.c);else if(l.type==='peer'){solid(l.x,.05,l.z,.7,2.0,4,l.c,.4,.12);for(let i=0;i<3;i++){ring(l.x,1.95+i*.20,l.z,.31+i*.22,.31+i*.22,color(l.c,.65),20);}}else if(l.type==='city'){ring(l.x,.025,l.z,4,3.3,color(l.c,.55),8);for(let j=0;j<6;j++){const a=TAU*j/6;solid(l.x+2*Math.cos(a),0,l.z+1.4*Math.sin(a),.55+j*.08,2+(j*3)%5,4+(j%2),l.c,j*.33,.56);}solid(l.x,0,l.z,.90,5.4,5,l.c,.16,.26);}else{for(let i=1;i<5;i++)ring(l.x,.01,l.z,i*.48,i*.48,color(l.c,.29),24);}if(l.id!=='spiral')label(l.x,l.type==='city'?6.1:3.35,l.z,l.name.toUpperCase(),l.c);}}
+if(app.room==='rat'){for(let k=0;k<raceGates.length;k++){const g=raceGates[k];gate(g.x,g.z,k<app.gate?'#669989':k===app.gate?'#f6cd85':'#83acc9',k===app.gate);label(g.x,3,g.z,'GATE '+(k+1),k===app.gate?'#f6cd85':'#9ebcb4');}for(let i=0;i<14;i+=1.7){line([-3.8,.04,i],[-3.8,.04,i+.8],'#61867a');line([3.8,.04,i],[3.8,.04,i+.8],'#61867a');}}
+if(app.room==='house'){house(0,4,'#94bacc');label(0,3.2,4,'JUNGLE SKYBOX','#b9dcee');}
+if(app.room==='cloud'&&!app.witness){ring(0,.03,2,4,4,'#a8bea9',8);for(let i=-3;i<=3;i++){line([-3,.04,i+2],[3,.04,i+2],'#55766c');line([i,.04,-1],[i,.04,5],'#55766c');}drawCloud(0,5,seconds,false);}
+if(app.room==='cloud'&&app.witness){drawCloud(p.x,p.z,seconds,false);label(p.x,3.5,p.z,'OUTSIDE / TURN '+app.turn,'#d2c899');return;} const b=session.bot;if(b&&Number.isFinite(b.x)&&Number.isFinite(b.z)&&(app.room!=='world'||!window.WFFields||WFFields.isNear(p,b.x/1000,b.z/1000))){body(b.x/1000,(b.y||0)/1000,b.z/1000,.78,'#b4a4e4',seconds,false);}
+for(const peer of visibleRemotes()){const cp=peer.checkpoint;const q=cp.zone===app.room?cp:app.room==='world'&&cp.outer?cp.outer:cp;if(q.zone===app.room&&(app.room!=='world'||!window.WFFields||WFFields.isNear(p,q.x/1000,q.z/1000))){body(q.x/1000,q.y/1000,q.z/1000,.94,'#f7bb88',seconds,false);label(q.x/1000,q.y/1000+2,q.z/1000,(peer.name||'peer')+' / '+peer.transport,'#f7bb88');}}
+ring(p.x,.02,p.z,.44,.31,color('#9bd0b0',.65),20);body(p.x,p.y,p.z,1,session.component.color&&/^#[0-9a-f]{6}$/i.test(session.component.color)?session.component.color:'#9bf5d8',seconds,keys.size>0);}
+const housePlayer='Local player', houseSteward='Course steward';
+function freshHouse(owner=houseSteward){return {residents:[owner],away:false,offer:null,uses:0,history:[],challengeTargetTicks:1680};}
+function house(){if(!app.housing)app.housing=freshHouse(app.houseOwner);return app.housing;}
+function conduct(action,detail){const h=house();h.history.push({tick:session.tick,action,detail});journal('housing / conduct',{action,detail});}
+function seat(){return house().away?'Titleholder away in another match':app.houseOwner+' · seat 1';}
+function housingDetails(){
+ const h=house(), owner=app.houseOwner, resident=h.residents.includes(housePlayer),inside=app.room==='house',atHome=owner!==housePlayer&&!h.away;
+ const role=owner===housePlayer?'Titleholder':resident?'Resident with house use':'Visitor';
+ const present=[atHome?owner:'',inside?housePlayer:''].filter(Boolean);
+ $('profileInfo').textContent='Deed: '+owner+'  ·  next defense: '+seat()+'\nResidents: '+h.residents.join(', ')+'\nPresent now: '+(present.join(', ')||'nobody')+'\nPlayer access: '+role+'  ·  visits '+app.visits+'  ·  house display uses '+h.uses;
+ $('mission').hidden=owner===housePlayer||app.room==='rat';$('mission').textContent=h.away?'Recall the steward from mission':'Send steward on a secret mission';
+ $('startDefense').disabled=!app.started||app.room==='rat'||h.away||(!resident&&owner!==housePlayer);
+ $('startDefense').textContent=owner===housePlayer?'Start title defense':'Challenge the titleholder';
+ $('tradeHouse').disabled=owner===housePlayer||!resident||h.away||app.room==='rat';
+ $('tradeHouse').textContent=h.offer?'Accept steward’s title offer':'Request a voluntary title trade';
+ $('housingOffer').textContent=h.offer?'Steward offers the deed in return for continued residency. Acceptance completes the local trade.':'';
+ $('houseUse').hidden=!inside||!resident;$('houseActivity').hidden=!inside||resident;
+ $('conduct').textContent=h.history.length?h.history.slice(-7).map(e=>'t'+e.tick+' · '+e.action+' · '+e.detail).join('\n'):'No completed conduct yet.';
+}
+function houseRaceFinish(){
+ const h=house(),prior=app.houseOwner,kind=app.matchKind||'regular',elapsed=session.tick-app.raceStartTick;
+ if(kind==='challenge'&&elapsed>h.challengeTargetTicks){conduct('Title challenge finished','Incumbent retained deed; local pace target exceeded.');return 'Challenge finished · incumbent retained deed';}
+ if(kind==='defense'){if(elapsed<=h.challengeTargetTicks){conduct('Title defended','Started in seat 1; retained Jungle Skybox.');return 'Defense won · local title retained';}
+ app.houseOwner=houseSteward;h.residents=[houseSteward];h.offer=null;h.away=false;conduct('Title defense lost','Training challenger took the deed.');return 'Defense finished · steward holds deed';}
+ if(h.away&&prior!==housePlayer){h.residents=[prior,housePlayer];conduct('Residency earned','Winner received house use while '+prior+' retained the deed on secret mission.');return 'Finish recorded · house use earned; '+prior+' retained the deed';}
+ if(prior===housePlayer){conduct('Title defended','Winner held seat 1 and retained the training deed.');return 'Finish recorded · local training title retained';}
+ app.houseOwner=housePlayer;h.residents=[housePlayer];h.offer=null;h.away=false;conduct(kind==='challenge'?'Title challenge won':'Training title won','Jungle Skybox deed transferred from '+prior+' to '+housePlayer+'.');return 'Finish recorded · local training title: Jungle Skybox';
+}
+function requestTrade(){
+ if(!requireLive())return;const h=house();
+ if(app.houseOwner===housePlayer||!h.residents.includes(housePlayer)||h.away||app.room==='rat'){notice('The co-resident and returning titleholder can trade.');return;}
+ if(!h.offer){h.offer={from:app.houseOwner,to:housePlayer,condition:'grant prior holder continuing residency'};conduct('Trade offered','Steward offers deed for continued residency.');notice('The steward offered terms. Accept to transfer the deed.');}
+ else{const old=app.houseOwner;app.houseOwner=housePlayer;h.residents=[housePlayer,old];h.offer=null;conduct('Voluntary trade completed','Both accepted. Local player holds deed; steward retains residency.');notice('Trade recorded · title transferred with continued steward residency.');}details();updateHud();
+}
+
+const peerMap=new Map();
+window.WFBridge={publishHz:()=>app.frozen||app.detached?0:session.remainingBreak>0?120:session.rate,readName:()=>session.component.name,readCheckpoint:()=>{if(simulationClock)simulationClock.flush();if(app.frozen||app.detached)return null;const checkpoint={tick:session.tick,x:session.actor.x,y:session.actor.y,z:session.actor.z,heading:yawUnits,zone:!app.started?'pocket':app.room,component:session.component.name};if(app.outer)checkpoint.outer={x:app.outer.x,y:app.outer.y,z:app.outer.z,heading:0,zone:'world',component:app.outer.component};if(app.resolvedAction)checkpoint.action=app.resolvedAction;return checkpoint;}};
+window.addEventListener('wfremote',e=>{const d=e.detail;if(app.frozen||app.detached||!d||!d.checkpoint)return;const action=d.action||d.checkpoint.action;if(action&&action.site==='rat'&&d.checkpoint.tick-action.tick<=360){if(!app.remoteAction||app.remoteAction.id!==d.id||app.remoteAction.seq!==action.seq)app.remoteAction=Object.assign({id:d.id,at:app.clock},action);}peerMap.set(d.id,Object.assign({at:performance.now()},d));});
+window.addEventListener('wfpeerleft',e=>{peerMap.delete(e.detail.id);});
+window.addEventListener('wftransport',e=>{if(app.detached||app.frozen)return;const d=e.detail;if(!d||!d.transport)return;app.actualTransport=d.transport;if(!app.networkLog)app.networkLog=[];app.networkLog.push({tick:session.tick,transport:d.transport,peer:d.peer,direction:d.direction,sequence:d.firstSeq,localSendLimitHz:d.localSendLimitHz});});
+function journal(kind,data){if(!app.journal)app.journal=[];app.journal.push({tick:session.tick,kind,data});}
+function wire(fn){return function(){try{fn();}catch(e){notice(e.message);}}}
+function download(name,file){const url=URL.createObjectURL(new Blob([JSON.stringify(file,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
+function readJson(input,fn){input.onchange=async()=>{try{if(!input.files.length)return;const f=input.files[0];if(f.size>36e6)throw Error('File exceeds 36 MB.');const data=JSON.parse(await f.text());fn(data);}catch(e){notice('Cannot open file · '+e.message);}finally{input.value='';}};}
+function visibleRemotes(){return app.detached||app.frozen?(app.seenPeers||[]):Array.from(peerMap.values()).filter(p=>performance.now()-p.at<24000);}
+function capture(){return {fields:window.WFFields?WFFields.snapshot():null,seenPeers:visibleRemotes(),camera:{x:camX,z:camZ,yawUnits},format:'wf-local-scene-1',app:JSON.parse(JSON.stringify(app)),cameraYaw,session:session.snapshot(),networkEvidence:window.WFRelay&&window.WFRelay.exportRecord?window.WFRelay.exportRecord():app.networkEvidence||null};}
+function detach(){peerMap.clear();window.dispatchEvent(new Event('wfdisconnect'));}
+function restore(pkg){if(!pkg||pkg.format!=='wf-local-scene-1'||!pkg.app||!['world','house','rat','cloud'].includes(pkg.app.room))throw Error('Unrecognized scene snapshot.');
+const restored=WFCore.Session.restore(pkg.session);if(!Number.isSafeInteger(restored.tick)||!restored.actor||!Number.isFinite(restored.actor.x)||!restored.receipts||!restored.checkpoints.length)throw Error('Invalid session data.');
+session=restored;if(window.WFFields)WFFields.restore(pkg.fields||null);app=Object.assign({},app,JSON.parse(JSON.stringify(pkg.app)),{frozen:true,detached:true});app.housing=pkg.app.housing||freshHouse(pkg.app.houseOwner||houseSteward);app.networkEvidence=pkg.networkEvidence||null;app.seenPeers=pkg.seenPeers||[];rebuildDestinations();yawUnits=pkg.camera?pkg.camera.yawUnits:0;cameraYaw=yawUnits*TAU/1024;camX=pkg.camera?pkg.camera.x:actor().x;camZ=pkg.camera?pkg.camera.z:actor().z;keys.clear();if(simulationClock)simulationClock.reset();snapshotCopy=null;layoutPlates();syncFields();detach();updateHud();notice('Snapshot opened in a detached branch.');}
+function syncFields(){$('load').value=app.load;$('link').value=app.link;$('rate').value=app.rate;$('retention').value=String(session.retention);$('moveChoice').value=app.choice||'Step';}
+function resize(){const box=canvas.getBoundingClientRect();width=Math.max(1,box.width);height=Math.max(1,box.height);dpr=Math.min(window.devicePixelRatio||1,1.75);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);backdrop=ctx.createLinearGradient(0,0,0,height*.95);backdrop.addColorStop(0,'#07121c');backdrop.addColorStop(.42,'#122b32');backdrop.addColorStop(1,'#102729');}
+const directions8=[[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1]];
+function forwardInput(){const x=Number(keys.has('KeyD')||keys.has('ArrowRight'))-Number(keys.has('KeyA')||keys.has('ArrowLeft')),z=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));const base=directions8.findIndex(v=>v[0]===x&&v[1]===z);const direction=base<0?[0,0]:directions8[(base+((yawUnits+64)>>7))%8];return {x:direction[0],z:direction[1],jump:keys.has('Space')};}
+function advance(dt){if(!app.frozen){app.clock+=dt/1000;updateNetwork();const before=session.actor.steps,previousTick=session.tick;let cmd=forwardInput();if(app.room==='cloud'&&!session.remainingBreak){cmd.x=0;cmd.z=0;cmd.jump=false;if(app.pendingTurn==='Step'){cmd.z=1;}}
+session.frame(dt,cmd);if(app.pendingTurn&&session.actor.steps>before&&app.room==='cloud'){app.turn++;app.lastMove=app.pendingTurn;app.actionAt=app.clock;app.resolvedAction={seq:app.turn,kind:app.lastMove,tick:session.tick,site:'rat'};app.pendingTurn='';if(app.lastMove==='Grab')app.grabs=(app.grabs||0)+1;if(app.lastMove==='Punch')app.strikes=(app.strikes||0)+1;journal('scripted turn',{number:app.turn,move:app.lastMove,actor:Object.assign({},session.actor)});notice(app.lastMove+' resolved · turn '+app.turn);}
+race((session.tick-previousTick)*1000/120);}}
+function frame(t){scene(t);if(t-lastHud>135){updateHud();lastHud=t;}if(t>toastUntil)$('toast').hidden=true;requestAnimationFrame(frame);}
+$('start').onclick=()=>{if(!requireLive())return;session.start();app.started=true;journal('takeover',{component:session.component.name,actor:Object.assign({},session.actor)});app.outerName='Dev Spiral';canvas.focus();updateNetwork();updateHud();notice('Player control · same avatar');};
+document.querySelectorAll('[data-panel]').forEach(b=>b.onclick=()=>panel(b.dataset.panel));$('close').onclick=closePanel;
+function rebuildDestinations(){places.splice(6);$('destination').options.length=0;$('community').options.length=0;for(const p of app.linkPlates||[])places.push({id:p.id,name:p.name,ref:p.url,c:'#a8d7b3',type:'city'});for(const l of places){$('destination').add(new Option(l.name,l.id));if(l.type==='city')$('community').add(new Option(l.name,l.id));}layoutPlates();}
+rebuildDestinations();
+$('addPlate').onclick=wire(()=>{if(!requireLive())return;const name=$('plateName').value.trim(), url=new URL($('plateUrl').value.trim());if(!name||!['https:','http:'].includes(url.protocol))throw Error('Enter a name and an HTTP or HTTPS link.');if(!app.linkPlates)app.linkPlates=[];if(app.linkPlates.some(p=>p.url===url.href))throw Error('This link already has a plate.');const id='link-'+(app.linkPlates.length+1);app.linkPlates.push({id,name,url:url.href});app.support[id]=1;journal('create plate',{id,name,url:url.href});rebuildDestinations();$('destination').value=id;$('community').value=id;$('plateRef').textContent=name+' · '+url.href;$('plateName').value='';$('plateUrl').value='';details();notice('Link plate created · '+name);});
+$('destination').onchange=()=>{const p=places.find(p=>p.id===$('destination').value);$('plateRef').textContent=p&&p.ref?p.name+' · '+p.ref:'';};
+$('teleport').onclick=()=>{const p=places.find(l=>l.id===$('destination').value);teleport(p);};
+$('ratMenu').onclick=()=>enter('rat','Menu');$('enterHouse').onclick=()=>{if(app.room!=='world')leave();enter('house','Menu');};
+$('support').onclick=()=>{if(!requireLive())return;const id=$('community').value;app.support[id]++;layoutPlates();journal('plate support',{id,support:app.support[id],positions:places.filter(p=>p.type==='city').map(p=>[p.id,p.x,p.z])});notice('Support recorded · '+places.find(p=>p.id===id).name);details();};
+$('link').onchange=()=>{if(!requireLive()){syncFields();return;}app.link=$('link').value;updateNetwork();details();};$('load').onchange=()=>{if(!requireLive()){syncFields();return;}app.load=$('load').value;journal('destination load',app.load);updateNetwork();details();};$('rate').onchange=()=>{if(!requireLive()){syncFields();return;}app.rate=$('rate').value;updateNetwork();details();};$('retention').onchange=()=>{if(!requireLive()){syncFields();return;}session.setRetention(Number($('retention').value));details();};
+$('interact').onclick=interact;$('leave').onclick=leave;
+$('burst').onclick=()=>{if(!requireLive())return;session.limitBreak(4);app.breakUntil=app.clock+4;notice('Limit Break · local avatar at full cadence for four seconds');};
+$('cloudAction').onclick=turn;$('moveChoice').onchange=()=>{app.choice=$('moveChoice').value;};$('witness').onclick=()=>{app.witness=!app.witness;updateHud();};$('exportProfile').onclick=()=>download('character-component.json',session.component);
+readJson($('loadProfile'),v=>{if(!requireLive())return;session.setComponent(v);notice('Component loaded · '+session.component.name);details();});
+$('audit').onclick=()=>{const a=session.audit();$('auditInfo').textContent=a.mode.toUpperCase()+' · '+a.summary+'\n'+a.exactSegments+' exact / '+a.rationalizedSegments+' reconstructed';};$('claims').onclick=()=>{$('claimPanel').hidden=!$('claimPanel').hidden;};
+$('beginClaim').onclick=()=>{$('claimInfo').textContent=session.beginClaims().summary;};$('submitClaim').onclick=()=>{$('claimInfo').textContent=session.proposeClaim($('author').value,$('proposal').value).summary;};$('deadline').onclick=()=>{$('claimInfo').textContent=session.closeClaims().summary;};$('resolve').onclick=()=>{$('claimInfo').textContent=session.resolveClaims().summary;};
+$('freeze').onclick=()=>{if(app.frozen){app.frozen=false;app.detached=true;notice('Detached branch running locally.');}else{if(!app.detached&&!snapshotCopy)snapshotCopy=capture();app.seenPeers=visibleRemotes();app.frozen=true;app.detached=true;detach();notice('World frozen. Inspect or save this moment.');}keys.clear();if(simulationClock)simulationClock.reset();details();};
+$('saveDevice').onclick=wire(()=>{localStorage.setItem('wf-local-save-v1',JSON.stringify(capture()));notice('Session saved on this device.');});$('loadDevice').onclick=wire(()=>{const save=localStorage.getItem('wf-local-save-v1');if(!save)throw Error('No session saved on this device.');restore(JSON.parse(save));notice('Device save opened as an offline branch.');});
+$('inspectTick').onclick=wire(()=>{const r=session.inspectTick(Number($('pastTick').value));$('pastPose').textContent=r.summary+(r.actor?' · x '+r.actor.x+' / y '+r.actor.y+' / z '+r.actor.z+' mm':'');});
+$('exportSave').onclick=()=>download('worlds-fastest-snapshot.json',capture());readJson($('loadSave'),restore);
+$('returnLive').onclick=()=>{if(!snapshotCopy){notice('Only a branch created from this live session can return to it.');return;}const live=snapshotCopy;restore(live);app.detached=!!live.app.detached;app.frozen=!!live.app.frozen;if(simulationClock)simulationClock.reset();snapshotCopy=null;session.pendingJump=false;updateHud();details();notice('Live session restored. Link may be reconnected.');};
+window.addEventListener('keydown',e=>{if(e.code==='Escape'){closePanel();return;}if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)||activePanel)return;if(e.code==='KeyE'&&!e.repeat){interact();return;}if(['KeyW','KeyA','KeyS','KeyD','Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){if(app.started&&document.activeElement.tagName!=='BUTTON')e.preventDefault();if(app.started)keys.add(e.code);}});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>keys.clear());
+document.querySelectorAll('[data-key]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys.add(b.dataset.key);});const end=()=>keys.delete(b.dataset.key);b.onpointerup=end;b.onpointercancel=end;});
+canvas.onpointerdown=e=>{canvas.focus();drag={x:Math.round(e.clientX)};canvas.setPointerCapture(e.pointerId);};canvas.onpointermove=e=>{if(drag&&!app.frozen){const px=Math.round(e.clientX);yawUnits=((yawUnits+px-drag.x)%1024+1024)%1024;cameraYaw=yawUnits*TAU/1024;drag.x=px;}};canvas.onpointerup=()=>drag=null;canvas.onpointercancel=()=>drag=null;
+$('mission').onclick=()=>{if(!requireLive()||app.houseOwner===housePlayer||app.room==='rat')return;const h=house();h.away=!h.away;journal('steward mission',{away:h.away});notice(h.away?'Incumbent away on a secret mission.':'Incumbent returned; earned residency is retained.');details();};
+$('startDefense').onclick=()=>{if(!requireLive()||house().away||app.room==='rat')return;if(app.room!=='world')leave();enter('rat',app.houseOwner===housePlayer?'Title defense':'Title challenge',app.houseOwner===housePlayer?'defense':'challenge');};
+$('tradeHouse').onclick=requestTrade;
+$('houseUse').onclick=()=>{if(!requireLive()||app.room!=='house'||!house().residents.includes(housePlayer))return;house().uses++;conduct('House display used','Resident accessed the local results screen.');panel('world');notice('Jungle Skybox display · '+app.results.length+' local finishes');};
+$('houseActivity').onclick=()=>{if(!requireLive()||app.room!=='house')return;panel('world');};
+$('scope').onclick=()=>{if(!requireLive())return;app.scope=!app.scope;journal('orb scope',{enabled:app.scope});details();};
+session.setRetention(30);syncFields();layoutPlates();resize();updateHud();window.addEventListener('resize',resize);simulationClock=WFClock.start(advance,()=>app.frozen);requestAnimationFrame(frame);
+</script></body></html>
